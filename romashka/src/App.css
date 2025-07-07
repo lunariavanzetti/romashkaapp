@@ -1,0 +1,119 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* Mobile-first breakpoints */
+:root {
+  --breakpoint-xs: 320px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 1024px;
+  --breakpoint-lg: 1440px;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch-friendly buttons */
+button, .touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+  border-radius: 12px;
+}
+
+/* Collapsible nav for small screens */
+@media (max-width: 768px) {
+  .sidebar, .navigation {
+    display: none;
+  }
+  .mobile-nav {
+    display: flex;
+  }
+}
+
+/* Bottom tab navigation for mobile */
+.mobile-bottom-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+  height: 56px;
+  background: rgba(255,255,255,0.95);
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+}
+
+.mobile-bottom-tabs a {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  color: #FF6B9D;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.mobile-bottom-tabs a.active {
+  color: #fff;
+  background: #FF6B9D;
+  border-radius: 16px;
+}
+
+/* Chat widget mobile optimization */
+@media (max-width: 768px) {
+  .chat-widget {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 0 !important;
+    bottom: 56px !important;
+    right: 0 !important;
+    left: 0 !important;
+  }
+}
