@@ -1,17 +1,22 @@
--- ROMASHKA Complete Database Schema
--- Master schema file that consolidates all functionality
--- Run this in your Supabase SQL Editor
+-- ROMASHKA Master Database Schema
+-- Complete database infrastructure for customer support platform
+-- Version: 1.0.0
+-- Compatible with: PostgreSQL 14+ / Supabase
 
--- Enable required extensions
+-- ================================
+-- EXTENSIONS & SETUP
+-- ================================
+
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ================================
--- CORE USER MANAGEMENT TABLES
+-- CORE USER MANAGEMENT
 -- ================================
 
--- Create profiles table (main user table)
+-- Profiles table (extends auth.users)
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -30,7 +35,32 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 -- ================================
--- AGENT MANAGEMENT TABLES
+-- CUSTOMER MANAGEMENT
+-- ================================
+
+-- Customer profiles with custom fields
+CREATE TABLE IF NOT EXISTS customer_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255) UNIQUE,
+  name VARCHAR(255),
+  phone VARCHAR(50),
+  company VARCHAR(255),
+  location VARCHAR(255),
+  timezone VARCHAR(50) DEFAULT 'UTC',
+  language VARCHAR(10) DEFAULT 'en',
+  tags TEXT[] DEFAULT '{}',
+  custom_fields JSONB DEFAULT '{}',
+  total_conversations INTEGER DEFAULT 0,
+  avg_satisfaction DECIMAL(3,2) DEFAULT 0,
+  last_interaction TIMESTAMP WITH TIME ZONE,
+  notes TEXT,
+  status VARCHAR(50) DEFAULT 'active', -- 'active', 'blocked', 'vip'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ================================
+-- AGENT MANAGEMENT
 -- ================================
 
 -- Agent availability and status tracking
@@ -66,32 +96,72 @@ CREATE TABLE IF NOT EXISTS canned_responses (
 );
 
 -- ================================
--- CUSTOMER MANAGEMENT TABLES
+-- COMMUNICATION CHANNELS
 -- ================================
 
--- Customer profiles with custom fields
-CREATE TABLE IF NOT EXISTS customer_profiles (
+-- Communication channels (WhatsApp, Email, etc.)
+CREATE TABLE IF NOT EXISTS communication_channels (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) UNIQUE,
-  name VARCHAR(255),
-  phone VARCHAR(50),
-  company VARCHAR(255),
-  location VARCHAR(255),
-  timezone VARCHAR(50) DEFAULT 'UTC',
-  language VARCHAR(10) DEFAULT 'en',
-  tags TEXT[] DEFAULT '{}',
-  custom_fields JSONB DEFAULT '{}',
-  total_conversations INTEGER DEFAULT 0,
-  avg_satisfaction DECIMAL(3,2) DEFAULT 0,
+  name VARCHAR(100) NOT NULL,
+  type VARCHAR(50) NOT NULL, -- 'whatsapp', 'messenger', 'instagram', 'email', 'sms', 'website'
+  status VARCHAR(20) DEFAULT 'active', -- 'active', 'inactive', 'pending_setup'
+  configuration JSONB NOT NULL DEFAULT '{}',
+  webhook_url TEXT,
+  webhook_secret VARCHAR(255),
+  api_credentials JSONB, -- Encrypted credentials
+  message_limit_per_day INTEGER DEFAULT 1000,
+  messages_sent_today INTEGER DEFAULT 0,
+  last_reset_date DATE DEFAULT CURRENT_DATE,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Message templates (for channels)
+CREATE TABLE IF NOT EXISTS message_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  language VARCHAR(10) NOT NULL,
+  category VARCHAR(50) NOT NULL, -- 'utility', 'marketing', 'authentication'
+  template_content JSONB NOT NULL DEFAULT '{}',
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+  channel_type VARCHAR(50) NOT NULL,
+  external_template_id VARCHAR(255),
+  usage_count INTEGER DEFAULT 0,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Customer channel preferences
+CREATE TABLE IF NOT EXISTS customer_channel_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID REFERENCES customer_profiles(id) ON DELETE CASCADE,
+  channel_type VARCHAR(50) NOT NULL,
+  is_preferred BOOLEAN DEFAULT false,
+  opt_in BOOLEAN DEFAULT true,
   last_interaction TIMESTAMP WITH TIME ZONE,
-  notes TEXT,
-  status VARCHAR(50) DEFAULT 'active', -- 'active', 'blocked', 'vip'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(customer_id, channel_type)
+);
+
+-- Channel routing rules
+CREATE TABLE IF NOT EXISTS channel_routing_rules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  priority INTEGER DEFAULT 0,
+  conditions JSONB NOT NULL DEFAULT '{}', -- Business hours, customer type, etc.
+  target_channel_type VARCHAR(50) NOT NULL,
+  fallback_channel_type VARCHAR(50),
+  is_active BOOLEAN DEFAULT true,
+  created_by UUID REFERENCES profiles(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- ================================
--- CONVERSATION MANAGEMENT TABLES
+-- CONVERSATIONS & MESSAGES
 -- ================================
 
 -- Enhanced conversations table
@@ -103,8 +173,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   assigned_agent_id UUID REFERENCES profiles(id),
   status VARCHAR(50) DEFAULT 'active', -- 'active', 'resolved', 'escalated', 'closed'
   priority VARCHAR(20) DEFAULT 'normal', -- 'low', 'normal', 'high', 'urgent'
-  channel_type VARCHAR(50) DEFAULT 'website', -- 'website', 'whatsapp', 'email', 'sms'
-  channel_id UUID,
+  channel_type VARCHAR(50) DEFAULT 'website',
+  channel_id UUID REFERENCES communication_channels(id),
   external_conversation_id VARCHAR(255),
   customer_phone VARCHAR(50),
   customer_social_id VARCHAR(255),
@@ -210,8 +280,24 @@ CREATE TABLE IF NOT EXISTS sla_tracking (
   completed_at TIMESTAMP WITH TIME ZONE
 );
 
+-- Message delivery tracking
+CREATE TABLE IF NOT EXISTS message_delivery_tracking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
+  channel_type VARCHAR(50) NOT NULL,
+  external_message_id VARCHAR(255),
+  delivery_status VARCHAR(50) DEFAULT 'sent',
+  delivery_timestamp TIMESTAMP WITH TIME ZONE,
+  read_timestamp TIMESTAMP WITH TIME ZONE,
+  error_details JSONB,
+  retry_count INTEGER DEFAULT 0,
+  max_retries INTEGER DEFAULT 3,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ================================
--- KNOWLEDGE MANAGEMENT TABLES
+-- KNOWLEDGE MANAGEMENT
 -- ================================
 
 -- Knowledge categories
@@ -250,7 +336,7 @@ CREATE TABLE IF NOT EXISTS knowledge_items (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Knowledge versions
+-- Knowledge versions (for version control)
 CREATE TABLE IF NOT EXISTS knowledge_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   knowledge_item_id UUID REFERENCES knowledge_items(id) ON DELETE CASCADE,
@@ -273,103 +359,8 @@ CREATE TABLE IF NOT EXISTS knowledge_analytics (
 );
 
 -- ================================
--- MULTI-CHANNEL COMMUNICATION TABLES
+-- INTEGRATIONS
 -- ================================
-
--- Communication channels
-CREATE TABLE IF NOT EXISTS communication_channels (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL,
-  type VARCHAR(50) NOT NULL, -- 'whatsapp', 'messenger', 'instagram', 'email', 'sms', 'website'
-  status VARCHAR(20) DEFAULT 'active', -- 'active', 'inactive', 'pending_setup'
-  configuration JSONB NOT NULL,
-  webhook_url TEXT,
-  webhook_secret VARCHAR(255),
-  api_credentials JSONB, -- Encrypted credentials
-  message_limit_per_day INTEGER DEFAULT 1000,
-  messages_sent_today INTEGER DEFAULT 0,
-  last_reset_date DATE DEFAULT CURRENT_DATE,
-  created_by UUID REFERENCES profiles(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Message templates (for WhatsApp, etc.)
-CREATE TABLE IF NOT EXISTS message_templates (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  language VARCHAR(10) NOT NULL,
-  category VARCHAR(50) NOT NULL, -- 'utility', 'marketing', 'authentication'
-  template_content JSONB NOT NULL,
-  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
-  channel_type VARCHAR(50) NOT NULL,
-  external_template_id VARCHAR(255),
-  usage_count INTEGER DEFAULT 0,
-  created_by UUID REFERENCES profiles(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Customer channel preferences
-CREATE TABLE IF NOT EXISTS customer_channel_preferences (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  customer_id UUID REFERENCES customer_profiles(id) ON DELETE CASCADE,
-  channel_type VARCHAR(50) NOT NULL,
-  is_preferred BOOLEAN DEFAULT false,
-  opt_in BOOLEAN DEFAULT true,
-  last_interaction TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(customer_id, channel_type)
-);
-
--- Channel routing rules
-CREATE TABLE IF NOT EXISTS channel_routing_rules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  priority INTEGER DEFAULT 0,
-  conditions JSONB NOT NULL, -- Business hours, customer type, etc.
-  target_channel_type VARCHAR(50) NOT NULL,
-  fallback_channel_type VARCHAR(50),
-  is_active BOOLEAN DEFAULT true,
-  created_by UUID REFERENCES profiles(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Message delivery tracking
-CREATE TABLE IF NOT EXISTS message_delivery_tracking (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
-  channel_type VARCHAR(50) NOT NULL,
-  external_message_id VARCHAR(255),
-  delivery_status VARCHAR(50) DEFAULT 'sent',
-  delivery_timestamp TIMESTAMP WITH TIME ZONE,
-  read_timestamp TIMESTAMP WITH TIME ZONE,
-  error_details JSONB,
-  retry_count INTEGER DEFAULT 0,
-  max_retries INTEGER DEFAULT 3,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- ================================
--- WEBHOOK & INTEGRATION TABLES
--- ================================
-
--- Webhook event logs
-CREATE TABLE IF NOT EXISTS webhook_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  channel_id UUID REFERENCES communication_channels(id),
-  event_type VARCHAR(100) NOT NULL,
-  source VARCHAR(100) NOT NULL, -- 'whatsapp', 'webhook', 'api'
-  payload JSONB NOT NULL,
-  processed BOOLEAN DEFAULT false,
-  processing_attempts INTEGER DEFAULT 0,
-  error_message TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  processed_at TIMESTAMP WITH TIME ZONE
-);
 
 -- Integration configurations
 CREATE TABLE IF NOT EXISTS integrations (
@@ -378,8 +369,8 @@ CREATE TABLE IF NOT EXISTS integrations (
   type VARCHAR(100) NOT NULL, -- 'crm', 'helpdesk', 'ecommerce', 'email_marketing'
   provider VARCHAR(100) NOT NULL, -- 'salesforce', 'hubspot', 'zendesk', 'shopify'
   status VARCHAR(50) DEFAULT 'inactive', -- 'active', 'inactive', 'error', 'pending_setup'
-  configuration JSONB NOT NULL,
-  credentials JSONB NOT NULL, -- Encrypted
+  configuration JSONB NOT NULL DEFAULT '{}',
+  credentials JSONB NOT NULL DEFAULT '{}', -- Encrypted
   sync_settings JSONB DEFAULT '{}',
   last_sync_at TIMESTAMP WITH TIME ZONE,
   sync_frequency INTEGER DEFAULT 3600, -- seconds
@@ -405,8 +396,70 @@ CREATE TABLE IF NOT EXISTS integration_field_mappings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Sync jobs tracking
+CREATE TABLE IF NOT EXISTS sync_jobs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  integration_id UUID REFERENCES integrations(id) ON DELETE CASCADE,
+  job_type VARCHAR(100) NOT NULL, -- 'full_sync', 'incremental', 'real_time'
+  direction VARCHAR(20) NOT NULL, -- 'inbound', 'outbound', 'bidirectional'
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'running', 'completed', 'failed'
+  records_processed INTEGER DEFAULT 0,
+  records_total INTEGER DEFAULT 0,
+  started_at TIMESTAMP WITH TIME ZONE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  error_details JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- ================================
--- ANALYTICS & REPORTING TABLES
+-- WEBHOOKS & EVENTS
+-- ================================
+
+-- Webhook event logs
+CREATE TABLE IF NOT EXISTS webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  channel_id UUID REFERENCES communication_channels(id),
+  event_type VARCHAR(100) NOT NULL,
+  source VARCHAR(100) NOT NULL, -- 'whatsapp', 'webhook', 'api'
+  payload JSONB NOT NULL,
+  processed BOOLEAN DEFAULT false,
+  processing_attempts INTEGER DEFAULT 0,
+  error_message TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  processed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Webhook subscriptions
+CREATE TABLE IF NOT EXISTS webhook_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  integration_id UUID REFERENCES integrations(id) ON DELETE CASCADE,
+  event_type VARCHAR(100) NOT NULL,
+  webhook_url TEXT NOT NULL,
+  secret_key VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  retry_count INTEGER DEFAULT 3,
+  timeout_seconds INTEGER DEFAULT 30,
+  last_triggered TIMESTAMP WITH TIME ZONE,
+  success_count INTEGER DEFAULT 0,
+  failure_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Webhook logs for debugging
+CREATE TABLE IF NOT EXISTS webhook_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  webhook_subscription_id UUID REFERENCES webhook_subscriptions(id) ON DELETE CASCADE,
+  event_type VARCHAR(100) NOT NULL,
+  payload JSONB,
+  response_status INTEGER,
+  response_body TEXT,
+  error_message TEXT,
+  processing_time_ms INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ================================
+-- ANALYTICS & REPORTING
 -- ================================
 
 -- Daily metrics aggregation
@@ -486,7 +539,7 @@ CREATE TABLE IF NOT EXISTS dashboard_configs (
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   is_default BOOLEAN DEFAULT false,
-  layout JSONB NOT NULL, -- Widget positions and configurations
+  layout JSONB NOT NULL DEFAULT '{}', -- Widget positions and configurations
   filters JSONB DEFAULT '{}', -- Default filters
   refresh_interval INTEGER DEFAULT 300, -- seconds
   is_public BOOLEAN DEFAULT false,
@@ -513,7 +566,7 @@ CREATE TABLE IF NOT EXISTS scheduled_reports (
 );
 
 -- ================================
--- PLAYGROUND & WIDGET TABLES
+-- PLAYGROUND & WIDGETS
 -- ================================
 
 -- Playground sessions
@@ -521,7 +574,7 @@ CREATE TABLE IF NOT EXISTS playground_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   session_name VARCHAR(255),
-  bot_configuration JSONB NOT NULL,
+  bot_configuration JSONB NOT NULL DEFAULT '{}',
   test_conversations JSONB DEFAULT '[]',
   performance_metrics JSONB DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -534,7 +587,7 @@ CREATE TABLE IF NOT EXISTS widget_configurations (
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   widget_name VARCHAR(255) NOT NULL,
   domain VARCHAR(255),
-  configuration JSONB NOT NULL,
+  configuration JSONB NOT NULL DEFAULT '{}',
   embed_code TEXT,
   status VARCHAR(50) DEFAULT 'active',
   install_verified BOOLEAN DEFAULT false,
@@ -545,7 +598,7 @@ CREATE TABLE IF NOT EXISTS widget_configurations (
 );
 
 -- ================================
--- WORKFLOW & AUTOMATION TABLES
+-- WORKFLOW & AUTOMATION
 -- ================================
 
 -- Workflows
@@ -582,7 +635,7 @@ CREATE TABLE IF NOT EXISTS workflow_executions (
 );
 
 -- ================================
--- WEBSITE SCANNING TABLES
+-- WEBSITE SCANNING
 -- ================================
 
 -- Website scan jobs
@@ -619,7 +672,7 @@ CREATE TABLE IF NOT EXISTS extracted_content (
 );
 
 -- ================================
--- ADDITIONAL UTILITY TABLES
+-- AI & INTENT MANAGEMENT
 -- ================================
 
 -- Intent patterns
@@ -648,6 +701,10 @@ CREATE TABLE IF NOT EXISTS conversation_context (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- ================================
+-- SYSTEM UTILITIES
+-- ================================
+
 -- System settings
 CREATE TABLE IF NOT EXISTS system_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -673,79 +730,87 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- ================================
--- INDEXES FOR PERFORMANCE
+-- PERFORMANCE INDEXES
 -- ================================
 
--- Primary indexes
+-- Primary relationship indexes
 CREATE INDEX IF NOT EXISTS idx_conversations_customer_id ON conversations(customer_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_agent_id ON conversations(assigned_agent_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations(status);
 CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at);
 CREATE INDEX IF NOT EXISTS idx_conversations_channel_type ON conversations(channel_type);
+CREATE INDEX IF NOT EXISTS idx_conversations_status_created_at ON conversations(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_conversations_agent_status ON conversations(assigned_agent_id, status);
 
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender_type ON messages(sender_type);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at);
 
 CREATE INDEX IF NOT EXISTS idx_customer_profiles_email ON customer_profiles(email);
 CREATE INDEX IF NOT EXISTS idx_customer_profiles_phone ON customer_profiles(phone);
 CREATE INDEX IF NOT EXISTS idx_customer_profiles_created_at ON customer_profiles(created_at);
 
+-- Agent and availability indexes
+CREATE INDEX IF NOT EXISTS idx_agent_availability_agent_id ON agent_availability(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_availability_is_online ON agent_availability(is_online);
+CREATE INDEX IF NOT EXISTS idx_agent_availability_status ON agent_availability(status);
+
+-- Knowledge management indexes
 CREATE INDEX IF NOT EXISTS idx_knowledge_items_category_id ON knowledge_items(category_id);
 CREATE INDEX IF NOT EXISTS idx_knowledge_items_status ON knowledge_items(status);
 CREATE INDEX IF NOT EXISTS idx_knowledge_items_language ON knowledge_items(language);
 
+-- Analytics indexes
 CREATE INDEX IF NOT EXISTS idx_daily_metrics_date ON daily_metrics(date);
 CREATE INDEX IF NOT EXISTS idx_daily_metrics_agent_id ON daily_metrics(agent_id);
 CREATE INDEX IF NOT EXISTS idx_daily_metrics_channel_type ON daily_metrics(channel_type);
 
+-- Webhook and integration indexes
 CREATE INDEX IF NOT EXISTS idx_webhook_events_processed ON webhook_events(processed);
 CREATE INDEX IF NOT EXISTS idx_webhook_events_created_at ON webhook_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_integrations_status ON integrations(status);
 
-CREATE INDEX IF NOT EXISTS idx_agent_availability_agent_id ON agent_availability(agent_id);
-CREATE INDEX IF NOT EXISTS idx_agent_availability_is_online ON agent_availability(is_online);
-
+-- Canned responses indexes
 CREATE INDEX IF NOT EXISTS idx_canned_responses_category ON canned_responses(category);
 CREATE INDEX IF NOT EXISTS idx_canned_responses_shortcut ON canned_responses(shortcut);
 CREATE INDEX IF NOT EXISTS idx_canned_responses_language ON canned_responses(language);
 
--- Full-text search indexes
+-- Text search indexes (for large datasets)
 CREATE INDEX IF NOT EXISTS idx_knowledge_items_content_trgm ON knowledge_items USING gin(content gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_knowledge_items_title_trgm ON knowledge_items USING gin(title gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS idx_messages_content_trgm ON messages USING gin(content gin_trgm_ops);
 
--- Composite indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_conversations_status_created_at ON conversations(status, created_at);
-CREATE INDEX IF NOT EXISTS idx_conversations_agent_status ON conversations(assigned_agent_id, status);
-CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at);
-
 -- ================================
--- ENABLE ROW LEVEL SECURITY
+-- ROW LEVEL SECURITY (RLS)
 -- ================================
 
 -- Enable RLS on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customer_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE agent_availability ENABLE ROW LEVEL SECURITY;
 ALTER TABLE canned_responses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customer_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE communication_channels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE message_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customer_channel_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE channel_routing_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE file_attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_transfers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sla_tracking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE message_delivery_tracking ENABLE ROW LEVEL SECURITY;
 ALTER TABLE knowledge_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE knowledge_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE knowledge_versions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE knowledge_analytics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE communication_channels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE message_templates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customer_channel_preferences ENABLE ROW LEVEL SECURITY;
-ALTER TABLE channel_routing_rules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE message_delivery_tracking ENABLE ROW LEVEL SECURITY;
-ALTER TABLE webhook_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE integrations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE integration_field_mappings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sync_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webhook_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webhook_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE webhook_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE realtime_metrics ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_analytics ENABLE ROW LEVEL SECURITY;
@@ -763,7 +828,7 @@ ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- ================================
--- BASIC RLS POLICIES
+-- RLS POLICIES
 -- ================================
 
 -- Profiles policies
@@ -773,100 +838,89 @@ CREATE POLICY "Users can view own profile" ON profiles
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (auth.uid() = id);
 
-CREATE POLICY "Users can insert own profile" ON profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
-
--- General authenticated access for most tables (can be refined later)
-CREATE POLICY "Allow authenticated access" ON conversations
+-- Customer profiles policies
+CREATE POLICY "Allow authenticated access to customer profiles" ON customer_profiles
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow authenticated access" ON messages
+-- Agent availability policies
+CREATE POLICY "Agents can manage own availability" ON agent_availability
+  FOR ALL USING (auth.uid() = agent_id);
+
+CREATE POLICY "Allow viewing all agent availability" ON agent_availability
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Conversations policies
+CREATE POLICY "Allow authenticated access to conversations" ON conversations
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow authenticated access" ON customer_profiles
+-- Messages policies
+CREATE POLICY "Allow authenticated access to messages" ON messages
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow authenticated access" ON knowledge_items
+-- Knowledge management policies
+CREATE POLICY "Allow authenticated access to knowledge items" ON knowledge_items
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow authenticated access" ON knowledge_categories
+CREATE POLICY "Allow authenticated access to knowledge categories" ON knowledge_categories
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow authenticated access" ON canned_responses
+-- Canned responses policies
+CREATE POLICY "Allow viewing public canned responses" ON canned_responses
+  FOR SELECT USING (auth.role() = 'authenticated' AND (is_public = true OR created_by = auth.uid()));
+
+CREATE POLICY "Allow managing own canned responses" ON canned_responses
+  FOR ALL USING (auth.uid() = created_by);
+
+-- Integration policies
+CREATE POLICY "Allow managing own integrations" ON integrations
+  FOR ALL USING (auth.uid() = created_by);
+
+-- Analytics policies (read-only for most users)
+CREATE POLICY "Allow authenticated access to analytics" ON daily_metrics
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow authenticated access to conversation analytics" ON conversation_analytics
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow authenticated access" ON agent_availability
-  FOR ALL USING (auth.role() = 'authenticated');
+-- Dashboard and widget policies
+CREATE POLICY "Allow managing own dashboards" ON dashboard_configs
+  FOR ALL USING (auth.uid() = user_id);
 
-CREATE POLICY "Allow authenticated access" ON conversation_notes
-  FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow managing own widgets" ON widget_configurations
+  FOR ALL USING (auth.uid() = user_id);
 
-CREATE POLICY "Allow authenticated access" ON file_attachments
-  FOR ALL USING (auth.role() = 'authenticated');
+-- Workflow policies
+CREATE POLICY "Allow managing own workflows" ON workflows
+  FOR ALL USING (auth.uid() = user_id);
 
-CREATE POLICY "Allow authenticated access" ON daily_metrics
-  FOR ALL USING (auth.role() = 'authenticated');
+-- General authenticated access for remaining tables
+CREATE POLICY "Allow authenticated access" ON conversation_notes FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON file_attachments FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON conversation_transfers FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON sla_tracking FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON communication_channels FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON message_templates FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON customer_channel_preferences FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON webhook_events FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON realtime_metrics FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON scheduled_reports FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON playground_sessions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON workflow_executions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON website_scan_jobs FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON extracted_content FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON intent_patterns FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON conversation_context FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated access" ON audit_logs FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Allow authenticated access" ON realtime_metrics
-  FOR ALL USING (auth.role() = 'authenticated');
+-- System settings (admin only)
+CREATE POLICY "Allow admin access to system settings" ON system_settings
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() 
+      AND profiles.role = 'admin'
+    )
+  );
 
-CREATE POLICY "Allow authenticated access" ON conversation_analytics
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON dashboard_configs
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON scheduled_reports
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON playground_sessions
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON widget_configurations
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON workflows
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON workflow_executions
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON website_scan_jobs
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON extracted_content
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON intent_patterns
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON conversation_context
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON communication_channels
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON message_templates
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON integrations
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON integration_field_mappings
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON webhook_events
-  FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow authenticated access" ON audit_logs
-  FOR ALL USING (auth.role() = 'authenticated');
-
--- System settings - public read, admin write
-CREATE POLICY "Public read system settings" ON system_settings
-  FOR SELECT USING (is_public = true OR auth.role() = 'authenticated');
-
-CREATE POLICY "Admin write system settings" ON system_settings
-  FOR ALL USING (auth.role() = 'authenticated');
-
--- Schema setup complete
-SELECT 'ROMASHKA Complete Schema Setup Complete!' as status;
+-- Final success message
+SELECT 'ROMASHKA Master Schema completed successfully!' as status;
