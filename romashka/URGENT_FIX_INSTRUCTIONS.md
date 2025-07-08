@@ -48,6 +48,9 @@ After running the fix, you should see:
 ### Error: "column reference 'table_name' is ambiguous"
 **Solution:** Use `verify-schema-fix-v2.sql` instead of the original verify script.
 
+### Error: "column 'status' does not exist"
+**Solution:** Run `pre-complete-schema-patch.sql` before running `complete-schema.sql`.
+
 ### Error: "relation auth.users does not exist"
 This is a Supabase setup issue. Make sure you're running this in Supabase, not a regular PostgreSQL database.
 
@@ -65,14 +68,16 @@ If you need to start fresh, run `cleanup-before-fix.sql` first (⚠️ deletes d
 1. **`fix-customer-id-error-v3.sql`** - The main fix script (run this first) - LATEST VERSION
 2. **`cleanup-before-fix.sql`** - Optional cleanup script (if you need to start fresh)
 3. **`verify-schema-fix-v2.sql`** - Verification script (run this second) - UPDATED VERSION
-4. **`DATABASE_SCHEMA_FIX.md`** - Detailed documentation
-5. **`complete-schema.sql`** - Run this after the fix is complete
+4. **`pre-complete-schema-patch.sql`** - Patch script (run this third) - ADDS MISSING COLUMNS
+5. **`DATABASE_SCHEMA_FIX.md`** - Detailed documentation
+6. **`complete-schema.sql`** - Run this after the patch is complete
 
 ## 🔄 Next Steps After Fix
 1. ✅ Run `fix-customer-id-error-v3.sql`
 2. ✅ Run `verify-schema-fix-v2.sql`
-3. ✅ Run `complete-schema.sql` (full schema)
-4. ✅ Test your application
+3. ✅ Run `pre-complete-schema-patch.sql` (adds missing columns)
+4. ✅ Run `complete-schema.sql` (full schema)
+5. ✅ Test your application
 
 ## 📞 Still Need Help?
 If you're still having issues after following these steps, please share:
