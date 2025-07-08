@@ -5,17 +5,18 @@ You're seeing the error: `"ERROR: 42703: column "customer_id" does not exist"`
 
 ## ✅ Quick Fix (2 minutes)
 
-### If you got "ON CONFLICT" error:
-1. **Use the updated script:** `fix-customer-id-error-v2.sql`
-2. **If you need to start fresh:** Run `cleanup-before-fix.sql` first (⚠️ deletes data!)
+### If you got "ON CONFLICT" or "ambiguous column" errors:
+1. **Use the latest script:** `fix-customer-id-error-v3.sql`
+2. **Use the updated verification:** `verify-schema-fix-v2.sql`
+3. **If you need to start fresh:** Run `cleanup-before-fix.sql` first (⚠️ deletes data!)
 
 ### Step 1: Run the Fix Script
 1. Open your Supabase SQL Editor
-2. Copy and paste the entire contents of `fix-customer-id-error-v2.sql`
+2. Copy and paste the entire contents of `fix-customer-id-error-v3.sql`
 3. Click "Run" to execute the script
 
 ### Step 2: Verify the Fix
-1. Copy and paste the contents of `verify-schema-fix.sql` 
+1. Copy and paste the contents of `verify-schema-fix-v2.sql` 
 2. Click "Run" to verify everything works
 3. Look for ✓ symbols indicating success
 
@@ -42,7 +43,10 @@ After running the fix, you should see:
 ## 🚨 If You Still Get Errors
 
 ### Error: "there is no unique or exclusion constraint matching the ON CONFLICT specification"
-**Solution:** Use `fix-customer-id-error-v2.sql` instead of the original script.
+**Solution:** Use `fix-customer-id-error-v3.sql` instead of the original script.
+
+### Error: "column reference 'table_name' is ambiguous"
+**Solution:** Use `verify-schema-fix-v2.sql` instead of the original verify script.
 
 ### Error: "relation auth.users does not exist"
 This is a Supabase setup issue. Make sure you're running this in Supabase, not a regular PostgreSQL database.
@@ -58,15 +62,15 @@ If you need to start fresh, run `cleanup-before-fix.sql` first (⚠️ deletes d
 
 ## 📖 Files to Use
 
-1. **`fix-customer-id-error-v2.sql`** - The main fix script (run this first) - UPDATED VERSION
+1. **`fix-customer-id-error-v3.sql`** - The main fix script (run this first) - LATEST VERSION
 2. **`cleanup-before-fix.sql`** - Optional cleanup script (if you need to start fresh)
-3. **`verify-schema-fix.sql`** - Verification script (run this second)
+3. **`verify-schema-fix-v2.sql`** - Verification script (run this second) - UPDATED VERSION
 4. **`DATABASE_SCHEMA_FIX.md`** - Detailed documentation
 5. **`complete-schema.sql`** - Run this after the fix is complete
 
 ## 🔄 Next Steps After Fix
-1. ✅ Run `fix-customer-id-error-v2.sql`
-2. ✅ Run `verify-schema-fix.sql`
+1. ✅ Run `fix-customer-id-error-v3.sql`
+2. ✅ Run `verify-schema-fix-v2.sql`
 3. ✅ Run `complete-schema.sql` (full schema)
 4. ✅ Test your application
 
