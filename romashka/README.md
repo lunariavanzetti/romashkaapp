@@ -1,175 +1,526 @@
-# ROMASHKA
+# ROMASHKA Database Infrastructure
 
-A modern React + Vite project with a custom design system, state management, API integration, and beautiful UI foundations.
+> Complete database schema and infrastructure for ROMASHKA - A comprehensive customer support platform with AI-powered chat, multi-channel communication, and advanced analytics.
 
-## Tech Stack
-- Vite + React + TypeScript
-- Tailwind CSS (custom theme)
-- Zustand (state management)
-- React Query (API calls)
-- Supabase (backend)
-- React Router (routing)
-- Framer Motion (animations)
-- Headless UI & Heroicons (UI)
+## 📋 Table of Contents
 
-## Design System
-- **Primary Pink:** #FF6B9D
-- **Primary Green:** #4ECDC4
-- **Primary Purple:** #A8E6CF
-- **Dark Mode:** #0F172A
-- **Light Mode:** #FFFFFF
-- **Gray Scale:** #64748B, #94A3B8, #CBD5E1, #F1F5F9
-- **Fonts:** Inter (headings), Source Sans Pro (body)
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Architecture](#architecture)
+- [Database Schema](#database-schema)
+- [Installation](#installation)
+- [Migration Guide](#migration-guide)
+- [Configuration](#configuration)
+- [Development Setup](#development-setup)
+- [Performance Optimization](#performance-optimization)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 
-## Project Structure
-```
-src/
-├── components/
-│   ├── ui/
-│   ├── layout/
-│   └── features/
-├── pages/
-├── hooks/
-├── utils/
-├── services/
-├── types/
-└── stores/
-```
+## 🎯 Overview
 
-## Setup
-1. Install dependencies:
+ROMASHKA is a modern customer support platform that combines AI-powered chatbots, live agent support, and multi-channel communication capabilities. This repository contains the complete database infrastructure designed to support:
+
+- **100K+ conversations** with optimal performance
+- **Multi-channel communication** (WhatsApp, Email, SMS, Website)
+- **AI-powered assistance** with knowledge base integration
+- **Real-time analytics** and reporting
+- **Workflow automation** and agent management
+- **Enterprise-grade security** with Row Level Security (RLS)
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- PostgreSQL 14+ or Supabase
+- Node.js 18+ (for verification script)
+- Database administration access
+
+### Installation
+
+1. **Clone or download the schema files**
    ```bash
-   npm install
+   git clone <repository-url>
+   cd romashka
    ```
-2. Set up environment variables in a `.env` file:
-   ```env
-   VITE_SUPABASE_URL=your-supabase-url
-   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+2. **Run the complete schema**
+   ```sql
+   -- Option 1: Master Schema (All-in-one)
+   \i master-schema.sql
+   
+   -- Option 2: Migration approach
+   \i migrations/001_complete_schema.sql
    ```
-3. Start the dev server:
+
+3. **Add functions and triggers**
+   ```sql
+   \i db-functions.sql
+   ```
+
+4. **Add seed data (optional)**
+   ```sql
+   \i seed-data.sql
+   ```
+
+5. **Verify installation**
    ```bash
-   npm run dev
+   npm install pg
+   node verify-schema.js
    ```
 
-## Features
-- ThemeProvider with dark/light mode
-- Color mode toggle
-- Glassmorphism navigation
-- Skeleton loading components
-- Toast notification system
-- Modern button variants
+## 🏗️ Architecture
 
-Ready for feature development!
+### Core Components
 
-# React + TypeScript + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ROMASHKA Database Architecture            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   User Mgmt     │  │   Conversations │  │   Knowledge     │ │
+│  │                 │  │                 │  │   Management    │ │
+│  │ • profiles      │  │ • conversations │  │ • knowledge_*   │ │
+│  │ • agent_avail   │  │ • messages      │  │ • categories    │ │
+│  │ • customer_*    │  │ • notes         │  │ • analytics     │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                             │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   Analytics     │  │   Integrations  │  │   Workflows     │ │
+│  │                 │  │                 │  │                 │ │
+│  │ • daily_metrics │  │ • channels      │  │ • workflows     │ │
+│  │ • conversation_ │  │ • webhooks      │  │ • automations   │ │
+│  │   analytics     │  │ • sync_jobs     │  │ • triggers      │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Key Features
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Multi-tenancy**: Full RLS support for secure data isolation
+- **Real-time**: Triggers and functions for live updates
+- **Scalable**: Optimized indexes for 100K+ conversations
+- **Extensible**: JSONB fields for flexible data storage
+- **Auditable**: Complete audit trail with change tracking
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📊 Database Schema
+
+### Core Tables
+
+| Table | Purpose | Key Relationships |
+|-------|---------|-------------------|
+| `profiles` | User accounts (agents, admins) | → `auth.users` |
+| `customer_profiles` | Customer information | ← `conversations` |
+| `conversations` | Chat conversations | → `customer_profiles`, `profiles` |
+| `messages` | Individual messages | → `conversations`, `profiles` |
+| `knowledge_items` | Knowledge base content | → `knowledge_categories` |
+| `agent_availability` | Agent status tracking | → `profiles` |
+
+### Analytics Tables
+
+| Table | Purpose | Key Metrics |
+|-------|---------|-------------|
+| `conversation_analytics` | Per-conversation metrics | Response time, resolution rate |
+| `daily_metrics` | Daily aggregated data | Volume, satisfaction, performance |
+| `realtime_metrics` | Live dashboard data | Active conversations, queue size |
+
+### Integration Tables
+
+| Table | Purpose | Supported Channels |
+|-------|---------|-------------------|
+| `communication_channels` | Channel configurations | WhatsApp, Email, SMS, Website |
+| `webhook_events` | Incoming webhook data | All channels |
+| `message_delivery_tracking` | Delivery status | All channels |
+
+## 🔧 Installation
+
+### Method 1: Complete Schema (Recommended)
+
+```bash
+# For PostgreSQL
+psql -U username -d database_name -f master-schema.sql
+
+# For Supabase
+# 1. Go to SQL Editor in Supabase Dashboard
+# 2. Copy and paste master-schema.sql
+# 3. Run the script
 ```
 
-## Authentication System
-- Modern landing page (`/`)
-- Multi-step sign up (`/signup`)
-- Sign in with email/password, Google, GitHub (`/signin`)
-- Email verification flow (`/verify-email`)
-- Password reset
-- Protected routes (`/dashboard`)
-- Persistent auth state
-- Stunning UI/UX: glassmorphism, gradients, micro-interactions, dark/light mode
+### Method 2: Migration Approach
 
-## Supabase Setup Notes
-- Run `supabase_schema.sql` in your Supabase SQL editor
-- Enable Auth providers (email, Google, GitHub) in Supabase dashboard
-- Add your Supabase URL and anon key to `.env`
-- Create a storage bucket for file uploads if needed
-- Enable real-time on `messages` and `conversations` tables
+```bash
+# Run migrations in order
+psql -U username -d database_name -f migrations/001_complete_schema.sql
 
-## API Documentation
-- **Endpoints**: `/api/ai`, `/api/knowledge`, `/api/conversations`, etc.
-- **Auth**: Bearer token required for all endpoints.
-- **Example:**
-  ```bash
-  curl -H "Authorization: Bearer <token>" https://yourdomain.com/api/ai -d '{"message": "Hello"}'
-  ```
+# Add additional functions
+psql -U username -d database_name -f db-functions.sql
 
-## User Guide
-- **Getting Started**: How to sign up, verify email, and onboard.
-- **Screenshots**: ![Dashboard](docs/dashboard.png)
-- **Features**: Chat, analytics, billing, automation, knowledge base, etc.
+# Optional: Add seed data
+psql -U username -d database_name -f seed-data.sql
+```
 
-## Admin Manual
-- **Configuration**: Setting up environment variables, billing, and integrations.
-- **User Management**: Inviting, suspending, and managing users.
-- **Branding**: Customizing logo, colors, and chat widget.
+### Method 3: Step-by-Step
 
-## Troubleshooting Guide
-- **Common Issues**: Login problems, email not received, payment errors.
-- **Debugging**: How to check logs, contact support, and report bugs.
+1. **Create Extensions**
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+   CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+   ```
 
-## Changelog
-- **v1.0.0**: Initial release with AI chat, analytics, billing, and automation.
-- **v1.1.0**: Added PWA, mobile support, and advanced security.
+2. **Create Tables**
+   ```sql
+   -- Run table creation in dependency order
+   \i master-schema.sql
+   ```
+
+3. **Add Indexes**
+   ```sql
+   -- Indexes are included in master-schema.sql
+   -- Or run manually for specific needs
+   ```
+
+4. **Setup RLS**
+   ```sql
+   -- RLS policies are included in master-schema.sql
+   -- Customize based on your security requirements
+   ```
+
+## 📈 Migration Guide
+
+### From Existing Database
+
+If you have an existing database, follow these steps:
+
+1. **Backup Current Database**
+   ```bash
+   pg_dump -U username database_name > backup.sql
+   ```
+
+2. **Check Current Schema**
+   ```bash
+   node verify-schema.js
+   ```
+
+3. **Apply Missing Components**
+   ```sql
+   -- Only add missing tables/columns
+   -- The migration script checks for existing structures
+   ```
+
+4. **Verify Migration**
+   ```bash
+   node verify-schema.js
+   ```
+
+### Migration Rollback
+
+```sql
+-- Rollback migration if needed
+DROP TABLE IF EXISTS schema_migrations;
+-- Then restore from backup
+```
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+```env
+# Database Connection
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=romashka
+DB_USER=postgres
+DB_PASSWORD=your_password
+
+# For Supabase
+SUPABASE_URL=your_project_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```
+
+### Database Settings
+
+```sql
+-- Recommended PostgreSQL settings
+ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';
+ALTER SYSTEM SET max_connections = 100;
+ALTER SYSTEM SET effective_cache_size = '1GB';
+ALTER SYSTEM SET maintenance_work_mem = '256MB';
+```
+
+## 🛠️ Development Setup
+
+### 1. Install Dependencies
+
+```bash
+npm install pg  # For verification script
+```
+
+### 2. Database Setup
+
+```bash
+# Create database
+createdb romashka
+
+# Run schema
+psql -d romashka -f master-schema.sql
+
+# Add functions
+psql -d romashka -f db-functions.sql
+
+# Add seed data
+psql -d romashka -f seed-data.sql
+```
+
+### 3. Verify Installation
+
+```bash
+node verify-schema.js
+```
+
+### 4. Test Queries
+
+```sql
+-- Test basic functionality
+SELECT * FROM system_settings WHERE setting_key = 'platform_name';
+SELECT COUNT(*) FROM conversations;
+SELECT COUNT(*) FROM knowledge_items;
+```
+
+## 🚀 Performance Optimization
+
+### Indexes
+
+The schema includes optimized indexes for:
+
+- **Conversation queries**: `idx_conversations_status_created_at`
+- **Message lookups**: `idx_messages_conversation_created`
+- **Customer searches**: `idx_customer_profiles_email`
+- **Full-text search**: `idx_knowledge_items_content_trgm`
+
+### Query Optimization
+
+```sql
+-- Use these patterns for optimal performance
+
+-- Conversation listing (paginated)
+SELECT * FROM conversations 
+WHERE status = 'active' 
+ORDER BY created_at DESC 
+LIMIT 20 OFFSET 0;
+
+-- Message history
+SELECT * FROM messages 
+WHERE conversation_id = $1 
+ORDER BY created_at ASC;
+
+-- Knowledge search
+SELECT * FROM knowledge_items 
+WHERE content ILIKE '%query%' 
+OR title ILIKE '%query%'
+ORDER BY effectiveness_score DESC;
+```
+
+### Performance Monitoring
+
+```sql
+-- Enable query statistics
+SELECT * FROM pg_stat_statements 
+ORDER BY total_exec_time DESC 
+LIMIT 10;
+
+-- Monitor table sizes
+SELECT 
+  schemaname,
+  tablename,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+FROM pg_tables 
+WHERE schemaname = 'public' 
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+```
+
+## 🔒 Security
+
+### Row Level Security (RLS)
+
+All tables have RLS enabled with appropriate policies:
+
+```sql
+-- Example policies
+CREATE POLICY "Users can view own profile" ON profiles
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Allow authenticated access to conversations" ON conversations
+  FOR ALL USING (auth.role() = 'authenticated');
+```
+
+### Data Encryption
+
+- **Credentials**: Stored in encrypted JSONB fields
+- **PII**: Use application-level encryption for sensitive data
+- **Audit Trail**: Complete change tracking in `audit_logs`
+
+### Access Control
+
+```sql
+-- Create roles
+CREATE ROLE romashka_agent;
+CREATE ROLE romashka_admin;
+
+-- Grant permissions
+GRANT SELECT, INSERT, UPDATE ON conversations TO romashka_agent;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO romashka_admin;
+```
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Missing Extensions**
+   ```sql
+   -- Install required extensions
+   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+   CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+   ```
+
+2. **Permission Errors**
+   ```sql
+   -- Grant necessary permissions
+   GRANT USAGE ON SCHEMA public TO your_user;
+   GRANT CREATE ON SCHEMA public TO your_user;
+   ```
+
+3. **Foreign Key Violations**
+   ```sql
+   -- Check referential integrity
+   SELECT conname, conrelid::regclass, confrelid::regclass
+   FROM pg_constraint
+   WHERE contype = 'f' AND NOT convalidated;
+   ```
+
+### Verification Script Issues
+
+```bash
+# Install dependencies
+npm install pg
+
+# Set environment variables
+export DB_HOST=localhost
+export DB_NAME=romashka
+export DB_USER=postgres
+export DB_PASSWORD=your_password
+
+# Run verification
+node verify-schema.js
+```
+
+### Performance Issues
+
+1. **Slow Queries**
+   ```sql
+   -- Analyze slow queries
+   EXPLAIN ANALYZE SELECT * FROM conversations WHERE status = 'active';
+   ```
+
+2. **Missing Indexes**
+   ```sql
+   -- Check index usage
+   SELECT schemaname, tablename, indexname, idx_scan, idx_tup_read, idx_tup_fetch
+   FROM pg_stat_user_indexes
+   ORDER BY idx_scan DESC;
+   ```
+
+## 📋 Maintenance
+
+### Regular Tasks
+
+1. **Update Statistics**
+   ```sql
+   ANALYZE;
+   ```
+
+2. **Vacuum Tables**
+   ```sql
+   VACUUM ANALYZE;
+   ```
+
+3. **Clean Expired Data**
+   ```sql
+   SELECT cleanup_expired_metrics();
+   ```
+
+4. **Backup Database**
+   ```bash
+   pg_dump -U username database_name > backup_$(date +%Y%m%d).sql
+   ```
+
+### Monitoring
+
+```sql
+-- System health check
+SELECT 'ROMASHKA Database Health Check' as status;
+
+-- Check table sizes
+SELECT 
+  schemaname,
+  tablename,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+FROM pg_tables 
+WHERE schemaname = 'public' 
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+LIMIT 10;
+
+-- Check active connections
+SELECT COUNT(*) as active_connections FROM pg_stat_activity;
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+1. **Fork the repository**
+2. **Create a feature branch**
+3. **Test your changes thoroughly**
+4. **Submit a pull request**
+
+### Development Guidelines
+
+- Follow PostgreSQL best practices
+- Include comprehensive tests
+- Document all changes
+- Maintain backward compatibility
+
+### Testing
+
+```bash
+# Run schema verification
+node verify-schema.js
+
+# Test specific functionality
+psql -d romashka -c "SELECT test_function();"
+```
+
+## 📚 Additional Resources
+
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Supabase Documentation](https://supabase.com/docs)
+- [ROMASHKA API Documentation](../api/README.md)
+- [Frontend Integration Guide](../frontend/README.md)
+
+## 📄 License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## 🆘 Support
+
+For support and questions:
+
+- 📧 Email: support@romashka.com
+- 💬 Discord: [ROMASHKA Community](https://discord.gg/romashka)
+- 🐛 Issues: [GitHub Issues](https://github.com/romashka/issues)
+
+---
+
+**Built with ❤️ by the ROMASHKA Team**
