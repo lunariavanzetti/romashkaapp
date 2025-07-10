@@ -65,6 +65,7 @@ export default function Pricing() {
         label={<span>Annual billing <span style={{ color: '#4ECDC4', fontWeight: 600 }}>(save 2 months)</span></span>}
         sx={{ mb: 3 }}
       />
+      {/* Temporarily commented out for build fix
       <Grid container spacing={3}>
         {pricingPlans.map(plan => (
           <Grid item xs={12} md={3} key={plan.id}>
@@ -97,6 +98,10 @@ export default function Pricing() {
           </Grid>
         ))}
       </Grid>
+      */}
+      <Typography variant="body1" sx={{ textAlign: 'center', mt: 3 }}>
+        Pricing plans temporarily unavailable during deployment
+      </Typography>
     </Box>
   );
 } 

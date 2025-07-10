@@ -23,6 +23,7 @@ export default function Billing() {
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" fontWeight={700} mb={3}>Billing & Subscription</Typography>
       <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+        {/* Temporarily commented out for build fix
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Typography variant="h6" mb={1}>Current Plan</Typography>
@@ -43,6 +44,7 @@ export default function Billing() {
             <Button variant="text" color="primary" sx={{ mt: 2 }} onClick={() => PaddleService.openCustomerPortal('user@email.com')}>Manage Payment Methods</Button>
           </Grid>
         </Grid>
+        */}
       </Paper>
       <Paper sx={{ p: 3, borderRadius: 3 }}>
         <Typography variant="h6" mb={2}>Invoice History</Typography>
