@@ -10,9 +10,6 @@
     "PADDLE_VENDOR_ID": "",
     "PADDLE_API_KEY": ""
   },
-  "routes": [
-    { "src": "/(.*)", "dest": "/index.html" }
-  ],
   "headers": [
     {
       "source": "/(.*)",
