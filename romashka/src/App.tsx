@@ -19,6 +19,7 @@ import Pricing from './pages/Pricing';
 import Billing from './pages/Billing';
 import Automation from './pages/Automation';
 import Onboarding from './pages/Onboarding';
+import Privacy from './pages/Privacy';
 import { UrlScanner } from './pages/knowledge/UrlScanner';
 
 // Component to conditionally render Navigation
@@ -35,6 +36,7 @@ const AppContent = () => {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-email" element={<EmailVerification />} />
+        <Route path="/privacy" element={<div className="pt-24"><Privacy /></div>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/dashboard/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
         <Route path="/dashboard/conversations" element={<ProtectedRoute><Conversations /></ProtectedRoute>} />

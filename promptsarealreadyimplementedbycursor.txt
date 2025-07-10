@@ -1,0 +1,1768 @@
+# ROMASHKA Complete Development Strategy: All 9 Prompts
+
+## Strategic Implementation Overview
+
+This document contains all 9 prompts to transform ROMASHKA into a complete Lyro.ai competitor. Execute these prompts sequentially with Cursor for best results.
+
+---
+
+## 🎯 PROMPT 1: Advanced AI Engine with OpenAI GPT-4o Mini Integration
+
+**Cursor, implement a complete AI engine using OpenAI GPT-4o Mini and add advanced capabilities including multilingual support, intent recognition, sentiment analysis, and context awareness.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+1. **Create new AI service architecture:**
+```typescript
+// src/services/openaiService.ts
+interface OpenAIConfig {
+  apiKey: string;
+  model: 'gpt-4o-mini';
+  maxTokens: number;
+  temperature: number;
+  presencePenalty: number;
+  frequencyPenalty: number;
+}
+
+interface ConversationContext {
+  conversationId: string;
+  messages: Message[];
+  customerProfile: CustomerProfile;
+  knowledgeBase: KnowledgeItem[];
+  language: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  intent: string;
+  confidence: number;
+  businessContext: BusinessContext;
+}
+
+interface BusinessContext {
+  companyName: string;
+  industry: string;
+  products: string[];
+  policies: string[];
+  contactInfo: ContactInfo;
+}
+```
+
+2. **Implement multilingual support for 12 languages:**
+   - English, Spanish, French, German, Italian, Portuguese, Dutch, Russian, Japanese, Chinese, Korean, Arabic
+
+3. **Add advanced AI capabilities:**
+   - Intent recognition and classification
+   - Sentiment analysis
+   - Confidence scoring (0-1)
+   - Context awareness across conversation history
+   - Automatic language detection
+   - Smart knowledge retrieval
+
+### **CUSTOMER USE CASE EXAMPLE:**
+*Customer "Maria" from Spain visits an e-commerce website and asks in Spanish: "¿Cuál es su política de devoluciones?" The AI should:*
+1. Detect Spanish language automatically
+2. Understand intent: "return_policy_inquiry"
+3. Analyze sentiment: "neutral"
+4. Generate confidence score: 0.95
+5. Retrieve relevant return policy from knowledge base
+6. Respond in Spanish with accurate return policy info
+7. Remember this context for follow-up questions
+
+### **IMPLEMENTATION REQUIREMENTS:**
+
+**Database Schema Updates:**
+```sql
+-- Add to existing conversations table
+ALTER TABLE conversations ADD COLUMN language VARCHAR(10) DEFAULT 'en';
+ALTER TABLE conversations ADD COLUMN sentiment VARCHAR(20);
+ALTER TABLE conversations ADD COLUMN intent VARCHAR(100);
+ALTER TABLE conversations ADD COLUMN ai_confidence DECIMAL(3,2);
+ALTER TABLE conversations ADD COLUMN business_context JSONB;
+
+-- Add to existing messages table  
+ALTER TABLE messages ADD COLUMN confidence_score DECIMAL(3,2);
+ALTER TABLE messages ADD COLUMN processing_time_ms INTEGER;
+ALTER TABLE messages ADD COLUMN intent_detected VARCHAR(100);
+ALTER TABLE messages ADD COLUMN knowledge_sources JSONB;
+ALTER TABLE messages ADD COLUMN tokens_used INTEGER;
+
+-- Create intent patterns table
+CREATE TABLE intent_patterns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  intent_name VARCHAR(100) NOT NULL,
+  language VARCHAR(10) NOT NULL,
+  patterns TEXT[] NOT NULL,
+  examples JSONB,
+  confidence_threshold DECIMAL(3,2) DEFAULT 0.8,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create conversation context table
+CREATE TABLE conversation_context (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES conversations(id) UNIQUE,
+  context_data JSONB NOT NULL,
+  last_intent VARCHAR(100),
+  conversation_summary TEXT,
+  key_entities JSONB,
+  customer_preferences JSONB,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Core AI Service Implementation:**
+
+1. **Enhanced OpenAI Service** (`src/services/openaiService.ts`):
+```typescript
+class OpenAIService {
+  private openai: OpenAI;
+  private config: OpenAIConfig;
+
+  constructor() {
+    this.openai = new OpenAI({
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+      dangerouslyAllowBrowser: true,
+    });
+    this.config = {
+      model: 'gpt-4o-mini',
+      maxTokens: 500,
+      temperature: 0.7,
+      presencePenalty: 0.1,
+      frequencyPenalty: 0.1
+    };
+  }
+
+  async generateResponse(message: string, context: ConversationContext): Promise<AIResponse>
+  async detectLanguage(text: string): Promise<string>
+  async detectIntent(message: string, language: string): Promise<string>
+  async analyzeSentiment(message: string, language: string): Promise<'positive' | 'negative' | 'neutral'>
+  async retrieveKnowledge(message: string, intent: string, context: ConversationContext): Promise<KnowledgeItem[]>
+  async calculateConfidence(userMessage: string, aiResponse: string, knowledge: KnowledgeItem[]): Promise<number>
+}
+
+interface AIResponse {
+  message: string;
+  confidence: number;
+  intent: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  language: string;
+  processingTime: number;
+  tokensUsed: number;
+  knowledgeSources: string[];
+}
+```
+
+**Additional Services:**
+
+2. **Context Manager** (`src/services/contextManager.ts`):
+```typescript
+class ContextManager {
+  async updateContext(conversationId: string, message: string, response: AIResponse): Promise<void>
+  async getConversationContext(conversationId: string): Promise<ConversationContext>
+  async summarizeConversation(messages: Message[]): Promise<string>
+  async extractKeyEntities(conversationId: string): Promise<Entity[]}
+  async identifyCustomerPreferences(conversationId: string): Promise<CustomerPreferences>
+}
+```
+
+3. **Knowledge Retrieval Engine** (`src/services/knowledgeRetrieval.ts`):
+```typescript
+class KnowledgeRetrievalEngine {
+  async searchKnowledge(query: string, intent: string, language: string): Promise<KnowledgeMatch[]>
+  async calculateRelevanceScore(query: string, knowledgeItem: KnowledgeItem): Promise<number>
+  async getContextualKnowledge(conversationContext: ConversationContext): Promise<KnowledgeItem[]>
+  async updateKnowledgeUsage(knowledgeItemId: string, wasHelpful: boolean): Promise<void>
+}
+```
+
+**API Endpoints:**
+```typescript
+POST /api/ai/chat - Main chat endpoint
+POST /api/ai/analyze-intent - Intent classification
+POST /api/ai/detect-language - Language detection
+POST /api/ai/analyze-sentiment - Sentiment analysis
+GET /api/ai/conversation-context/:id - Get conversation context
+POST /api/ai/feedback - Record response feedback
+GET /api/ai/analytics - Get AI performance analytics
+```
+
+**Performance Requirements:**
+- Response time: <6 seconds (matching Lyro.ai)
+- 99.9% uptime
+- Handle 1000+ concurrent conversations
+- Cache common responses for faster delivery
+- Automatic failover to fallback responses
+
+**Testing Scenarios:**
+1. Test all 12 supported languages
+2. Verify intent classification accuracy >90%
+3. Test sentiment analysis across different emotional contexts
+4. Validate conversation context preservation
+5. Stress test with high concurrent load
+
+---
+
+## 🎯 PROMPT 2: Complete Knowledge Base Management System
+
+**Cursor, build a comprehensive knowledge base system that allows content ingestion, processing, and intelligent retrieval for AI responses.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+**New Database Tables:**
+```sql
+CREATE TABLE knowledge_categories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  parent_id UUID REFERENCES knowledge_categories(id),
+  order_index INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE knowledge_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(500) NOT NULL,
+  content TEXT NOT NULL,
+  category_id UUID REFERENCES knowledge_categories(id),
+  source_type VARCHAR(50) NOT NULL, -- 'url', 'file', 'manual'
+  source_url TEXT,
+  file_path TEXT,
+  confidence_score DECIMAL(3,2) DEFAULT 0.8,
+  usage_count INTEGER DEFAULT 0,
+  effectiveness_score DECIMAL(3,2) DEFAULT 0.5,
+  language VARCHAR(10) DEFAULT 'en',
+  tags TEXT[], -- Array of tags
+  status VARCHAR(20) DEFAULT 'active', -- 'active', 'draft', 'archived'
+  version INTEGER DEFAULT 1,
+  created_by UUID REFERENCES profiles(id),
+  updated_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE knowledge_versions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  knowledge_item_id UUID REFERENCES knowledge_items(id),
+  version INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  changes_description TEXT,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE knowledge_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  knowledge_item_id UUID REFERENCES knowledge_items(id),
+  conversation_id UUID REFERENCES conversations(id),
+  was_helpful BOOLEAN,
+  feedback_text TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **CUSTOMER USE CASE EXAMPLE:**
+*E-commerce store owner "Alex" wants to add his return policy to the knowledge base:*
+1. **URL Import**: Pastes company policy page URL → System scrapes and extracts content
+2. **AI Processing**: Content is automatically categorized as "Return Policy" with 95% confidence
+3. **Multi-language**: Content is translated to 12 languages
+4. **Customer Interaction**: When customer asks "How do I return an item?", AI uses this knowledge to respond accurately
+5. **Analytics**: System tracks that this knowledge item resolved 89% of return-related questions
+
+### **IMPLEMENTATION REQUIREMENTS:**
+
+**Core Services to Build:**
+
+1. **Content Ingestion Service** (`src/services/contentIngestion.ts`):
+```typescript
+interface ContentSource {
+  type: 'url' | 'file' | 'manual';
+  data: string | File;
+  language?: string;
+  category?: string;
+}
+
+class ContentIngestionService {
+  async processURL(url: string): Promise<KnowledgeItem>
+  async processFile(file: File): Promise<KnowledgeItem>
+  async processManualContent(content: string): Promise<KnowledgeItem>
+  async extractTextFromPDF(file: File): Promise<string>
+  async scrapeWebPage(url: string): Promise<string>
+}
+```
+
+2. **Content Processing Pipeline**:
+   - Web scraping for URLs (using Cheerio/Puppeteer)
+   - PDF text extraction (using pdf-parse)
+   - Document processing (DOC, DOCX using mammoth)
+   - Automatic categorization using AI
+   - Content chunking for better retrieval
+   - Duplicate detection and merging
+
+3. **Knowledge Retrieval System**:
+```typescript
+interface KnowledgeQuery {
+  query: string;
+  language: string;
+  context: ConversationContext;
+  maxResults: number;
+}
+
+class KnowledgeRetrieval {
+  async searchKnowledge(query: KnowledgeQuery): Promise<KnowledgeMatch[]>
+  async getRelevantContent(intent: string, context: ConversationContext): Promise<KnowledgeItem[]>
+  async updateUsageStats(itemId: string, wasHelpful: boolean): Promise<void>
+}
+```
+
+**UI Components to Create:**
+
+1. **Knowledge Base Management Dashboard** (`src/pages/knowledge/KnowledgeManager.tsx`):
+   - Content upload interface (drag & drop for files, URL input)
+   - Category management with drag & drop reordering
+   - Content editor with markdown support
+   - Bulk import/export functionality
+   - Search and filtering
+   - Analytics overview
+
+2. **Content Editor** (`src/components/knowledge/ContentEditor.tsx`):
+   - Rich text editor with markdown preview
+   - Category selection dropdown
+   - Tag management system
+   - Version history view
+   - Translation management for 12 languages
+   - Preview of how AI will use the content
+
+3. **Knowledge Analytics** (`src/components/knowledge/KnowledgeAnalytics.tsx`):
+   - Usage statistics charts
+   - Effectiveness metrics
+   - Gap analysis (common questions without good answers)
+   - Content performance rankings
+
+**API Endpoints:**
+```typescript
+POST /api/knowledge/import-url - Import content from URL
+POST /api/knowledge/upload-file - Upload and process file
+GET /api/knowledge/items - List knowledge items with filters
+PUT /api/knowledge/items/:id - Update knowledge item
+DELETE /api/knowledge/items/:id - Archive knowledge item
+GET /api/knowledge/search - Search knowledge base
+POST /api/knowledge/feedback - Record feedback on knowledge effectiveness
+GET /api/knowledge/analytics - Get knowledge base analytics
+GET /api/knowledge/suggestions - Get suggested improvements
+```
+
+**Advanced Features:**
+
+1. **Smart Content Suggestions**:
+   - Analyze conversation logs to identify knowledge gaps
+   - Suggest new content based on frequently asked questions
+   - Recommend content updates when effectiveness drops
+
+2. **Quality Assurance**:
+   - Content approval workflow for teams
+   - Automatic quality scoring based on AI analysis
+   - Duplicate content detection and merging suggestions
+
+3. **Performance Optimization**:
+   - Vector embeddings for semantic search
+   - Content caching for frequently accessed items
+   - Progressive loading for large knowledge bases
+
+**Testing Requirements:**
+1. Test URL scraping with various website structures
+2. Validate file processing for all supported formats
+3. Test knowledge retrieval accuracy >95%
+4. Verify content categorization accuracy >90%
+5. Performance test with 10,000+ knowledge items
+
+---
+
+## 🎯 PROMPT 3: Advanced Chat Features with Human Agent Handoff
+
+**Cursor, implement professional chat capabilities including human agent integration, conversation management, and advanced chat features that match enterprise-level customer service platforms.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+**Database Schema Extensions:**
+```sql
+-- Extend conversations table
+ALTER TABLE conversations ADD COLUMN assigned_agent_id UUID REFERENCES profiles(id);
+ALTER TABLE conversations ADD COLUMN priority VARCHAR(20) DEFAULT 'normal'; -- 'low', 'normal', 'high', 'urgent'
+ALTER TABLE conversations ADD COLUMN tags TEXT[];
+ALTER TABLE conversations ADD COLUMN customer_satisfaction INTEGER; -- 1-5 rating
+ALTER TABLE conversations ADD COLUMN resolution_time_seconds INTEGER;
+ALTER TABLE conversations ADD COLUMN handoff_reason TEXT;
+ALTER TABLE conversations ADD COLUMN department VARCHAR(100);
+
+-- Create agent availability table
+CREATE TABLE agent_availability (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  agent_id UUID REFERENCES profiles(id) NOT NULL,
+  is_online BOOLEAN DEFAULT false,
+  status VARCHAR(50) DEFAULT 'available', -- 'available', 'busy', 'away', 'offline'
+  max_concurrent_chats INTEGER DEFAULT 5,
+  current_chat_count INTEGER DEFAULT 0,
+  last_activity TIMESTAMP DEFAULT NOW(),
+  auto_away_time INTEGER DEFAULT 300, -- seconds
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create canned responses table
+CREATE TABLE canned_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  shortcut VARCHAR(50), -- e.g., '/greeting', '/pricing'
+  category VARCHAR(100),
+  language VARCHAR(10) DEFAULT 'en',
+  usage_count INTEGER DEFAULT 0,
+  created_by UUID REFERENCES profiles(id),
+  is_public BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create conversation notes table
+CREATE TABLE conversation_notes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES conversations(id),
+  agent_id UUID REFERENCES profiles(id),
+  note TEXT NOT NULL,
+  is_internal BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create customer profiles table
+CREATE TABLE customer_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR(255),
+  name VARCHAR(255),
+  phone VARCHAR(50),
+  company VARCHAR(255),
+  location VARCHAR(255),
+  timezone VARCHAR(50),
+  language VARCHAR(10) DEFAULT 'en',
+  tags TEXT[],
+  custom_fields JSONB,
+  total_conversations INTEGER DEFAULT 0,
+  avg_satisfaction DECIMAL(2,1),
+  last_interaction TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **CUSTOMER USE CASE EXAMPLE:**
+*Customer "Sarah" has a complex billing issue that AI can't resolve:*
+
+1. **AI Attempt**: Sarah asks "Why was I charged twice?" → AI responds with general billing info
+2. **Escalation Trigger**: Sarah replies "This doesn't help, I need a human" → System detects escalation intent
+3. **Smart Routing**: System routes to billing department agent "Mike" (lowest queue, billing expertise)
+4. **Context Handoff**: Mike sees full conversation history, customer profile, and AI's attempted solutions
+5. **Resolution**: Mike resolves issue in 3 minutes, asks for satisfaction rating
+6. **Learning**: AI learns from this interaction to better handle similar cases
+
+### **IMPLEMENTATION REQUIREMENTS:**
+
+**Core Services:**
+
+1. **Agent Management Service** (`src/services/agentService.ts`):
+```typescript
+interface AgentStatus {
+  id: string;
+  isOnline: boolean;
+  status: 'available' | 'busy' | 'away' | 'offline';
+  currentChatCount: number;
+  maxConcurrentChats: number;
+  lastActivity: Date;
+  departments: string[];
+  skills: string[];
+}
+
+class AgentManagementService {
+  async getAvailableAgents(department?: string): Promise<AgentStatus[]>
+  async assignConversation(conversationId: string, agentId?: string): Promise<boolean>
+  async updateAgentStatus(agentId: string, status: AgentStatus): Promise<void>
+  async getAgentWorkload(agentId: string): Promise<number>
+  async findBestAgent(conversation: Conversation): Promise<string | null>
+}
+```
+
+2. **Conversation Routing Service**:
+```typescript
+interface RoutingRules {
+  department: string;
+  priority: number;
+  skills: string[];
+  language: string;
+  customerTier: string;
+}
+
+class ConversationRouter {
+  async routeConversation(conversation: Conversation, reason: string): Promise<string>
+  async handleEscalation(conversationId: string, escalationType: string): Promise<void>
+  async balanceWorkload(): Promise<void>
+  async handleAfterHours(conversation: Conversation): Promise<void>
+}
+```
+
+3. **Real-time Communication Service**:
+```typescript
+class RealtimeService {
+  async sendTypingIndicator(conversationId: string, isTyping: boolean): Promise<void>
+  async markMessageAsRead(messageId: string, readBy: string): Promise<void>
+  async notifyAgentAssignment(agentId: string, conversationId: string): Promise<void>
+  async broadcastAgentStatus(agentId: string, status: AgentStatus): Promise<void>
+}
+```
+
+**UI Components to Build:**
+
+1. **Agent Dashboard** (`src/pages/agent/AgentDashboard.tsx`):
+   - Live conversation list with priority indicators
+   - Agent status controls (available/busy/away)
+   - Quick access to canned responses
+   - Customer information sidebar
+   - Conversation assignment notifications
+   - Performance metrics (response time, satisfaction)
+
+2. **Advanced Chat Interface** (`src/components/chat/AdvancedChatInterface.tsx`):
+   - Multi-conversation tabs for agents
+   - Rich message composer with file upload
+   - Canned response shortcuts (type "/" to trigger)
+   - Customer profile information panel
+   - Conversation history and notes
+   - Internal chat for agent collaboration
+   - Typing indicators and read receipts
+
+3. **Customer Profile Widget** (`src/components/chat/CustomerProfile.tsx`):
+   - Customer information display
+   - Conversation history timeline
+   - Previous satisfaction ratings
+   - Custom field management
+   - Tags and notes section
+
+4. **Handoff Interface** (`src/components/chat/HandoffInterface.tsx`):
+   - Smooth transition from AI to human
+   - Context preservation display
+   - Handoff reason selection
+   - Agent assignment interface
+   - Escalation workflow
+
+**Advanced Chat Features:**
+
+1. **File Sharing System**:
+   - Secure file upload/download
+   - Image preview and annotation
+   - Document sharing with access controls
+   - Automatic virus scanning
+   - File retention policies
+
+2. **Canned Responses**:
+   - Quick shortcuts (e.g., /hello, /pricing)
+   - Category-based organization
+   - Personal and team-wide responses
+   - Variable substitution (customer name, order details)
+   - Usage analytics and optimization
+
+3. **Conversation Management**:
+   - Auto-assignment based on skills and availability
+   - Priority queue management
+   - SLA tracking and alerts
+   - Conversation tagging and categorization
+   - Bulk actions for conversation management
+
+**API Endpoints:**
+```typescript
+GET /api/conversations - List conversations with filters
+POST /api/conversations/:id/assign - Assign conversation to agent
+POST /api/conversations/:id/transfer - Transfer to another agent
+POST /api/conversations/:id/escalate - Escalate conversation
+POST /api/conversations/:id/notes - Add internal note
+GET /api/agents/status - Get all agent statuses
+PUT /api/agents/:id/status - Update agent status
+POST /api/agents/:id/typing - Send typing indicator
+GET /api/canned-responses - Get canned responses
+POST /api/canned-responses - Create canned response
+POST /api/files/upload - Upload file to conversation
+GET /api/customers/:id/profile - Get customer profile
+PUT /api/customers/:id/profile - Update customer profile
+```
+
+**Performance Requirements:**
+- Message delivery: <500ms
+- Agent notification: <1 second
+- File upload: <30 seconds for 10MB files
+- Concurrent conversations: 50+ per agent
+- System capacity: 1000+ concurrent conversations
+
+**Testing Scenarios:**
+1. AI to human handoff with context preservation
+2. Multi-agent conversation transfers
+3. High-volume concurrent conversation handling
+4. File sharing across different devices
+5. Real-time synchronization across multiple tabs
+
+---
+
+## 🎯 PROMPT 4: Multi-Channel Communication System
+
+**Cursor, implement a complete multi-channel communication system that allows customers to interact via WhatsApp, Facebook Messenger, Instagram, Email, and SMS, with a unified inbox for agents.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+**Database Schema for Multi-Channel:**
+```sql
+-- Create channels table
+CREATE TABLE communication_channels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  type VARCHAR(50) NOT NULL, -- 'whatsapp', 'messenger', 'instagram', 'email', 'sms', 'website'
+  status VARCHAR(20) DEFAULT 'active', -- 'active', 'inactive', 'pending_setup'
+  configuration JSONB NOT NULL, -- Channel-specific config
+  webhook_url TEXT,
+  webhook_secret VARCHAR(255),
+  api_credentials JSONB, -- Encrypted credentials
+  message_limit_per_day INTEGER DEFAULT 1000,
+  messages_sent_today INTEGER DEFAULT 0,
+  last_reset_date DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Extend conversations table for channels
+ALTER TABLE conversations ADD COLUMN channel_type VARCHAR(50) DEFAULT 'website';
+ALTER TABLE conversations ADD COLUMN channel_id UUID REFERENCES communication_channels(id);
+ALTER TABLE conversations ADD COLUMN external_conversation_id VARCHAR(255); -- WhatsApp chat ID, etc.
+ALTER TABLE conversations ADD COLUMN customer_phone VARCHAR(50);
+ALTER TABLE conversations ADD COLUMN customer_social_id VARCHAR(255);
+
+-- Extend messages table for channel-specific data
+ALTER TABLE messages ADD COLUMN channel_type VARCHAR(50) DEFAULT 'website';
+ALTER TABLE messages ADD COLUMN external_message_id VARCHAR(255);
+ALTER TABLE messages ADD COLUMN message_type VARCHAR(50) DEFAULT 'text'; -- 'text', 'image', 'audio', 'video', 'document', 'location'
+ALTER TABLE messages ADD COLUMN media_url TEXT;
+ALTER TABLE messages ADD COLUMN media_caption TEXT;
+ALTER TABLE messages ADD COLUMN delivery_status VARCHAR(50) DEFAULT 'sent'; -- 'sent', 'delivered', 'read', 'failed'
+
+-- Create message templates table (for WhatsApp template messages)
+CREATE TABLE message_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  language VARCHAR(10) NOT NULL,
+  category VARCHAR(50) NOT NULL, -- 'utility', 'marketing', 'authentication'
+  template_content JSONB NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+  channel_type VARCHAR(50) NOT NULL,
+  external_template_id VARCHAR(255),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create webhook events log
+CREATE TABLE webhook_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  channel_id UUID REFERENCES communication_channels(id),
+  event_type VARCHAR(100) NOT NULL,
+  payload JSONB NOT NULL,
+  processed BOOLEAN DEFAULT false,
+  error_message TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **CUSTOMER USE CASE EXAMPLE:**
+*Customer "John" interacts across multiple channels:*
+
+1. **WhatsApp**: John sends "Hi, I need help with my order #12345" via WhatsApp Business
+2. **Unified Processing**: System identifies John by phone number, links to existing customer profile
+3. **AI Response**: AI responds via WhatsApp with order status in under 6 seconds
+4. **Channel Switch**: John later emails from work asking for shipping updates
+5. **Context Preservation**: System recognizes same customer, continues conversation with full context
+6. **Agent View**: Agent sees unified conversation history across all channels in single interface
+
+### **IMPLEMENTATION REQUIREMENTS:**
+
+**Channel Integration Services:**
+
+1. **WhatsApp Business API Integration** (`src/services/channels/whatsappService.ts`):
+```typescript
+interface WhatsAppConfig {
+  phoneNumberId: string;
+  accessToken: string;
+  webhookSecret: string;
+  businessAccountId: string;
+}
+
+class WhatsAppService {
+  async sendTextMessage(to: string, text: string): Promise<string>
+  async sendTemplateMessage(to: string, templateName: string, parameters: any[]): Promise<string>
+  async sendMediaMessage(to: string, mediaType: 'image' | 'audio' | 'video' | 'document', mediaUrl: string, caption?: string): Promise<string>
+  async markMessageAsRead(messageId: string): Promise<boolean>
+  async handleWebhook(payload: any): Promise<void>
+  async getMediaUrl(mediaId: string): Promise<string>
+  async validateWebhookSignature(payload: string, signature: string): Promise<boolean>
+}
+```
+
+2. **Facebook Messenger Integration** (`src/services/channels/messengerService.ts`):
+```typescript
+interface MessengerConfig {
+  pageAccessToken: string;
+  appSecret: string;
+  verifyToken: string;
+  pageId: string;
+}
+
+class MessengerService {
+  async sendMessage(recipientId: string, message: any): Promise<string>
+  async sendQuickReplies(recipientId: string, text: string, quickReplies: any[]): Promise<string>
+  async sendButtonTemplate(recipientId: string, text: string, buttons: any[]): Promise<string>
+  async handleWebhook(payload: any): Promise<void>
+  async getUserProfile(userId: string): Promise<any>
+  async setTypingIndicator(recipientId: string, action: 'typing_on' | 'typing_off'): Promise<void>
+}
+```
+
+3. **Instagram Direct Messages Integration** (`src/services/channels/instagramService.ts`):
+```typescript
+class InstagramService {
+  async sendMessage(recipientId: string, text: string): Promise<string>
+  async sendMediaMessage(recipientId: string, mediaUrl: string, mediaType: string): Promise<string>
+  async handleWebhook(payload: any): Promise<void>
+  async getUserInfo(userId: string): Promise<any>
+  async markMessageAsSeen(messageId: string): Promise<boolean>
+}
+```
+
+4. **Email Channel Integration** (`src/services/channels/emailService.ts`):
+```typescript
+interface EmailConfig {
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPassword: string;
+  imapHost: string;
+  imapPort: number;
+  supportEmail: string;
+}
+
+class EmailService {
+  async sendEmail(to: string, subject: string, htmlContent: string, textContent: string): Promise<string>
+  async replyToEmail(originalMessageId: string, replyContent: string): Promise<string>
+  async checkIncomingEmails(): Promise<void>
+  async parseEmailToMessage(email: any): Promise<Message>
+  async extractEmailThread(messageId: string): Promise<Message[]>
+  async handleAutoReply(email: any): Promise<void>
+}
+```
+
+5. **SMS Integration** (`src/services/channels/smsService.ts`):
+```typescript
+interface SMSConfig {
+  provider: 'twilio' | 'messagebird' | 'vonage';
+  apiKey: string;
+  apiSecret: string;
+  phoneNumber: string;
+}
+
+class SMSService {
+  async sendSMS(to: string, text: string): Promise<string>
+  async handleIncomingSMS(payload: any): Promise<void>
+  async getDeliveryStatus(messageId: string): Promise<string>
+  async handleOptOut(phoneNumber: string): Promise<void>
+  async handleOptIn(phoneNumber: string): Promise<void>
+}
+```
+
+**Unified Channel Manager:**
+
+```typescript
+class ChannelManager {
+  private channels: Map<string, ChannelService> = new Map();
+
+  async registerChannel(channelType: string, config: any): Promise<void>
+  async sendMessage(conversationId: string, content: any): Promise<string>
+  async handleIncomingMessage(channelType: string, payload: any): Promise<void>
+  async getChannelCapabilities(channelType: string): Promise<ChannelCapabilities>
+  async switchChannel(conversationId: string, newChannelType: string): Promise<boolean>
+  async syncMessageStatus(messageId: string, status: string): Promise<void>
+}
+
+interface ChannelCapabilities {
+  supportsMedia: boolean;
+  supportsQuickReplies: boolean;
+  supportsTemplates: boolean;
+  supportsTypingIndicator: boolean;
+  supportsReadReceipts: boolean;
+  maxMessageLength: number;
+  supportedMediaTypes: string[];
+}
+```
+
+**UI Components:**
+
+1. **Unified Inbox** (`src/components/inbox/UnifiedInbox.tsx`):
+   - Channel selector sidebar with unread counts
+   - Conversation list with channel indicators
+   - Cross-channel conversation threading
+   - Channel-specific message rendering
+   - Quick channel switching
+   - Bulk operations across channels
+
+2. **Channel Configuration** (`src/components/channels/ChannelConfig.tsx`):
+   - Setup wizards for each channel type
+   - Credential management with encryption
+   - Webhook endpoint configuration
+   - Channel testing and validation
+   - Usage analytics per channel
+   - Rate limiting configuration
+
+3. **Message Composer** (`src/components/inbox/MessageComposer.tsx`):
+   - Channel-aware input validation
+   - Media upload with channel restrictions
+   - Template message selection (WhatsApp)
+   - Quick reply buttons
+   - Character count for SMS
+   - Rich formatting for email
+
+4. **Channel Analytics** (`src/components/analytics/ChannelAnalytics.tsx`):
+   - Message volume per channel
+   - Response time by channel
+   - Customer preference analysis
+   - Channel effectiveness metrics
+   - Cost per conversation by channel
+
+**API Endpoints:**
+```typescript
+GET /api/channels - List all configured channels
+POST /api/channels - Configure new channel
+PUT /api/channels/:id - Update channel configuration
+DELETE /api/channels/:id - Remove channel
+POST /api/channels/:id/test - Test channel connectivity
+POST /api/webhooks/:channelType - Webhook endpoints for each channel
+GET /api/conversations/unified - Get unified conversation view
+POST /api/messages/send - Send message via specific channel
+GET /api/analytics/channels - Channel performance analytics
+POST /api/templates - Create message template
+GET /api/templates/:channelType - Get templates for channel
+```
+
+**Performance Requirements:**
+- Webhook processing: <2 seconds
+- Message delivery: <5 seconds
+- Cross-channel sync: <3 seconds
+- Concurrent webhook handling: 1000+ per minute
+- Message throughput: 10,000+ per hour
+
+**Testing Requirements:**
+1. Test each channel integration end-to-end
+2. Validate webhook signature verification
+3. Test cross-channel conversation threading
+4. Verify message delivery status tracking
+5. Test failover and retry mechanisms
+
+---
+
+## 🎯 PROMPT 5: Advanced Analytics & Reporting System
+
+**Cursor, build a comprehensive analytics and reporting system that provides real-time insights into conversation performance, AI effectiveness, customer satisfaction, and business metrics with customizable dashboards and export capabilities.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+**Analytics Database Schema:**
+```sql
+-- Create analytics aggregation tables
+CREATE TABLE daily_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  date DATE NOT NULL,
+  channel_type VARCHAR(50),
+  department VARCHAR(100),
+  agent_id UUID REFERENCES profiles(id),
+  
+  -- Conversation metrics
+  total_conversations INTEGER DEFAULT 0,
+  ai_resolved_conversations INTEGER DEFAULT 0,
+  human_resolved_conversations INTEGER DEFAULT 0,
+  abandoned_conversations INTEGER DEFAULT 0,
+  
+  -- Response time metrics
+  avg_first_response_time_seconds INTEGER DEFAULT 0,
+  avg_resolution_time_seconds INTEGER DEFAULT 0,
+  
+  -- Satisfaction metrics
+  total_ratings INTEGER DEFAULT 0,
+  avg_satisfaction_score DECIMAL(3,2) DEFAULT 0,
+  
+  -- AI performance
+  ai_confidence_avg DECIMAL(3,2) DEFAULT 0,
+  ai_accuracy_rate DECIMAL(3,2) DEFAULT 0,
+  handoff_rate DECIMAL(3,2) DEFAULT 0,
+  
+  -- Business metrics
+  leads_generated INTEGER DEFAULT 0,
+  sales_qualified_leads INTEGER DEFAULT 0,
+  revenue_attributed DECIMAL(10,2) DEFAULT 0,
+  
+  created_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(date, channel_type, department, agent_id)
+);
+
+-- Create real-time metrics cache
+CREATE TABLE realtime_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  metric_name VARCHAR(100) NOT NULL,
+  metric_value DECIMAL(15,4) NOT NULL,
+  dimensions JSONB, -- For filtering/grouping
+  timestamp TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '1 hour'
+);
+
+-- Create conversation analytics
+CREATE TABLE conversation_analytics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id UUID REFERENCES conversations(id) UNIQUE,
+  
+  -- Timing metrics
+  started_at TIMESTAMP NOT NULL,
+  first_response_at TIMESTAMP,
+  resolved_at TIMESTAMP,
+  total_duration_seconds INTEGER,
+  
+  -- Interaction metrics
+  total_messages INTEGER DEFAULT 0,
+  customer_messages INTEGER DEFAULT 0,
+  ai_messages INTEGER DEFAULT 0,
+  agent_messages INTEGER DEFAULT 0,
+  
+  -- Resolution metrics
+  resolved_by VARCHAR(20), -- 'ai', 'agent', 'abandoned'
+  resolution_type VARCHAR(50), -- 'solved', 'escalated', 'abandoned', 'spam'
+  handoff_count INTEGER DEFAULT 0,
+  agent_switches INTEGER DEFAULT 0,
+  
+  -- Quality metrics
+  customer_satisfaction INTEGER, -- 1-5 rating
+  ai_accuracy_score DECIMAL(3,2),
+  knowledge_items_used INTEGER DEFAULT 0,
+  
+  -- Business metrics
+  lead_qualified BOOLEAN DEFAULT false,
+  revenue_generated DECIMAL(10,2) DEFAULT 0,
+  follow_up_required BOOLEAN DEFAULT false,
+  
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create custom dashboard configurations
+CREATE TABLE dashboard_configs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id),
+  name VARCHAR(255) NOT NULL,
+  is_default BOOLEAN DEFAULT false,
+  layout JSONB NOT NULL, -- Widget positions and configurations
+  filters JSONB, -- Default filters
+  refresh_interval INTEGER DEFAULT 300, -- seconds
+  is_public BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create scheduled reports
+CREATE TABLE scheduled_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  report_type VARCHAR(50) NOT NULL, -- 'performance', 'satisfaction', 'ai_analytics', 'custom'
+  schedule_cron VARCHAR(100) NOT NULL, -- Cron expression
+  recipients TEXT[] NOT NULL, -- Email addresses
+  filters JSONB,
+  format VARCHAR(20) DEFAULT 'pdf', -- 'pdf', 'excel', 'csv'
+  last_sent_at TIMESTAMP,
+  next_run_at TIMESTAMP,
+  is_active BOOLEAN DEFAULT true,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **CUSTOMER USE CASE EXAMPLE:**
+*Business owner "Lisa" wants to understand her customer service performance:*
+
+1. **Real-time Dashboard**: Lisa opens dashboard and sees live metrics: 47 conversations today, 82% AI resolution rate, 4.6/5 satisfaction
+2. **Drill-down Analysis**: Clicks on low satisfaction score → sees it's from billing department → identifies training need
+3. **Custom Report**: Creates weekly report comparing AI vs human resolution times across channels
+4. **Automated Insights**: System alerts Lisa that WhatsApp has 30% higher customer satisfaction than email
+5. **Business Impact**: Dashboard shows $2,400 in cost savings from AI automation this month
+6. **Scheduled Reports**: Receives automated Monday morning executive summary via email
+
+### **IMPLEMENTATION REQUIREMENTS:**
+
+**Core Analytics Services:**
+
+1. **Metrics Collection Service** (`src/services/analytics/metricsCollector.ts`):
+```typescript
+interface MetricEvent {
+  type: string;
+  value: number;
+  dimensions: Record<string, any>;
+  timestamp: Date;
+  conversationId?: string;
+  userId?: string;
+}
+
+class MetricsCollector {
+  async recordEvent(event: MetricEvent): Promise<void>
+  async recordConversationStart(conversationId: string, channel: string): Promise<void>
+  async recordFirstResponse(conversationId: string, responseType: 'ai' | 'human'): Promise<void>
+  async recordConversationEnd(conversationId: string, resolution: string): Promise<void>
+  async recordSatisfactionRating(conversationId: string, rating: number): Promise<void>
+  async recordHandoff(conversationId: string, reason: string): Promise<void>
+  async recordRevenueAttribution(conversationId: string, amount: number): Promise<void>
+}
+```
+
+2. **Analytics Engine** (`src/services/analytics/analyticsEngine.ts`):
+```typescript
+interface AnalyticsQuery {
+  metrics: string[];
+  dimensions: string[];
+  filters: Record<string, any>;
+  timeRange: { start: Date; end: Date };
+  granularity: 'hour' | 'day' | 'week' | 'month';
+  limit?: number;
+}
+
+class AnalyticsEngine {
+  async calculateMetrics(query: AnalyticsQuery): Promise<AnalyticsResult>
+  async getTrendData(metric: string, timeRange: TimeRange): Promise<TrendPoint[]>
+  async getTopPerformers(metric: string, dimension: string, limit: number): Promise<RankingResult[]>
+  async getComparativeAnalysis(baseFilters: any, compareFilters: any): Promise<ComparisonResult>
+  async detectAnomalies(metric: string, timeRange: TimeRange): Promise<Anomaly[]>
+  async generateInsights(filters: any): Promise<Insight[]>
+}
+```
+
+3. **Real-time Analytics** (`src/services/analytics/realtimeAnalytics.ts`):
+```typescript
+class RealtimeAnalytics {
+  async getLiveMetrics(): Promise<LiveMetrics>
+  async getActiveConversations(): Promise<ConversationSummary[]>
+  async getAgentPerformance(): Promise<AgentMetrics[]>
+  async getChannelActivity(): Promise<ChannelActivity[]>
+  async subscribeToMetrics(callback: (metrics: LiveMetrics) => void): Promise<void>
+  async calculateSLA(conversationId: string): Promise<SLAStatus>
+}
+```
+
+**Dashboard & Visualization Components:**
+
+1. **Analytics Dashboard** (`src/pages/analytics/AnalyticsDashboard.tsx`):
+   - Customizable widget grid layout
+   - Drag-and-drop widget positioning
+   - Real-time metric updates
+   - Interactive charts and graphs
+   - Date range selector
+   - Filter sidebar
+   - Export dashboard functionality
+   - Dashboard sharing and templates
+
+2. **Metric Widgets** (`src/components/analytics/widgets/`):
+   - **KPI Cards**: Key metrics with trend indicators
+   - **Line Charts**: Time series data visualization
+   - **Bar Charts**: Comparative analysis
+   - **Pie Charts**: Distribution analysis
+   - **Funnel Charts**: Conversion tracking
+   - **Heatmaps**: Channel/time performance
+   - **Gauge Charts**: SLA compliance
+   - **Table Widget**: Detailed data views
+
+3. **Custom Report Builder** (`src/components/analytics/ReportBuilder.tsx`):
+   - Visual query builder interface
+   - Metric and dimension selection
+   - Filter configuration
+   - Chart type selection
+   - Preview functionality
+   - Save and share reports
+   - Scheduled delivery setup
+
+**API Endpoints:**
+```typescript
+GET /api/analytics/metrics - Get metrics with filters
+GET /api/analytics/trends - Get trend data
+GET /api/analytics/rankings - Get performance rankings
+GET /api/analytics/real-time - Get live metrics
+POST /api/analytics/query - Custom analytics query
+GET /api/analytics/insights - Get AI-generated insights
+POST /api/reports/generate - Generate custom report
+GET /api/reports/scheduled - List scheduled reports
+POST /api/reports/schedule - Create scheduled report
+GET /api/exports/:id/download - Download export file
+POST /api/dashboards - Save dashboard configuration
+GET /api/dashboards - List user dashboards
+PUT /api/dashboards/:id - Update dashboard
+```
+
+**Performance Requirements:**
+- Dashboard loading: <3 seconds
+- Real-time updates: every 30 seconds
+- Export generation: <30 seconds for large datasets
+- Concurrent users: 100+ simultaneous dashboard users
+- Data retention: 2 years with archiving
+
+**Testing Requirements:**
+1. Test metric calculation accuracy with sample data
+2. Validate real-time updates across multiple users
+3. Test export functionality with large datasets
+4. Verify scheduled report generation and delivery
+5. Test dashboard performance with complex queries
+
+---
+
+## 🎯 PROMPT 6: Enterprise Integration Ecosystem
+
+**Cursor, build a comprehensive integration system that connects ROMASHKA with popular CRM systems, help desk platforms, e-commerce solutions, and business tools through APIs, webhooks, and pre-built connectors.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+**Integration Database Schema:**
+```sql
+-- Create integrations table
+CREATE TABLE integrations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(255) NOT NULL,
+  type VARCHAR(100) NOT NULL, -- 'crm', 'helpdesk', 'ecommerce', 'email_marketing', 'calendar', 'analytics'
+  provider VARCHAR(100) NOT NULL, -- 'salesforce', 'hubspot', 'zendesk', 'shopify', etc.
+  status VARCHAR(50) DEFAULT 'inactive', -- 'active', 'inactive', 'error', 'pending_setup'
+  configuration JSONB NOT NULL,
+  credentials JSONB NOT NULL, -- Encrypted
+  sync_settings JSONB,
+  last_sync_at TIMESTAMP,
+  sync_frequency INTEGER DEFAULT 3600, -- seconds
+  error_count INTEGER DEFAULT 0,
+  last_error TEXT,
+  created_by UUID REFERENCES profiles(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create sync jobs table
+CREATE TABLE sync_jobs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  integration_id UUID REFERENCES integrations(id),
+  job_type VARCHAR(100) NOT NULL, -- 'full_sync', 'incremental', 'real_time'
+  direction VARCHAR(20) NOT NULL, -- 'inbound', 'outbound', 'bidirectional'
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'running', 'completed', 'failed'
+  records_processed INTEGER DEFAULT 0,
+  records_total INTEGER DEFAULT 0,
+  started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  error_details JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create field mappings table
+CREATE TABLE field_mappings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  integration_id UUID REFERENCES integrations(id),
+  source_entity VARCHAR(100) NOT NULL, -- 'conversation', 'customer', 'message'
+  target_entity VARCHAR(100) NOT NULL, -- 'contact', 'deal', 'ticket'
+  source_field VARCHAR(255) NOT NULL,
+  target_field VARCHAR(255) NOT NULL,
+  transformation_rule TEXT, -- JSON transformation logic
+  is_required BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create webhook subscriptions table
+CREATE TABLE webhook_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  integration_id UUID REFERENCES integrations(id),
+  event_type VARCHAR(100) NOT NULL,
+  webhook_url TEXT NOT NULL,
+  secret_key VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
+  retry_count INTEGER DEFAULT 3,
+  timeout_seconds INTEGER DEFAULT 30,
+  last_triggered TIMESTAMP,
+  success_count INTEGER DEFAULT 0,
+  failure_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create customer sync mapping
+CREATE TABLE customer_sync_mapping (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_profile_id UUID REFERENCES customer_profiles(id),
+  integration_id UUID REFERENCES integrations(id),
+  external_id VARCHAR(255) NOT NULL,
+  external_entity_type VARCHAR(100) NOT NULL, -- 'contact', 'lead', 'customer'
+  last_synced_at TIMESTAMP DEFAULT NOW(),
+  sync_status VARCHAR(50) DEFAULT 'synced', -- 'synced', 'pending', 'error'
+  UNIQUE(customer_profile_id, integration_id)
+);
+```
+
+### **CUSTOMER USE CASE EXAMPLE:**
+*E-commerce store owner "Mike" uses Shopify, HubSpot CRM, and Zendesk:*
+
+1. **Customer Context**: When customer "Emma" chats, system automatically pulls her order history from Shopify and previous tickets from Zendesk
+2. **AI Enhanced Response**: AI says "I see you're asking about order #5432. According to our records, it shipped yesterday and will arrive tomorrow"
+3. **Lead Qualification**: Customer shows interest in premium product → System creates qualified lead in HubSpot CRM
+4. **Automatic Ticket**: Complex issue → System creates Zendesk ticket with full conversation context
+5. **Revenue Attribution**: When customer makes purchase → Revenue is attributed to customer service conversation
+6. **Follow-up**: System schedules follow-up email via HubSpot based on conversation outcome
+
+### **IMPLEMENTATION REQUIREMENTS:**
+
+**Core Integration Framework:**
+
+1. **Integration Manager** (`src/services/integrations/integrationManager.ts`):
+```typescript
+interface IntegrationConfig {
+  provider: string;
+  credentials: Record<string, any>;
+  settings: IntegrationSettings;
+  fieldMappings: FieldMapping[];
+  webhookConfig?: WebhookConfig;
+}
+
+interface IntegrationSettings {
+  syncDirection: 'inbound' | 'outbound' | 'bidirectional';
+  syncFrequency: number; // seconds
+  autoSync: boolean;
+  conflictResolution: 'source_wins' | 'target_wins' | 'manual';
+  batchSize: number;
+}
+
+class IntegrationManager {
+  async createIntegration(config: IntegrationConfig): Promise<string>
+  async testConnection(integrationId: string): Promise<boolean>
+  async syncData(integrationId: string, syncType: 'full' | 'incremental'): Promise<SyncResult>
+  async handleWebhook(integrationId: string, payload: any): Promise<void>
+  async getIntegrationStatus(integrationId: string): Promise<IntegrationStatus>
+  async pauseIntegration(integrationId: string): Promise<void>
+  async resumeIntegration(integrationId: string): Promise<void>
+}
+```
+
+**CRM Integrations:**
+
+1. **Salesforce Integration** (`src/services/integrations/crm/salesforceService.ts`):
+```typescript
+interface SalesforceConfig {
+  instanceUrl: string;
+  clientId: string;
+  clientSecret: string;
+  username: string;
+  password: string;
+  securityToken: string;
+}
+
+class SalesforceService {
+  async authenticate(): Promise<string>
+  async createContact(customerData: CustomerProfile): Promise<string>
+  async updateContact(contactId: string, updates: any): Promise<void>
+  async createLead(leadData: LeadData): Promise<string>
+  async createOpportunity(opportunityData: OpportunityData): Promise<string>
+  async getContactByEmail(email: string): Promise<Contact | null>
+  async createTask(taskData: TaskData): Promise<string>
+  async addNote(entityId: string, note: string): Promise<string>
+  async queryRecords(soql: string): Promise<any[]>
+  async handleWebhook(payload: any): Promise<void>
+}
+```
+
+2. **HubSpot Integration** (`src/services/integrations/crm/hubspotService.ts`):
+```typescript
+interface HubSpotConfig {
+  apiKey: string;
+  portalId: string;
+  appId: string;
+}
+
+class HubSpotService {
+  async createContact(properties: Record<string, any>): Promise<string>
+  async updateContact(contactId: string, properties: Record<string, any>): Promise<void>
+  async createDeal(dealData: DealData): Promise<string>
+  async createTicket(ticketData: TicketData): Promise<string>
+  async createEngagement(engagementData: EngagementData): Promise<string>
+  async searchContacts(query: SearchQuery): Promise<Contact[]>
+  async getContactByEmail(email: string): Promise<Contact | null>
+  async associateObjects(fromObjectId: string, toObjectId: string, associationType: string): Promise<void>
+  async getContactHistory(contactId: string): Promise<ContactHistory[]>
+}
+```
+
+**Help Desk Integrations:**
+
+1. **Zendesk Integration** (`src/services/integrations/helpdesk/zendeskService.ts`):
+```typescript
+interface ZendeskConfig {
+  subdomain: string;
+  email: string;
+  apiToken: string;
+}
+
+class ZendeskService {
+  async createTicket(ticketData: ZendeskTicketData): Promise<string>
+  async updateTicket(ticketId: string, updates: any): Promise<void>
+  async addComment(ticketId: string, comment: string, isPublic: boolean): Promise<void>
+  async createUser(userData: UserData): Promise<string>
+  async searchTickets(query: string): Promise<Ticket[]>
+  async getTicketHistory(ticketId: string): Promise<TicketHistory[]>
+  async assignTicket(ticketId: string, assigneeId: string): Promise<void>
+  async escalateTicket(ticketId: string, priority: string): Promise<void>
+  async closeTicket(ticketId: string, resolution: string): Promise<void>
+}
+```
+
+**E-commerce Integrations:**
+
+1. **Shopify Integration** (`src/services/integrations/ecommerce/shopifyService.ts`):
+```typescript
+interface ShopifyConfig {
+  shopDomain: string;
+  accessToken: string;
+  webhookSecret: string;
+}
+
+class ShopifyService {
+  async getCustomer(customerId: string): Promise<ShopifyCustomer>
+  async getCustomerByEmail(email: string): Promise<ShopifyCustomer | null>
+  async getCustomerOrders(customerId: string): Promise<Order[]>
+  async getOrder(orderId: string): Promise<Order>
+  async updateCustomer(customerId: string, updates: any): Promise<void>
+  async createCustomerNote(customerId: string, note: string): Promise<void>
+  async getProducts(): Promise<Product[]>
+  async getProduct(productId: string): Promise<Product>
+  async updateInventory(variantId: string, quantity: number): Promise<void>
+  async processRefund(orderId: string, amount: number, reason: string): Promise<string>
+  async handleWebhook(payload: any, headers: any): Promise<void>
+}
+```
+
+**UI Components:**
+
+1. **Integration Marketplace** (`src/components/integrations/IntegrationMarketplace.tsx`):
+   - Browse available integrations by category
+   - Integration cards with descriptions and ratings
+   - Setup wizard for each integration
+   - Feature comparison matrix
+   - Installation and configuration guides
+
+2. **Integration Setup Wizard** (`src/components/integrations/SetupWizard.tsx`):
+   - Step-by-step configuration process
+   - Credential input with validation
+   - Connection testing
+   - Field mapping interface
+   - Sync settings configuration
+   - Preview and confirmation
+
+3. **Integration Dashboard** (`src/components/integrations/IntegrationDashboard.tsx`):
+   - List of active integrations with status
+   - Sync history and logs
+   - Performance metrics per integration
+   - Error monitoring and alerts
+   - Quick actions (pause, resume, sync now)
+
+4. **Field Mapping Interface** (`src/components/integrations/FieldMapper.tsx`):
+   - Visual drag-and-drop field mapping
+   - Data transformation rules
+   - Preview of mapped data
+   - Validation and conflict resolution
+   - Custom field creation
+
+**API Endpoints:**
+```typescript
+GET /api/integrations - List available integrations
+POST /api/integrations - Create new integration
+PUT /api/integrations/:id - Update integration
+DELETE /api/integrations/:id - Remove integration
+POST /api/integrations/:id/test - Test connection
+POST /api/integrations/:id/sync - Trigger sync
+GET /api/integrations/:id/status - Get sync status
+GET /api/integrations/:id/logs - Get sync logs
+POST /api/integrations/:id/webhook - Handle webhook
+GET /api/integrations/marketplace - Get available integrations
+POST /api/integrations/:id/field-mapping - Configure field mapping
+GET /api/sync-jobs - List sync jobs
+POST /api/sync-jobs/:id/retry - Retry failed job
+```
+
+**Performance Requirements:**
+- Integration setup: <5 minutes
+- Data sync: <10 minutes for 10,000 records
+- Webhook processing: <2 seconds
+- Real-time sync: <30 seconds
+- Error recovery: automatic retry with exponential backoff
+
+**Testing Requirements:**
+1. Test each integration's authentication flow
+2. Validate data synchronization accuracy
+3. Test webhook processing and retry logic
+4. Verify conflict resolution mechanisms
+5. Load test with high-volume data sync
+
+---
+
+## 🎯 PROMPT 7: Website URL Scanning & Knowledge Extraction System
+
+**Cursor, implement the website URL scanning feature that allows customers to input their website URLs, automatically scrape and extract content, process it with AI to create structured knowledge, and enable testing in a playground environment.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+**Database Schema Extensions:**
+```sql
+-- Add to existing Supabase schema
+CREATE TABLE website_scan_jobs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id),
+  project_id UUID,
+  urls TEXT[] NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'scanning', 'processing', 'completed', 'failed'
+  progress_percentage INTEGER DEFAULT 0,
+  pages_found INTEGER DEFAULT 0,
+  pages_processed INTEGER DEFAULT 0,
+  scan_settings JSONB DEFAULT '{"maxDepth": 2, "respectRobots": true, "maxPages": 50}',
+  started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  error_details JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE extracted_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scan_job_id UUID REFERENCES website_scan_jobs(id),
+  url TEXT NOT NULL,
+  title VARCHAR(500),
+  content TEXT NOT NULL,
+  content_type VARCHAR(100), -- 'pricing', 'faq', 'about', 'product', 'policy', 'general'
+  headings JSONB,
+  metadata JSONB,
+  word_count INTEGER,
+  processing_quality DECIMAL(3,2),
+  extracted_entities JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE auto_generated_knowledge (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scan_job_id UUID REFERENCES website_scan_jobs(id),
+  extracted_content_id UUID REFERENCES extracted_content(id),
+  knowledge_item_id UUID REFERENCES knowledge_items(id),
+  auto_category VARCHAR(255),
+  confidence_score DECIMAL(3,2),
+  needs_review BOOLEAN DEFAULT true,
+  approved BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **CORE SERVICES TO IMPLEMENT:**
+
+1. **Website Scanner Service** (`src/services/websiteScanner.ts`):
+```typescript
+interface ScanConfig {
+  urls: string[];
+  maxDepth: number;
+  maxPages: number;
+  respectRobotsTxt: boolean;
+  includeImages: boolean;
+  contentTypes: string[];
+}
+
+class WebsiteScanner {
+  async startScanJob(urls: string[], config: ScanConfig): Promise<string>
+  async scanUrl(url: string): Promise<ExtractedContent>
+  async extractPageContent(html: string, url: string): Promise<PageContent>
+  async classifyContentType(content: string, url: string): Promise<string>
+  async extractBusinessInfo(content: string): Promise<BusinessInfo>
+  async validateUrl(url: string): Promise<boolean>
+  async getScanProgress(jobId: string): Promise<ScanProgress>
+}
+```
+
+2. **Content Processor Service** (`src/services/contentProcessor.ts`):
+```typescript
+class ContentProcessor {
+  async processExtractedContent(content: ExtractedContent[]): Promise<ProcessingResult>
+  async extractPricingInfo(html: string): Promise<PricingPlan[]>
+  async extractFAQs(html: string): Promise<FAQ[]>
+  async extractCompanyInfo(html: string): Promise<CompanyInfo>
+  async extractContactDetails(html: string): Promise<ContactInfo>
+  async generateKnowledgeItems(content: ExtractedContent[]): Promise<KnowledgeItem[]>
+  async categorizeContent(content: string): Promise<string>
+}
+```
+
+### **UI COMPONENTS TO BUILD:**
+
+1. **URL Scanner Interface** (`src/pages/knowledge/UrlScanner.tsx`):
+   - Multi-URL input with validation
+   - Scan configuration options
+   - Real-time progress tracking
+   - Content preview and categorization
+   - Bulk approve/reject extracted knowledge
+
+2. **Scan Results Dashboard** (`src/pages/knowledge/ScanResults.tsx`):
+   - Extracted content preview
+   - Knowledge item generation
+   - Quality scoring display
+   - Category assignment
+   - Review and approval workflow
+
+### **CUSTOMER USE CASE:**
+*E-commerce store owner "Alex" wants to train his AI:*
+1. **Input URLs**: Pastes pricing page, FAQ page, about page URLs
+2. **AI Scanning**: System crawls and extracts content automatically
+3. **Smart Processing**: AI categorizes content and creates knowledge items
+4. **Review Process**: Alex reviews and approves extracted knowledge
+5. **AI Training**: Bot becomes knowledgeable about Alex's business
+6. **Testing**: Alex tests bot responses in playground before going live
+
+**Performance Requirements:**
+- Scan 10-50 pages in under 5 minutes
+- Extract structured data with 90%+ accuracy
+- Handle JavaScript-rendered pages
+- Respect robots.txt and rate limits
+- Support major website platforms
+
+**API Endpoints:**
+```typescript
+POST /api/knowledge/scan-urls - Start URL scanning job
+GET /api/knowledge/scan-jobs/:id - Get scan job status
+POST /api/knowledge/scan-jobs/:id/approve - Approve extracted content
+GET /api/knowledge/extracted-content/:scanId - Get extracted content
+PUT /api/knowledge/extracted-content/:id - Edit extracted content
+POST /api/knowledge/bulk-create - Create knowledge items from scan
+```
+
+---
+
+## 🎯 PROMPT 8: Testing Playground & Widget Embedding System
+
+**Cursor, implement a comprehensive testing playground where customers can test their AI chatbot before deployment, and create a widget embedding system that generates JavaScript code for easy website integration.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+**Database Schema:**
+```sql
+CREATE TABLE playground_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id),
+  session_name VARCHAR(255),
+  bot_configuration JSONB NOT NULL,
+  test_conversations JSONB DEFAULT '[]',
+  performance_metrics JSONB DEFAULT '{}',
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE widget_configurations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id),
+  widget_name VARCHAR(255),
+  domain VARCHAR(255),
+  configuration JSONB NOT NULL,
+  embed_code TEXT,
+  status VARCHAR(50) DEFAULT 'active',
+  install_verified BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### **CORE SERVICES:**
+
+1. **Playground Service** (`src/services/playgroundService.ts`):
+```typescript
+interface PlaygroundConfig {
+  botPersonality: string;
+  welcomeMessage: string;
+  language: string;
+  knowledgeBaseIds: string[];
+  workflows: string[];
+  responseStyle: 'professional' | 'casual' | 'friendly';
+}
+
+class PlaygroundService {
+  async createSession(config: PlaygroundConfig): Promise<string>
+  async sendTestMessage(sessionId: string, message: string): Promise<TestResponse>
+  async getSessionHistory(sessionId: string): Promise<PlaygroundConversation[]>
+  async resetSession(sessionId: string): Promise<void>
+  async analyzePerformance(sessionId: string): Promise<PerformanceAnalysis>
+  async exportSession(sessionId: string): Promise<SessionExport>
+}
+```
+
+2. **Widget Generator Service** (`src/services/widgetGenerator.ts`):
+```typescript
+interface WidgetConfig {
+  projectId: string;
+  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  theme: 'light' | 'dark' | 'auto';
+  primaryColor: string;
+  welcomeMessage: string;
+  avatarUrl?: string;
+  language: string;
+  showBranding: boolean;
+}
+
+class WidgetGenerator {
+  async generateEmbedCode(config: WidgetConfig): Promise<string>
+  async validateDomain(domain: string): Promise<boolean>
+  async trackInstallation(widgetId: string, domain: string): Promise<void>
+  async getWidgetAnalytics(widgetId: string): Promise<WidgetAnalytics>
+  async updateConfiguration(widgetId: string, config: Partial<WidgetConfig>): Promise<void>
+}
+```
+
+### **UI COMPONENTS:**
+
+1. **Playground Interface** (`src/pages/playground/PlaygroundPage.tsx`):
+   - **Left Panel**: Bot configuration (personality, knowledge base, workflows)
+   - **Center Panel**: Chat interface identical to live widget
+   - **Right Panel**: Real-time analytics (confidence scores, response time, knowledge sources)
+   - **Features**: Reset conversation, export chat, performance metrics
+
+2. **Widget Configurator** (`src/pages/widget/WidgetConfig.tsx`):
+   - Visual widget customization
+   - Real-time preview
+   - Domain management
+   - Embed code generation
+   - Installation verification
+
+### **WIDGET EMBED CODE GENERATION:**
+```html
+<!-- Generated embed code example -->
+<script>
+  window.RomashkaConfig = {
+    projectId: 'proj_abc123',
+    apiKey: 'pk_live_xyz789',
+    position: 'bottom-right',
+    theme: 'light',
+    language: 'en',
+    welcomeMessage: 'Hi! How can I help you today?',
+    primaryColor: '#FF6B9D'
+  };
+  
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://widget.romashka.ai/v1/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  })();
+</script>
+```
+
+**Performance Requirements:**
+- Playground response time: <2 seconds
+- Widget load time: <1 second
+- Cross-browser compatibility
+- Mobile responsiveness
+- GDPR compliance
+
+**API Endpoints:**
+```typescript
+POST /api/playground/sessions - Create playground session
+GET /api/playground/sessions - List user's sessions
+PUT /api/playground/sessions/:id - Update session config
+POST /api/playground/chat - Send test message
+GET /api/playground/analytics/:sessionId - Get session analytics
+POST /api/playground/reset/:sessionId - Reset conversation
+POST /api/widget/generate - Generate widget embed code
+GET /api/widget/configs - List widget configurations
+PUT /api/widget/configs/:id - Update widget configuration
+POST /api/widget/verify-install - Verify widget installation
+GET /api/widget/analytics/:widgetId - Get widget analytics
+```
+
+---
+
+## 🎯 PROMPT 9: Complete Integration Provider Services
+
+**Cursor, complete the enterprise integration ecosystem by implementing specific provider services for Salesforce, HubSpot, Zendesk, Shopify, WooCommerce, Mailchimp, Google Calendar, and Stripe, along with the integration marketplace UI and comprehensive setup wizards.**
+
+### **TECHNICAL SPECIFICATIONS:**
+
+Complete the integration framework from Prompt 6 by implementing:
+
+**Additional CRM Services:**
+- **Pipedrive Integration** (`src/services/integrations/crm/pipedriveService.ts`)
+- **Monday.com Integration** (`src/services/integrations/crm/mondayService.ts`)
+
+**Help Desk Services:**
+- **Freshdesk Integration** (`src/services/integrations/helpdesk/freshdeskService.ts`)
+- **Intercom Integration** (`src/services/integrations/helpdesk/intercomService.ts`)
+
+**E-commerce Services:**
+- **WooCommerce Integration** (`src/services/integrations/ecommerce/woocommerceService.ts`)
+- **BigCommerce Integration** (`src/services/integrations/ecommerce/bigcommerceService.ts`)
+
+**Business Tool Services:**
+- **Google Calendar Integration** (`src/services/integrations/calendar/googleCalendarService.ts`)
+- **Mailchimp Integration** (`src/services/integrations/email/mailchimpService.ts`)
+- **Stripe Integration** (`src/services/integrations/payment/stripeService.ts`)
+
+**UI Components to Complete:**
+
+1. **Integration Marketplace** (`src/pages/integrations/Marketplace.tsx`):
+   - Category-based browsing (CRM, Help Desk, E-commerce, etc.)
+   - Provider comparison matrix
+   - Rating and review system
+   - Installation wizard launcher
+
+2. **Setup Wizard System** (`src/components/integrations/SetupWizard.tsx`):
+   - Multi-step setup process
+   - OAuth authentication flows
+   - Field mapping interface
+   - Sync configuration
+   - Testing and validation
+
+3. **Integration Management Dashboard** (`src/pages/integrations/Dashboard.tsx`):
+   - Active integrations overview
+   - Sync status and history
+   - Error monitoring and resolution
+   - Performance metrics
+   - Quick actions and controls
+
+**Customer Use Case Implementation:**
+Implement Mike's complete workflow:
+- Shopify order data synchronization
+- HubSpot lead creation and tracking
+- Zendesk ticket creation and updates
+- Cross-platform customer profile management
+- Revenue attribution tracking
+
+**Performance Requirements:**
+- OAuth authentication: <30 seconds
+- Data sync: <5 minutes for 1000 records
+- Real-time webhook processing: <2 seconds
+- Error recovery: automatic retry with exponential backoff
+- API rate limiting compliance
+
+---
+
+## 📋 EXECUTION STRATEGY
+
+### **Phase 1: Core Foundation (Prompts 1-3)**
+- Implement advanced AI engine with multilingual support
+- Build comprehensive knowledge base management
+- Create professional chat features with agent handoff
+
+### **Phase 2: Scale & Channels (Prompts 4-5)**
+- Add multi-channel communication system
+- Implement analytics and reporting infrastructure
+
+### **Phase 3: Integration & Deployment (Prompts 6-9)**
+- Build enterprise integration ecosystem
+- Create URL scanning and knowledge extraction
+- Implement testing playground and widget embedding
+- Complete all provider integrations
+
+### **Success Metrics:**
+- ✅ 70%+ AI resolution rate (matching Lyro.ai)
+- ✅ <6 second response times
+- ✅ 12 language support
+- ✅ Multi-channel unified inbox
+- ✅ Real-time analytics and reporting
+- ✅ Enterprise integrations (10+ platforms)
+- ✅ Widget embedding and playground testing
+
+After completing all 9 prompts, ROMASHKA will be a complete Lyro.ai competitor with enterprise-grade features, ready for production deployment and customer acquisition.

@@ -130,8 +130,4 @@ ROMASHKA empowers users to:
 
 ---
 
-<<<<<<< HEAD
 ROMASHKA is built to be the most comprehensive, extensible, and user-friendly AI-powered website scanning and integration platform available. Whether you're a developer, enterprise, or startup, ROMASHKA gives you the tools to automate, analyze, and integrate your digital world. 
-=======
-ROMASHKA is built to be the most comprehensive, extensible, and user-friendly AI-powered website scanning and integration platform available. Whether you're a developer, enterprise, or startup, ROMASHKA gives you the tools to automate, analyze, and integrate your digital world. 
->>>>>>> 9504571a4c11e49e40640d718265eefa183556c3
