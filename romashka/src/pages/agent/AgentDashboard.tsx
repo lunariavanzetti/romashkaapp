@@ -14,7 +14,8 @@ import {
   Bell,
   TrendingUp,
   Users,
-  Activity
+  Activity,
+  FileText
 } from 'lucide-react';
 import { DashboardLayout } from '../../components/layout';
 import { Button, Skeleton } from '../../components/ui';
@@ -22,6 +23,8 @@ import { agentService, type AgentStatus } from '../../services/agentService';
 import { realtimeService } from '../../services/realtimeService';
 import { supabase } from '../../services/supabaseClient';
 import { useAuthStore } from '../../stores/authStore';
+import { AdvancedChatInterface } from '../../components/chat/AdvancedChatInterface';
+import { FileShareManager } from '../../components/chat/FileShareManager';
 
 interface Conversation {
   id: string;
@@ -56,6 +59,10 @@ export default function AgentDashboard() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [activeConversations, setActiveConversations] = useState<Conversation[]>([]);
+  const [showChatInterface, setShowChatInterface] = useState(false);
+  const [showFileManager, setShowFileManager] = useState(false);
+  const [currentView, setCurrentView] = useState<'overview' | 'chat' | 'files'>('overview');
 
   useEffect(() => {
     if (user?.id) {
@@ -102,6 +109,7 @@ export default function AgentDashboard() {
         .order('created_at', { ascending: true });
 
       setConversations(convData || []);
+              setActiveConversations(convData?.filter((c: any) => c.status === 'active') || []);
 
       // Load performance data
       if (user?.id) {
@@ -176,6 +184,22 @@ export default function AgentDashboard() {
 
   const handleConversationClick = (conversation: Conversation) => {
     setSelectedConversation(conversation);
+    setCurrentView('chat');
+  };
+
+  const handleConversationSelect = (conversationId: string) => {
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (conversation) {
+      setSelectedConversation(conversation);
+    }
+  };
+
+  const handleConversationClose = (conversationId: string) => {
+    setActiveConversations(prev => prev.filter(c => c.id !== conversationId));
+    if (selectedConversation?.id === conversationId) {
+      setSelectedConversation(null);
+      setCurrentView('overview');
+    }
   };
 
   const handleResolveConversation = async (conversationId: string) => {
@@ -373,14 +397,51 @@ export default function AgentDashboard() {
           </div>
         )}
 
-        {/* Conversations List */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-xl font-semibold">Active Conversations</h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              {conversations.length} conversation{conversations.length !== 1 ? 's' : ''} assigned
-            </p>
+        {/* Navigation Tabs */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mb-6">
+          <div className="flex border-b border-gray-200 dark:border-gray-700">
+            <button
+              onClick={() => setCurrentView('overview')}
+              className={`px-6 py-3 font-medium ${
+                currentView === 'overview'
+                  ? 'text-primary-pink border-b-2 border-primary-pink'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setCurrentView('chat')}
+              className={`px-6 py-3 font-medium ${
+                currentView === 'chat'
+                  ? 'text-primary-pink border-b-2 border-primary-pink'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Chat Interface
+            </button>
+            <button
+              onClick={() => setCurrentView('files')}
+              className={`px-6 py-3 font-medium ${
+                currentView === 'files'
+                  ? 'text-primary-pink border-b-2 border-primary-pink'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              File Manager
+            </button>
           </div>
+        </div>
+
+        {/* Content based on current view */}
+        {currentView === 'overview' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold">Active Conversations</h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                {conversations.length} conversation{conversations.length !== 1 ? 's' : ''} assigned
+              </p>
+            </div>
 
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {conversations.length === 0 ? (
@@ -454,6 +515,43 @@ export default function AgentDashboard() {
             )}
           </div>
         </div>
+        )}
+
+        {/* Chat Interface View */}
+        {currentView === 'chat' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg h-[80vh]">
+            <AdvancedChatInterface
+              conversations={activeConversations}
+              onConversationSelect={handleConversationSelect}
+              onConversationClose={handleConversationClose}
+            />
+          </div>
+        )}
+
+        {/* File Manager View */}
+        {currentView === 'files' && (
+          <div className="space-y-6">
+            {selectedConversation ? (
+              <FileShareManager
+                conversationId={selectedConversation.id}
+                onFileUploaded={(file) => {
+                  console.log('File uploaded:', file);
+                  // Optionally refresh conversation data
+                }}
+              />
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+                <FileText size={48} className="mx-auto mb-4 text-gray-400" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  No Conversation Selected
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Select a conversation to manage files
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
