@@ -49,9 +49,9 @@ ON CONFLICT (id) DO UPDATE SET
 -- ================================
 
 INSERT INTO customer_profiles (id, email, name, phone, company, location, language, tags, status) VALUES
-('650e8400-e29b-41d4-a716-446655440000', 'customer1@example.com', 'Alice Johnson', '+1234567890', 'ABC Corp', 'New York, USA', 'en', '["vip", "enterprise"]', 'active'),
-('650e8400-e29b-41d4-a716-446655440001', 'customer2@example.com', 'Bob Wilson', '+1234567891', 'XYZ Ltd', 'London, UK', 'en', '["standard"]', 'active'),
-('650e8400-e29b-41d4-a716-446655440002', 'customer3@example.com', 'Carlos Rodriguez', '+1234567892', 'Global Trade', 'Madrid, Spain', 'es', '["new", "potential"]', 'active')
+('650e8400-e29b-41d4-a716-446655440000', 'customer1@example.com', 'Alice Johnson', '+1234567890', 'ABC Corp', 'New York, USA', 'en', '{"vip", "enterprise"}', 'active'),
+('650e8400-e29b-41d4-a716-446655440001', 'customer2@example.com', 'Bob Wilson', '+1234567891', 'XYZ Ltd', 'London, UK', 'en', '{"standard"}', 'active'),
+('650e8400-e29b-41d4-a716-446655440002', 'customer3@example.com', 'Carlos Rodriguez', '+1234567892', 'Global Trade', 'Madrid, Spain', 'es', '{"new", "potential"}', 'active')
 ON CONFLICT (id) DO UPDATE SET
     email = EXCLUDED.email,
     name = EXCLUDED.name,
@@ -68,9 +68,9 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- Generate unique agent IDs based on current user
 INSERT INTO user_agents (id, user_id, agent_id, agent_name, agent_type, agent_description, is_active, is_primary, agent_config, capabilities) VALUES
-(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-001', 'My AI Assistant', 'ai_assistant', 'Primary AI assistant for customer support', true, true, '{"model": "gpt-4", "temperature": 0.7}', '["chat", "knowledge_search", "task_automation"]'),
-(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-002', 'My Analytics Bot', 'analytics_bot', 'Specialized bot for analytics and reporting', true, false, '{"model": "gpt-4", "temperature": 0.3}', '["analytics", "reporting", "data_visualization"]'),
-(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-003', 'My Knowledge Bot', 'knowledge_bot', 'Knowledge management and processing bot', true, false, '{"model": "gpt-4", "temperature": 0.5}', '["knowledge_processing", "content_analysis", "data_extraction"]')
+(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-001', 'My AI Assistant', 'ai_assistant', 'Primary AI assistant for customer support', true, true, '{"model": "gpt-4", "temperature": 0.7}', '{"chat", "knowledge_search", "task_automation"}'),
+(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-002', 'My Analytics Bot', 'analytics_bot', 'Specialized bot for analytics and reporting', true, false, '{"model": "gpt-4", "temperature": 0.3}', '{"analytics", "reporting", "data_visualization"}'),
+(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-003', 'My Knowledge Bot', 'knowledge_bot', 'Knowledge management and processing bot', true, false, '{"model": "gpt-4", "temperature": 0.5}', '{"knowledge_processing", "content_analysis", "data_extraction"}')
 ON CONFLICT (agent_id) DO UPDATE SET
     agent_name = EXCLUDED.agent_name,
     agent_type = EXCLUDED.agent_type,
@@ -205,11 +205,11 @@ SELECT
     FLOOR(RANDOM() * 100) + 50,
     0.88,
     'en',
-    CASE c.rn
-        WHEN 1 THEN '["password", "reset", "login"]'
-        WHEN 2 THEN '["billing", "cycle", "subscription"]'
-        WHEN 3 THEN '["api", "rate", "limits"]'
-    END,
+         CASE c.rn
+         WHEN 1 THEN '{"password", "reset", "login"}'
+         WHEN 2 THEN '{"billing", "cycle", "subscription"}'
+         WHEN 3 THEN '{"api", "rate", "limits"}'
+     END,
     'active',
     auth.uid()
 FROM categories c
@@ -330,10 +330,10 @@ ON CONFLICT (id) DO NOTHING;
 -- ================================
 
 INSERT INTO canned_responses (title, content, shortcut, category, language, created_by, is_public, tags) VALUES
-('Welcome Greeting', 'Hello! Welcome to our support chat. How can I help you today?', '/welcome', 'greetings', 'en', auth.uid(), true, '["greeting", "welcome"]'),
-('Pricing Information', 'You can find our current pricing plans on our website. Would you like me to walk you through the options?', '/pricing', 'sales', 'en', auth.uid(), true, '["pricing", "sales"]'),
-('Technical Support', 'I see you''re experiencing a technical issue. Let me help you troubleshoot this step by step.', '/tech', 'support', 'en', auth.uid(), true, '["technical", "support"]'),
-('Thank You', 'Thank you for contacting us! Is there anything else I can help you with?', '/thanks', 'general', 'en', auth.uid(), true, '["thanks", "closing"]')
+('Welcome Greeting', 'Hello! Welcome to our support chat. How can I help you today?', '/welcome', 'greetings', 'en', auth.uid(), true, '{"greeting", "welcome"}'),
+('Pricing Information', 'You can find our current pricing plans on our website. Would you like me to walk you through the options?', '/pricing', 'sales', 'en', auth.uid(), true, '{"pricing", "sales"}'),
+('Technical Support', 'I see you''re experiencing a technical issue. Let me help you troubleshoot this step by step.', '/tech', 'support', 'en', auth.uid(), true, '{"technical", "support"}'),
+('Thank You', 'Thank you for contacting us! Is there anything else I can help you with?', '/thanks', 'general', 'en', auth.uid(), true, '{"thanks", "closing"}')
 ON CONFLICT (title) DO UPDATE SET
     content = EXCLUDED.content,
     shortcut = EXCLUDED.shortcut,
