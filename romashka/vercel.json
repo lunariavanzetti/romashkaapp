@@ -4,7 +4,8 @@
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/((?!privacy).*)", "destination": "/index.html" }
   ],
   "env": {
     "SUPABASE_URL": "",
