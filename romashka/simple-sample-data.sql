@@ -68,9 +68,9 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- Generate unique agent IDs based on current user
 INSERT INTO user_agents (id, user_id, agent_id, agent_name, agent_type, agent_description, is_active, is_primary, agent_config, capabilities) VALUES
-(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-001', 'My AI Assistant', 'ai_assistant', 'Primary AI assistant for customer support', true, true, '{"model": "gpt-4", "temperature": 0.7}', '{"chat", "knowledge_search", "task_automation"}'),
-(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-002', 'My Analytics Bot', 'analytics_bot', 'Specialized bot for analytics and reporting', true, false, '{"model": "gpt-4", "temperature": 0.3}', '{"analytics", "reporting", "data_visualization"}'),
-(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-003', 'My Knowledge Bot', 'knowledge_bot', 'Knowledge management and processing bot', true, false, '{"model": "gpt-4", "temperature": 0.5}', '{"knowledge_processing", "content_analysis", "data_extraction"}')
+(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-001', 'My AI Assistant', 'ai_assistant', 'Primary AI assistant for customer support', true, true, '{"model": "gpt-4", "temperature": 0.7}', '["chat", "knowledge_search", "task_automation"]'),
+(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-002', 'My Analytics Bot', 'analytics_bot', 'Specialized bot for analytics and reporting', true, false, '{"model": "gpt-4", "temperature": 0.3}', '["analytics", "reporting", "data_visualization"]'),
+(gen_random_uuid(), auth.uid(), 'agent-' || auth.uid()::text || '-003', 'My Knowledge Bot', 'knowledge_bot', 'Knowledge management and processing bot', true, false, '{"model": "gpt-4", "temperature": 0.5}', '["knowledge_processing", "content_analysis", "data_extraction"]')
 ON CONFLICT (agent_id) DO UPDATE SET
     agent_name = EXCLUDED.agent_name,
     agent_type = EXCLUDED.agent_type,
