@@ -3,12 +3,19 @@
 /**
  * ROMASHKA Database Automated Setup Script
  * This script automates the entire database setup process
+ * 
+ * Usage: node --env-file=.env setup-database.js
+ * OR: npm run db:setup
  */
 
-require('dotenv').config();
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+import pg from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const { Pool } = pg;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Colors for console output
 const colors = {
@@ -290,8 +297,8 @@ process.on('unhandledRejection', (error) => {
     process.exit(1);
 });
 
-// Run the main function
-if (require.main === module) {
+// Run the main function if this is the main module
+if (import.meta.url === `file://${process.argv[1]}`) {
     main().catch(error => {
         logError('Setup failed:');
         logError(error.message);
@@ -299,4 +306,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = main;
+export default main;

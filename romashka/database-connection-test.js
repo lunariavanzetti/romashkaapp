@@ -3,10 +3,19 @@
 /**
  * Database Connection Test and Schema Verification
  * This script connects to Supabase and verifies the database schema
+ * 
+ * Usage: node --env-file=.env database-connection-test.js
+ * OR: npm run db:test
  */
 
-require('dotenv').config();
-const { Pool } = require('pg');
+import pg from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const { Pool } = pg;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Database connection configuration
 const pool = new Pool({
@@ -200,9 +209,6 @@ async function runCompleteSetup() {
     console.log('\n🚀 Running complete database setup...');
     
     try {
-        const fs = require('fs');
-        const path = require('path');
-        
         // Read the complete setup script
         const setupScript = fs.readFileSync(path.join(__dirname, 'complete-database-setup.sql'), 'utf8');
         
@@ -274,12 +280,13 @@ async function main() {
     await pool.end();
 }
 
-// Run the main function
-if (require.main === module) {
+// Run the main function if this is the main module
+if (import.meta.url === `file://${process.argv[1]}`) {
     main().catch(error => {
         console.error('❌ Unexpected error:', error);
         process.exit(1);
     });
 }
 
-module.exports = { testConnection, checkSchema, checkKnowledgeCategoriesSchema, fixKnowledgeCategoriesTable };
+export { testConnection, checkSchema, checkKnowledgeCategoriesSchema, fixKnowledgeCategoriesTable };
+export default main;

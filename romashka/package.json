@@ -11,8 +11,8 @@
     "setup:whatsapp": "node setup-whatsapp-webhook.cjs",
     "test:webhook": "node test-webhook-endpoint.cjs",
     "test:channels": "node -e \"import('./src/services/channels/testMultiChannel.ts')\"",
-    "db:setup": "node setup-database.js",
-    "db:test": "node database-connection-test.js"
+    "db:setup": "node --env-file=.env setup-database.js",
+    "db:test": "node --env-file=.env database-connection-test.js"
   },
   "dependencies": {
     "@emoji-mart/react": "^1.1.1",
@@ -29,7 +29,7 @@
     "@types/node": "^24.0.12",
     "braces": "^3.0.3",
     "clsx": "^2.1.1",
-    "dotenv": "^17.2.0",
+    "dotenv": "^16.6.1",
     "emoji-mart": "^5.6.0",
     "express": "^5.1.0",
     "framer-motion": "^12.22.0",
