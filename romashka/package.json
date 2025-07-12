@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "setup:whatsapp": "node setup-whatsapp-webhook.cjs",
     "test:webhook": "node test-webhook-endpoint.cjs",
-    "test:channels": "node -e \"import('./src/services/channels/testMultiChannel.ts')\""
+    "test:channels": "node -e \"import('./src/services/channels/testMultiChannel.ts')\"",
+    "db:setup": "node setup-database.js",
+    "db:test": "node database-connection-test.js"
   },
   "dependencies": {
     "@emoji-mart/react": "^1.1.1",
