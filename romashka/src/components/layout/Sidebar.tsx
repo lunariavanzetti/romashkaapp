@@ -10,7 +10,8 @@ import {
   CreditCard,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Puzzle
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -20,6 +21,7 @@ const navLinks = [
   { label: 'Analytics', icon: <BarChart2 size={20} />, to: '/dashboard/analytics' },
   { label: 'Knowledge Base', icon: <Book size={20} />, to: '/knowledge' },
   { label: 'Automation', icon: <Zap size={20} />, to: '/automation' },
+  { label: 'Integrations', icon: <Puzzle size={20} />, to: '/integrations' },
   { label: 'Team', icon: <Users size={20} />, to: '/team' },
   { label: 'Settings', icon: <Settings size={20} />, to: '/settings' },
   { label: 'Billing', icon: <CreditCard size={20} />, to: '/billing' },
