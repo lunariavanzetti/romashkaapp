@@ -22,6 +22,7 @@ import Onboarding from './pages/Onboarding';
 import Privacy from './pages/Privacy';
 import { UrlScanner } from './pages/knowledge/UrlScanner';
 import IntegrationsPage from './pages/integrations/index';
+import SettingsPage from './pages/settings/index';
 
 // Component to conditionally render Navigation
 const AppContent = () => {
@@ -52,6 +53,7 @@ const AppContent = () => {
         <Route path="/billing" element={<div className="pt-24"><Billing /></div>} />
         <Route path="/automation" element={<div className="pt-24"><ProtectedRoute><Automation /></ProtectedRoute></div>} />
         <Route path="/integrations" element={<div className="pt-24"><ProtectedRoute><IntegrationsPage /></ProtectedRoute></div>} />
+        <Route path="/settings" element={<div className="pt-24"><ProtectedRoute><SettingsPage /></ProtectedRoute></div>} />
         <Route path="/onboarding" element={<div className="pt-24"><Onboarding /></div>} />
         <Route path="*" element={<div className="pt-24"><Landing /></div>} />
       </Routes>
