@@ -3,29 +3,81 @@ import { Button } from '../components/ui';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { ArrowRight, CheckCircle, Zap, Shield, Globe } from 'lucide-react';
 
 const stats = [
-  { label: 'Automation', value: 70, suffix: '%' },
-  { label: 'Avg. Response', value: 6, suffix: 's' },
+  { label: 'Resolution Rate', value: 90, suffix: '%' },
+  { label: 'Response Time', value: 6, suffix: 's' },
+  { label: 'Customer Satisfaction', value: 4.9, suffix: '/5' },
+  { label: 'Cost Reduction', value: 60, suffix: '%' },
 ];
 
 const features = [
-  'AI-powered chat automation',
-  'Real-time analytics',
-  'Multi-channel support',
-  'Easy knowledge base',
+  {
+    icon: <Zap className="w-6 h-6" />,
+    title: 'AI-Powered Automation',
+    description: 'Transform your customer service with AI that actually understands context and provides helpful responses.'
+  },
+  {
+    icon: <Globe className="w-6 h-6" />,
+    title: 'Multi-Channel Support',
+    description: 'Seamlessly connect with customers across WhatsApp, Messenger, Email, and your website.'
+  },
+  {
+    icon: <Shield className="w-6 h-6" />,
+    title: 'Enterprise Security',
+    description: 'Bank-grade security with SOC 2 compliance and advanced data protection.'
+  },
+  {
+    icon: <CheckCircle className="w-6 h-6" />,
+    title: 'Real-Time Analytics',
+    description: 'Gain deep insights into customer behavior and optimize your support strategy.'
+  },
 ];
 
 const testimonials = [
-  { name: 'Alice', text: 'ROMASHKA transformed our support!', company: 'Acme Inc.' },
-  { name: 'Bob', text: 'Super fast and easy to use.', company: 'Beta LLC' },
-  { name: 'Carol', text: 'Our team loves the automation.', company: 'Gamma Co.' },
+  { 
+    name: 'Sarah Chen', 
+    text: 'ROMASHKA reduced our response time by 80% while improving customer satisfaction. The AI actually understands our business context.', 
+    company: 'TechFlow Solutions',
+    role: 'Customer Success Manager'
+  },
+  { 
+    name: 'Michael Rodriguez', 
+    text: 'Setup was incredibly easy, and the results were immediate. Our team can now focus on complex issues instead of repetitive questions.', 
+    company: 'E-Commerce Plus',
+    role: 'Operations Director'
+  },
+  { 
+    name: 'Emma Thompson', 
+    text: 'The multi-channel integration is seamless. Our customers love the consistent experience across all platforms.', 
+    company: 'Global Retail Co.',
+    role: 'Head of Customer Experience'
+  },
 ];
 
 const pricing = [
-  { tier: 'Free', price: '$0', features: ['Basic automation', 'Community support'] },
-  { tier: 'Pro', price: '$29/mo', features: ['All Free features', 'Advanced analytics', 'Priority support'] },
-  { tier: 'Enterprise', price: 'Contact us', features: ['Custom integrations', 'Dedicated manager'] },
+  { 
+    tier: 'Starter', 
+    price: '$0', 
+    period: 'Forever Free',
+    features: ['Up to 100 conversations/month', 'Basic AI responses', 'Website widget', 'Email support'],
+    popular: false
+  },
+  { 
+    tier: 'Professional', 
+    price: '$29', 
+    period: 'per month',
+    features: ['Up to 2,000 conversations/month', 'Advanced AI with learning', 'Multi-channel support', 'Analytics dashboard', 'Priority support'],
+    popular: true
+  },
+  { 
+    tier: 'Enterprise', 
+    price: 'Custom', 
+    period: 'Contact us',
+    features: ['Unlimited conversations', 'Custom AI training', 'White-label solution', 'Dedicated account manager', 'SLA guarantee'],
+    popular: false
+  },
 ];
 
 export default function Landing() {
@@ -33,90 +85,298 @@ export default function Landing() {
   const { user } = useAuthStore();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-pink via-primary-purple to-primary-green dark:from-dark dark:via-primary-purple dark:to-primary-green flex flex-col items-center">
+    <div className="min-h-screen bg-bg-primary dark:bg-bg-dark">
       {/* Hero Section */}
-      <section className="w-full max-w-5xl px-4 py-24 flex flex-col items-center text-center relative">
-        <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="font-heading text-5xl md:text-6xl font-bold text-white drop-shadow-lg mb-6">
-          Automate Customer Conversations with <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-pink to-primary-green">ROMASHKA</span>
-        </motion.h1>
-        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }} className="text-xl md:text-2xl text-white/90 mb-8">
-          AI-powered, real-time, and beautifully simple.
-        </motion.p>
-        <div className="flex gap-4 mb-12">
-          {user ? (
-            <Button 
-              variant="primary" 
-              className="shadow-xl bg-gradient-to-r from-primary-pink to-primary-purple hover:from-primary-purple hover:to-primary-pink dark:from-primary-green dark:to-primary-lavender dark:hover:from-primary-lavender dark:hover:to-primary-green transition-all duration-300 transform hover:scale-105" 
-              onClick={() => navigate('/dashboard')}
-            >
-              Dashboard
-            </Button>
-          ) : (
-            <Button 
-              variant="primary" 
-              className="shadow-xl bg-gradient-to-r from-primary-pink to-primary-purple hover:from-primary-purple hover:to-primary-pink dark:from-primary-green dark:to-primary-lavender dark:hover:from-primary-lavender dark:hover:to-primary-green transition-all duration-300 transform hover:scale-105" 
-              onClick={() => navigate('/signup')}
-            >
-              Get Started
-            </Button>
-          )}
-          <Button 
-            variant="secondary" 
-            className="shadow-xl bg-gradient-to-r from-primary-green to-primary-lavender hover:from-primary-lavender hover:to-primary-green dark:from-primary-pink dark:to-primary-purple dark:hover:from-primary-purple dark:hover:to-primary-pink transition-all duration-300 transform hover:scale-105" 
-            onClick={() => navigate('/pricing')}
+      <section className="relative overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-gradient-hero animated-background"></div>
+        
+        <div className="relative z-10 container mx-auto px-4 py-24 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-4xl mx-auto"
           >
-            See Pricing
-          </Button>
-        </div>
-        {/* Animated Stats */}
-        <div className="flex gap-8 justify-center mb-12">
-          {stats.map((stat, i) => (
-            <motion.div key={stat.label} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.3 + i * 0.2 }} className="glass-card px-8 py-6 rounded-2xl shadow-lg text-white">
-              <div className="text-4xl font-bold">
-                <motion.span initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}>
-                  {stat.value}
-                </motion.span>{stat.suffix}
-              </div>
-              <div className="text-lg mt-2 opacity-80">{stat.label}</div>
+            <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6">
+              Transform Your Customer Service with{' '}
+              <span className="text-gradient-lyro">AI That Actually Understands</span>
+            </h1>
+            
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto"
+            >
+              Eliminate the frustration of traditional chatbots. ROMASHKA provides genuinely helpful, 
+              context-aware responses that delight your customers and free up your team.
+            </motion.p>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+            >
+              {user ? (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate('/dashboard')}
+                  icon={<ArrowRight className="w-5 h-5" />}
+                  iconPosition="right"
+                  className="shadow-glow-teal"
+                >
+                  Go to Dashboard
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => navigate('/signup')}
+                  icon={<ArrowRight className="w-5 h-5" />}
+                  iconPosition="right"
+                  className="shadow-glow-teal"
+                >
+                  Start Free Trial
+                </Button>
+              )}
+              
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate('/pricing')}
+                className="border-white/30 text-white hover:bg-white/10"
+              >
+                View Pricing
+              </Button>
             </motion.div>
-          ))}
-        </div>
-        {/* Features Glass Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16 w-full">
-          {features.map((feature, i) => (
-            <motion.div key={feature} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + i * 0.1 }} className="glass-card p-6 rounded-xl shadow-md text-white text-lg">
-              {feature}
+            
+            {/* Stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
+            >
+              {stats.map((stat, i) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.8 + i * 0.1 }}
+                  className="text-center"
+                >
+                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">
+                    {stat.value}{stat.suffix}
+                  </div>
+                  <div className="text-white/70 text-sm">{stat.label}</div>
+                </motion.div>
+              ))}
             </motion.div>
-          ))}
+          </motion.div>
         </div>
       </section>
-      {/* Testimonials Carousel */}
-      <section className="w-full max-w-3xl px-4 py-12">
-        <h2 className="font-heading text-3xl text-white mb-6">What our users say</h2>
-        <div className="flex gap-6 overflow-x-auto pb-4">
-          {testimonials.map((t, i) => (
-            <motion.div key={i} className="glass-card min-w-[260px] p-6 rounded-xl shadow-md text-white" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 * i }}>
-              <div className="text-lg mb-2">“{t.text}”</div>
-              <div className="font-bold">{t.name}</div>
-              <div className="text-sm opacity-70">{t.company}</div>
-            </motion.div>
-          ))}
+      
+      {/* Features Section */}
+      <section className="py-24 bg-bg-secondary dark:bg-bg-darker">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-heading text-4xl md:text-5xl font-bold text-primary-deep-blue dark:text-white mb-4">
+              Everything You Need for Modern Customer Service
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+              Built for businesses that want to provide exceptional customer experiences without the complexity.
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.8 }}
+                className="glass-card p-6 rounded-xl hover:shadow-elevation-3 transition-all duration-300"
+              >
+                <div className="w-12 h-12 bg-gradient-button rounded-lg flex items-center justify-center text-white mb-4">
+                  {feature.icon}
+                </div>
+                <h3 className="font-heading text-lg font-semibold text-primary-deep-blue dark:text-white mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
+                  {feature.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
-      {/* Pricing Preview */}
-      <section className="w-full max-w-4xl px-4 py-12">
-        <h2 className="font-heading text-3xl text-white mb-6">Pricing</h2>
-        <div className="flex flex-col md:flex-row gap-8 justify-center">
-          {pricing.map((tier, i) => (
-            <motion.div key={tier.tier} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 * i }} className="glass-card flex-1 p-8 rounded-2xl shadow-lg text-white flex flex-col items-center">
-              <div className="font-heading text-2xl mb-2">{tier.tier}</div>
-              <div className="text-3xl font-bold mb-4">{tier.price}</div>
-              <ul className="mb-6 space-y-1">
-                {tier.features.map((f) => <li key={f}>• {f}</li>)}
-              </ul>
-              <Button variant={i === 1 ? 'primary' : 'outline'}>Choose</Button>
-            </motion.div>
-          ))}
+      
+      {/* Testimonials Section */}
+      <section className="py-24 bg-bg-primary dark:bg-bg-dark">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-heading text-4xl md:text-5xl font-bold text-primary-deep-blue dark:text-white mb-4">
+              Trusted by Growing Businesses
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              See how companies like yours are transforming their customer service
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.8 }}
+                className="glass-card p-6 rounded-xl hover:shadow-elevation-3 transition-all duration-300"
+              >
+                <div className="text-gray-700 dark:text-gray-300 mb-4 italic">
+                  "{testimonial.text}"
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-button rounded-full flex items-center justify-center text-white font-bold">
+                    {testimonial.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-primary-deep-blue dark:text-white">
+                      {testimonial.name}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {testimonial.role}, {testimonial.company}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* Pricing Section */}
+      <section className="py-24 bg-bg-secondary dark:bg-bg-darker">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-heading text-4xl md:text-5xl font-bold text-primary-deep-blue dark:text-white mb-4">
+              Simple, Transparent Pricing
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300">
+              Start free, scale as you grow. No hidden fees, no surprises.
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {pricing.map((plan, i) => (
+              <motion.div
+                key={plan.tier}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1, duration: 0.8 }}
+                className={`glass-card p-8 rounded-xl relative ${
+                  plan.popular ? 'ring-2 ring-primary-teal shadow-glow-teal' : ''
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="bg-gradient-button text-white px-4 py-1 rounded-full text-sm font-semibold">
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+                
+                <div className="text-center mb-6">
+                  <h3 className="font-heading text-2xl font-bold text-primary-deep-blue dark:text-white mb-2">
+                    {plan.tier}
+                  </h3>
+                  <div className="text-4xl font-bold text-primary-deep-blue dark:text-white mb-1">
+                    {plan.price}
+                  </div>
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">
+                    {plan.period}
+                  </div>
+                </div>
+                
+                <ul className="space-y-3 mb-8">
+                  {plan.features.map((feature, j) => (
+                    <li key={j} className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-primary-teal flex-shrink-0" />
+                      <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <Button
+                  variant={plan.popular ? 'primary' : 'outline'}
+                  fullWidth
+                  className={!plan.popular ? 'border-primary-teal text-primary-teal' : ''}
+                  onClick={() => navigate('/signup')}
+                >
+                  {plan.price === 'Custom' ? 'Contact Sales' : 'Get Started'}
+                </Button>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* CTA Section */}
+      <section className="py-24 bg-gradient-hero">
+        <div className="container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-3xl mx-auto"
+          >
+            <h2 className="font-heading text-4xl md:text-5xl font-bold text-white mb-4">
+              Ready to Transform Your Customer Service?
+            </h2>
+            <p className="text-xl text-white/90 mb-8">
+              Join thousands of businesses that trust ROMASHKA to deliver exceptional customer experiences.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={() => navigate('/signup')}
+                icon={<ArrowRight className="w-5 h-5" />}
+                iconPosition="right"
+                className="shadow-glow-orange"
+              >
+                Start Your Free Trial
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate('/contact')}
+                className="border-white/30 text-white hover:bg-white/10"
+              >
+                Schedule Demo
+              </Button>
+            </div>
+          </motion.div>
         </div>
       </section>
     </div>
