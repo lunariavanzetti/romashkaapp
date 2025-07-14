@@ -1,5 +1,4 @@
 import React from 'react';
-import { cn } from '../../utils/cn';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline';
@@ -8,7 +7,7 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export const Badge: React.FC<BadgeProps> = ({ 
   variant = 'default', 
-  className, 
+  className = '', 
   children, 
   ...props 
 }) => {
@@ -23,10 +22,10 @@ export const Badge: React.FC<BadgeProps> = ({
 
   return (
     <span
-      className={cn(baseClasses, variantClasses[variant], className)}
+      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
       {...props}
     >
       {children}
     </span>
   );
-}; 
+};

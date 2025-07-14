@@ -1,110 +1,40 @@
 import React from 'react';
-import clsx from 'clsx';
-import { AnimatedSpinner } from './AnimatedSpinner';
 
-const base =
-  'inline-flex items-center justify-center font-heading rounded-lg px-6 py-3 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none text-base font-semibold shadow-elevation-2 backdrop-blur-glass border-0 relative overflow-hidden';
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+  children: React.ReactNode;
+}
 
-const variants = {
-  primary: 'bg-gradient-button text-white hover:shadow-glow-teal hover:scale-[1.02] active:scale-[0.98] focus:ring-primary-teal',
-  secondary: 'bg-gradient-accent text-white hover:shadow-glow-orange hover:scale-[1.02] active:scale-[0.98] focus:ring-primary-orange',
-  outline: 'border-2 border-primary-teal text-primary-teal bg-transparent hover:bg-primary-teal hover:text-white hover:shadow-glow-teal focus:ring-primary-teal',
-  ghost: 'bg-transparent text-primary-teal hover:bg-primary-teal/10 hover:text-primary-teal-dark focus:ring-primary-teal',
-  danger: 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:shadow-glow-red hover:scale-[1.02] active:scale-[0.98] focus:ring-red-500',
-  success: 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:shadow-glow-green hover:scale-[1.02] active:scale-[0.98] focus:ring-green-500',
-  glass: 'bg-white/10 dark:bg-gray-800/10 text-gray-700 dark:text-gray-100 border border-white/20 dark:border-gray-700/20 backdrop-blur-glass hover:bg-white/20 dark:hover:bg-gray-800/20 focus:ring-primary-teal',
-  lyro: 'bg-gradient-lyro text-white hover:shadow-glow-teal hover:scale-[1.02] active:scale-[0.98] focus:ring-primary-teal animate-gradient-shift',
-};
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className = '', variant = 'default', size = 'default', children, ...props }, ref) => {
+    const baseClasses = 'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
+    
+    const variantClasses = {
+      default: 'bg-blue-600 text-white hover:bg-blue-700',
+      destructive: 'bg-red-600 text-white hover:bg-red-700',
+      outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50',
+      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+      ghost: 'hover:bg-gray-100 text-gray-900',
+      link: 'underline-offset-4 hover:underline text-blue-600'
+    };
 
-const sizes = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-base',
-  lg: 'px-6 py-3 text-lg',
-  xl: 'px-8 py-4 text-xl',
-};
+    const sizeClasses = {
+      default: 'h-10 py-2 px-4',
+      sm: 'h-9 px-3 rounded-md',
+      lg: 'h-11 px-8 rounded-md',
+      icon: 'h-10 w-10'
+    };
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: keyof typeof variants;
-  size?: keyof typeof sizes;
-  loading?: boolean;
-  icon?: React.ReactNode;
-  iconPosition?: 'left' | 'right';
-  fullWidth?: boolean;
-  rounded?: boolean;
-};
-
-export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
-  size = 'md',
-  loading = false,
-  icon,
-  iconPosition = 'left',
-  fullWidth = false,
-  rounded = false,
-  children,
-  className = '',
-  disabled,
-  ...props
-}) => {
-  const buttonClasses = clsx(
-    base,
-    variants[variant],
-    sizes[size],
-    {
-      'w-full': fullWidth,
-      'rounded-full': rounded,
-      'cursor-not-allowed': loading || disabled,
-      'opacity-50': loading || disabled,
-    },
-    className
-  );
-
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <>
-          <AnimatedSpinner size="sm" className="mr-2" />
-          {children}
-        </>
-      );
-    }
-
-    if (icon && iconPosition === 'left') {
-      return (
-        <>
-          <span className="mr-2">{icon}</span>
-          {children}
-        </>
-      );
-    }
-
-    if (icon && iconPosition === 'right') {
-      return (
-        <>
-          {children}
-          <span className="ml-2">{icon}</span>
-        </>
-      );
-    }
-
-    return children;
-  };
-
-  return (
-    <button
-      className={buttonClasses}
-      disabled={loading || disabled}
-      {...props}
-    >
-      {/* Ripple effect overlay */}
-      <span className="absolute inset-0 rounded-lg opacity-0 hover:opacity-20 transition-opacity duration-200 bg-white pointer-events-none" />
-      
-      {/* Content */}
-      <span className="relative z-10 flex items-center justify-center">
-        {renderContent()}
-      </span>
-    </button>
-  );
-};
-
-export default Button; 
+    return (
+      <button
+        className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+        ref={ref}
+        {...props}
+      >
+        {children}
+      </button>
+    );
+  }
+);
+Button.displayName = 'Button';
