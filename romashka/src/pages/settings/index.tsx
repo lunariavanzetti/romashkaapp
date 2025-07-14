@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Palette, User, Shield, CreditCard, Bell, Target, Calendar } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, User, Shield, CreditCard, Bell, Target, Calendar, Zap } from 'lucide-react';
 import BrandSettings from './branding/BrandSettings';
 import LeadScoringSettings from './leadScoring/LeadScoringSettings';
 import CalendarSettings from './calendar/CalendarSettings';
+import BehaviorTriggersSettings from './behaviorTriggers/BehaviorTriggersSettings';
 
-type SettingsTab = 'brand' | 'leads' | 'calendar' | 'account' | 'security' | 'billing' | 'notifications';
+type SettingsTab = 'brand' | 'leads' | 'calendar' | 'triggers' | 'account' | 'security' | 'billing' | 'notifications';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('brand');
@@ -14,6 +15,7 @@ export default function SettingsPage() {
     { id: 'brand' as const, label: 'Brand', icon: Palette, description: 'Logo, colors, and white-label settings' },
     { id: 'leads' as const, label: 'Lead Scoring', icon: Target, description: 'Automatic lead qualification and routing' },
     { id: 'calendar' as const, label: 'Calendar', icon: Calendar, description: 'Calendar integration and booking settings' },
+    { id: 'triggers' as const, label: 'Behavior Triggers', icon: Zap, description: 'Automated visitor engagement triggers' },
     { id: 'account' as const, label: 'Account', icon: User, description: 'Profile and organization settings' },
     { id: 'security' as const, label: 'Security', icon: Shield, description: 'Password, 2FA, and security settings' },
     { id: 'billing' as const, label: 'Billing', icon: CreditCard, description: 'Subscription and payment methods' },
@@ -28,6 +30,8 @@ export default function SettingsPage() {
         return <LeadScoringSettings />;
       case 'calendar':
         return <CalendarSettings />;
+      case 'triggers':
+        return <BehaviorTriggersSettings />;
       case 'account':
         return (
           <div className="glass-card bg-white/80 dark:bg-gray-800/80 rounded-xl p-8 border border-white/20 backdrop-blur-glass">
