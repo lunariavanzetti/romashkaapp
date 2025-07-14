@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Palette, User, Shield, CreditCard, Bell, Target, Calendar, Zap } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, User, Shield, CreditCard, Bell, Target, Calendar, Zap, Bot } from 'lucide-react';
 import BrandSettings from './branding/BrandSettings';
 import LeadScoringSettings from './leadScoring/LeadScoringSettings';
 import CalendarSettings from './calendar/CalendarSettings';
 import BehaviorTriggersSettings from './behaviorTriggers/BehaviorTriggersSettings';
+import PersonalitySettings from './personality/PersonalitySettings';
 
-type SettingsTab = 'brand' | 'leads' | 'calendar' | 'triggers' | 'account' | 'security' | 'billing' | 'notifications';
+type SettingsTab = 'brand' | 'personality' | 'leads' | 'calendar' | 'triggers' | 'account' | 'security' | 'billing' | 'notifications';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('brand');
 
   const tabs = [
     { id: 'brand' as const, label: 'Brand', icon: Palette, description: 'Logo, colors, and white-label settings' },
+    { id: 'personality' as const, label: 'AI Personality', icon: Bot, description: 'AI assistant personality and brand voice' },
     { id: 'leads' as const, label: 'Lead Scoring', icon: Target, description: 'Automatic lead qualification and routing' },
     { id: 'calendar' as const, label: 'Calendar', icon: Calendar, description: 'Calendar integration and booking settings' },
     { id: 'triggers' as const, label: 'Behavior Triggers', icon: Zap, description: 'Automated visitor engagement triggers' },
@@ -26,6 +28,8 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'brand':
         return <BrandSettings />;
+      case 'personality':
+        return <PersonalitySettings />;
       case 'leads':
         return <LeadScoringSettings />;
       case 'calendar':
