@@ -1,0 +1,716 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  PlusIcon, 
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  ArrowUpTrayIcon,
+  ArrowDownTrayIcon,
+  TagIcon,
+  BookmarkIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  ShareIcon,
+  DocumentDuplicateIcon,
+  TrashIcon,
+  EyeIcon,
+  PencilIcon,
+  FolderIcon,
+  SparklesIcon,
+  AdjustmentsHorizontalIcon
+} from '@heroicons/react/24/outline';
+import { useToastStore } from '../../components/ui/Toast';
+import { 
+  ResponseTemplate, 
+  TemplateCategory, 
+  TemplateSearchParams,
+  TemplateSearchResult,
+  AITrainingSession 
+} from '../../types/responseTemplates';
+import { templateService } from '../../services/templates/templateService';
+import { aiTrainingService } from '../../services/templates/aiTrainingService';
+import { TemplateCard } from '../../components/templates/TemplateCard';
+import { TemplateFilters } from '../../components/templates/TemplateFilters';
+import { TemplateCategories } from '../../components/templates/TemplateCategories';
+import { TemplateSearchBar } from '../../components/templates/TemplateSearchBar';
+import { TemplateAnalytics } from '../../components/templates/TemplateAnalytics';
+import { AITrainingStatus } from '../../components/templates/AITrainingStatus';
+import { TemplateImportExport } from '../../components/templates/TemplateImportExport';
+import { TemplateLibrary } from '../../components/templates/TemplateLibrary';
+import { CreateTemplateModal } from '../../components/templates/CreateTemplateModal';
+import { TemplatePreviewModal } from '../../components/templates/TemplatePreviewModal';
+import { TemplateShareModal } from '../../components/templates/TemplateShareModal';
+import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner';
+import { EmptyState } from '../../components/ui/EmptyState';
+
+export default function TemplatesPage() {
+  const navigate = useNavigate();
+  const { showToast } = useToastStore();
+  const [templates, setTemplates] = useState<ResponseTemplate[]>([]);
+  const [categories, setCategories] = useState<TemplateCategory[]>([]);
+  const [searchResults, setSearchResults] = useState<TemplateSearchResult | null>(null);
+  const [activeSessions, setActiveSessions] = useState<AITrainingSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+  const [currentView, setCurrentView] = useState<'grid' | 'list' | 'analytics'>('grid');
+  const [activeTab, setActiveTab] = useState<'all' | 'shared' | 'library'>('all');
+  
+  // Modals
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ResponseTemplate | null>(null);
+  
+  // Search and filters
+  const [searchParams, setSearchParams] = useState<TemplateSearchParams>({
+    query: '',
+    category: '',
+    tags: [],
+    language: '',
+    effectiveness_min: 0,
+    sort_by: 'updated_at',
+    sort_order: 'desc',
+    page: 1,
+    limit: 20
+  });
+  
+  const [filters, setFilters] = useState({
+    category: '',
+    tags: [] as string[],
+    language: '',
+    effectiveness_min: 0,
+    created_by: '',
+    date_range: null as { start: string; end: string } | null
+  });
+
+  // Load data
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'all') {
+      loadTemplates();
+    } else if (activeTab === 'shared') {
+      loadSharedTemplates();
+    } else if (activeTab === 'library') {
+      loadTemplateLibrary();
+    }
+  }, [activeTab, searchParams]);
+
+  const loadInitialData = async () => {
+    try {
+      const [templatesData, categoriesData, sessionsData] = await Promise.all([
+        templateService.getTemplates(),
+        templateService.getCategories(),
+        aiTrainingService.getTrainingSessions(5)
+      ]);
+      
+      setTemplates(templatesData);
+      setCategories(categoriesData);
+      setActiveSessions(sessionsData);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      showToast({ message: 'Failed to load templates data', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTemplates = async () => {
+    try {
+      setSearchLoading(true);
+      
+      if (searchParams.query) {
+        const results = await templateService.searchTemplates(searchParams);
+        setSearchResults(results);
+        setTemplates(results.templates);
+      } else {
+        const templatesData = await templateService.getTemplates({
+          category: searchParams.category,
+          tags: searchParams.tags,
+          limit: searchParams.limit,
+          offset: (searchParams.page! - 1) * searchParams.limit!
+        });
+        setTemplates(templatesData);
+        setSearchResults(null);
+      }
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      showToast({ message: 'Failed to load templates', type: 'error' });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const loadSharedTemplates = async () => {
+    try {
+      setSearchLoading(true);
+      const sharedTemplates = await templateService.getSharedTemplates();
+      setTemplates(sharedTemplates);
+    } catch (error) {
+      console.error('Error loading shared templates:', error);
+      showToast({ message: 'Failed to load shared templates', type: 'error' });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const loadTemplateLibrary = async () => {
+    try {
+      setSearchLoading(true);
+      const libraries = await templateService.getTemplateLibraries();
+      // Flatten all templates from libraries
+      const allTemplates = libraries.flatMap(lib => lib.templates);
+      setTemplates(allTemplates);
+    } catch (error) {
+      console.error('Error loading template library:', error);
+      showToast({ message: 'Failed to load template library', type: 'error' });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  // Template actions
+  const handleCreateTemplate = async (templateData: Partial<ResponseTemplate>) => {
+    try {
+      const newTemplate = await templateService.createTemplate(templateData);
+      setTemplates(prev => [newTemplate, ...prev]);
+      setCreateModalOpen(false);
+      showToast({ message: 'Template created successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error creating template:', error);
+      showToast({ message: 'Failed to create template', type: 'error' });
+    }
+  };
+
+  const handleUpdateTemplate = async (templateId: string, updates: Partial<ResponseTemplate>) => {
+    try {
+      const updatedTemplate = await templateService.updateTemplate(templateId, updates);
+      setTemplates(prev => prev.map(t => t.id === templateId ? updatedTemplate : t));
+      showToast({ message: 'Template updated successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error updating template:', error);
+      showToast({ message: 'Failed to update template', type: 'error' });
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      await templateService.deleteTemplate(templateId);
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      setDeleteModalOpen(false);
+      setSelectedTemplate(null);
+      showToast({ message: 'Template deleted successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      showToast({ message: 'Failed to delete template', type: 'error' });
+    }
+  };
+
+  const handleDeleteSelectedTemplates = async () => {
+    try {
+      await templateService.batchDeleteTemplates(selectedTemplates);
+      setTemplates(prev => prev.filter(t => !selectedTemplates.includes(t.id)));
+      setSelectedTemplates([]);
+      showToast({ message: `${selectedTemplates.length} templates deleted successfully`, type: 'success' });
+    } catch (error) {
+      console.error('Error deleting templates:', error);
+      showToast({ message: 'Failed to delete templates', type: 'error' });
+    }
+  };
+
+  const handleDuplicateTemplate = async (templateId: string) => {
+    try {
+      const duplicatedTemplate = await templateService.duplicateTemplate(templateId);
+      setTemplates(prev => [duplicatedTemplate, ...prev]);
+      showToast({ message: 'Template duplicated successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error duplicating template:', error);
+      showToast({ message: 'Failed to duplicate template', type: 'error' });
+    }
+  };
+
+  const handleShareTemplate = async (templateId: string, shareSettings: any) => {
+    try {
+      await templateService.shareTemplate(templateId, shareSettings);
+      setShareModalOpen(false);
+      setSelectedTemplate(null);
+      showToast({ message: 'Template shared successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error sharing template:', error);
+      showToast({ message: 'Failed to share template', type: 'error' });
+    }
+  };
+
+  // AI Training
+  const handleStartAITraining = async (type: 'conversation_analysis' | 'template_optimization' | 'performance_tracking') => {
+    try {
+      const templateIds = selectedTemplates.length > 0 ? selectedTemplates : templates.map(t => t.id);
+      
+      if (templateIds.length === 0) {
+        showToast({ message: 'No templates selected for training', type: 'error' });
+        return;
+      }
+
+      const session = await aiTrainingService.startTrainingSession(type, templateIds);
+      setActiveSessions(prev => [session, ...prev]);
+      showToast({ message: `AI training session started: ${type.replace('_', ' ')}`, type: 'success' });
+    } catch (error) {
+      console.error('Error starting AI training:', error);
+      showToast({ message: 'Failed to start AI training', type: 'error' });
+    }
+  };
+
+  // Search and filter handlers
+  const handleSearch = (query: string) => {
+    setSearchParams(prev => ({ ...prev, query, page: 1 }));
+  };
+
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(newFilters);
+    setSearchParams(prev => ({
+      ...prev,
+      ...newFilters,
+      page: 1
+    }));
+  };
+
+  const handleClearFilters = () => {
+    const defaultFilters = {
+      category: '',
+      tags: [],
+      language: '',
+      effectiveness_min: 0,
+      created_by: '',
+      date_range: null
+    };
+    setFilters(defaultFilters);
+    setSearchParams(prev => ({
+      ...prev,
+      ...defaultFilters,
+      query: '',
+      page: 1
+    }));
+  };
+
+  // Selection handlers
+  const handleSelectTemplate = (templateId: string) => {
+    setSelectedTemplates(prev => 
+      prev.includes(templateId) 
+        ? prev.filter(id => id !== templateId)
+        : [...prev, templateId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    setSelectedTemplates(templates.map(t => t.id));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedTemplates([]);
+  };
+
+  // Export/Import handlers
+  const handleExportTemplates = async () => {
+    try {
+      const exportData = await templateService.exportTemplates(
+        selectedTemplates.length > 0 ? selectedTemplates : templates.map(t => t.id)
+      );
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `templates-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast({ message: 'Templates exported successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error exporting templates:', error);
+      showToast({ message: 'Failed to export templates', type: 'error' });
+    }
+  };
+
+  const handleImportTemplates = async (importData: any) => {
+    try {
+      const importedTemplates = await templateService.importTemplates(importData);
+      setTemplates(prev => [...importedTemplates, ...prev]);
+      showToast({ message: `${importedTemplates.length} templates imported successfully`, type: 'success' });
+    } catch (error) {
+      console.error('Error importing templates:', error);
+      showToast({ message: 'Failed to import templates', type: 'error' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <BookmarkIcon className="h-8 w-8 text-indigo-600" />
+                <h1 className="text-2xl font-bold text-gray-900">Response Templates</h1>
+              </div>
+              
+              {/* Tab Navigation */}
+              <div className="flex space-x-8">
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'all'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  All Templates
+                </button>
+                <button
+                  onClick={() => setActiveTab('shared')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'shared'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Shared with Me
+                </button>
+                <button
+                  onClick={() => setActiveTab('library')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'library'
+                      ? 'border-indigo-500 text-indigo-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Template Library
+                </button>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setCurrentView('analytics')}
+                className={`px-3 py-2 rounded-md text-sm font-medium ${
+                  currentView === 'analytics'
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <ChartBarIcon className="h-5 w-5" />
+              </button>
+              
+              <button
+                onClick={() => setCreateModalOpen(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 flex items-center space-x-2"
+              >
+                <PlusIcon className="h-5 w-5" />
+                <span>Create Template</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Training Status */}
+      {activeSessions.length > 0 && (
+        <div className="bg-blue-50 border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <AITrainingStatus sessions={activeSessions} />
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {currentView === 'analytics' ? (
+          <TemplateAnalytics
+            templates={templates}
+            onBack={() => setCurrentView('grid')}
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="space-y-6">
+                {/* Categories */}
+                <TemplateCategories
+                  categories={categories}
+                  selectedCategory={filters.category}
+                  onCategorySelect={(category) => handleFilterChange({ ...filters, category })}
+                />
+
+                {/* Filters */}
+                <TemplateFilters
+                  filters={filters}
+                  onFiltersChange={handleFilterChange}
+                  onClearFilters={handleClearFilters}
+                />
+
+                {/* AI Training Actions */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <SparklesIcon className="h-5 w-5 mr-2 text-indigo-600" />
+                    AI Training
+                  </h3>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleStartAITraining('conversation_analysis')}
+                      className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                    >
+                      Analyze Conversations
+                    </button>
+                    <button
+                      onClick={() => handleStartAITraining('template_optimization')}
+                      className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                    >
+                      Optimize Templates
+                    </button>
+                    <button
+                      onClick={() => handleStartAITraining('performance_tracking')}
+                      className="w-full text-left px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+                    >
+                      Track Performance
+                    </button>
+                  </div>
+                </div>
+
+                {/* Import/Export */}
+                <TemplateImportExport
+                  onImport={handleImportTemplates}
+                  onExport={handleExportTemplates}
+                />
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              <div className="space-y-6">
+                {/* Search and Actions Bar */}
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <TemplateSearchBar
+                      onSearch={handleSearch}
+                      placeholder="Search templates..."
+                      defaultValue={searchParams.query}
+                    />
+                    
+                    <div className="flex items-center space-x-3">
+                      {selectedTemplates.length > 0 && (
+                        <>
+                          <span className="text-sm text-gray-600">
+                            {selectedTemplates.length} selected
+                          </span>
+                          <button
+                            onClick={handleDeleteSelectedTemplates}
+                            className="text-red-600 hover:text-red-900 text-sm"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={handleDeselectAll}
+                            className="text-gray-600 hover:text-gray-900 text-sm"
+                          >
+                            Deselect All
+                          </button>
+                        </>
+                      )}
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setCurrentView('grid')}
+                          className={`p-2 rounded-md ${
+                            currentView === 'grid'
+                              ? 'bg-indigo-100 text-indigo-700'
+                              : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                        >
+                          <FolderIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => setCurrentView('list')}
+                          className={`p-2 rounded-md ${
+                            currentView === 'list'
+                              ? 'bg-indigo-100 text-indigo-700'
+                              : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                        >
+                          <FunnelIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Search Results Info */}
+                  {searchResults && (
+                    <div className="text-sm text-gray-600 mb-4">
+                      Found {searchResults.total_count} templates
+                    </div>
+                  )}
+                </div>
+
+                {/* Templates Grid/List */}
+                {searchLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <LoadingSpinner size="lg" />
+                  </div>
+                ) : templates.length === 0 ? (
+                  <EmptyState
+                    title="No templates found"
+                    description="Create your first template to get started"
+                    action={{
+                      label: "Create Template",
+                      onClick: () => setCreateModalOpen(true)
+                    }}
+                  />
+                ) : (
+                  <div className={`grid gap-6 ${
+                    currentView === 'grid' 
+                      ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                      : 'grid-cols-1'
+                  }`}>
+                    {templates.map((template) => (
+                      <motion.div
+                        key={template.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <TemplateCard
+                          template={template}
+                          isSelected={selectedTemplates.includes(template.id)}
+                          viewMode={currentView}
+                          onSelect={() => handleSelectTemplate(template.id)}
+                          onEdit={() => navigate(`/templates/${template.id}/edit`)}
+                          onPreview={() => {
+                            setSelectedTemplate(template);
+                            setPreviewModalOpen(true);
+                          }}
+                          onDuplicate={() => handleDuplicateTemplate(template.id)}
+                          onShare={() => {
+                            setSelectedTemplate(template);
+                            setShareModalOpen(true);
+                          }}
+                          onDelete={() => {
+                            setSelectedTemplate(template);
+                            setDeleteModalOpen(true);
+                          }}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {searchResults && searchResults.total_count > searchParams.limit! && (
+                  <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+                    <div className="flex-1 flex justify-between sm:hidden">
+                      <button
+                        disabled={searchParams.page === 1}
+                        onClick={() => setSearchParams(prev => ({ ...prev, page: prev.page! - 1 }))}
+                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        disabled={searchParams.page! * searchParams.limit! >= searchResults.total_count}
+                        onClick={() => setSearchParams(prev => ({ ...prev, page: prev.page! + 1 }))}
+                        className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Showing{' '}
+                          <span className="font-medium">
+                            {((searchParams.page! - 1) * searchParams.limit!) + 1}
+                          </span>{' '}
+                          to{' '}
+                          <span className="font-medium">
+                            {Math.min(searchParams.page! * searchParams.limit!, searchResults.total_count)}
+                          </span>{' '}
+                          of{' '}
+                          <span className="font-medium">{searchResults.total_count}</span>{' '}
+                          results
+                        </p>
+                      </div>
+                      <div>
+                        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                          <button
+                            disabled={searchParams.page === 1}
+                            onClick={() => setSearchParams(prev => ({ ...prev, page: prev.page! - 1 }))}
+                            className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            Previous
+                          </button>
+                          <button
+                            disabled={searchParams.page! * searchParams.limit! >= searchResults.total_count}
+                            onClick={() => setSearchParams(prev => ({ ...prev, page: prev.page! + 1 }))}
+                            className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                          >
+                            Next
+                          </button>
+                        </nav>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
+      <CreateTemplateModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSubmit={handleCreateTemplate}
+        categories={categories}
+      />
+
+      <TemplatePreviewModal
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        template={selectedTemplate}
+      />
+
+      <TemplateShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        template={selectedTemplate}
+        onShare={handleShareTemplate}
+      />
+
+      <ConfirmationModal
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={() => selectedTemplate && handleDeleteTemplate(selectedTemplate.id)}
+        title="Delete Template"
+        message={`Are you sure you want to delete "${selectedTemplate?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+      />
+    </div>
+  );
+}

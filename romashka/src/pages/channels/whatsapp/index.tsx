@@ -3,7 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, MessageSquare, Users, TrendingUp, Settings, Clock, AlertCircle, CheckCircle, XCircle, Play, Pause } from 'lucide-react';
+import { 
+  PhoneIcon as Phone, 
+  ChatBubbleLeftRightIcon as MessageSquare, 
+  UsersIcon as Users, 
+  ChartBarIcon as TrendingUp, 
+  CogIcon as Settings, 
+  ClockIcon as Clock, 
+  ExclamationTriangleIcon as AlertCircle, 
+  CheckCircleIcon as CheckCircle, 
+  XCircleIcon as XCircle, 
+  PlayIcon as Play, 
+  PauseIcon as Pause 
+} from '@heroicons/react/24/outline';
 
 import WhatsAppOverview from './components/WhatsAppOverview';
 import WhatsAppTemplates from './components/WhatsAppTemplates';

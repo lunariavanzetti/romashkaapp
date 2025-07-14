@@ -1,5 +1,14 @@
 export { Button } from './Button';
 export { Badge } from './Badge';
+export { Card, CardContent, CardHeader, CardTitle, CardFooter } from './card';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
+export { Progress } from './progress';
+export { Input } from './input';
+export { Label } from './label';
+export { Textarea } from './textarea';
+export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './dialog';
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+export { Switch } from './switch';
 export { ColorModeToggle } from './ColorModeToggle';
 export { Skeleton } from './Skeleton';
 export { Toasts, useToastStore, type Toast } from './Toast';
