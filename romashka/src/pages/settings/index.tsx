@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Palette, User, Shield, CreditCard, Bell } from 'lucide-react';
+import { Settings as SettingsIcon, Palette, User, Shield, CreditCard, Bell, Target, Calendar } from 'lucide-react';
 import BrandSettings from './branding/BrandSettings';
+import LeadScoringSettings from './leadScoring/LeadScoringSettings';
+import CalendarSettings from './calendar/CalendarSettings';
 
-type SettingsTab = 'brand' | 'account' | 'security' | 'billing' | 'notifications';
+type SettingsTab = 'brand' | 'leads' | 'calendar' | 'account' | 'security' | 'billing' | 'notifications';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('brand');
 
   const tabs = [
     { id: 'brand' as const, label: 'Brand', icon: Palette, description: 'Logo, colors, and white-label settings' },
+    { id: 'leads' as const, label: 'Lead Scoring', icon: Target, description: 'Automatic lead qualification and routing' },
+    { id: 'calendar' as const, label: 'Calendar', icon: Calendar, description: 'Calendar integration and booking settings' },
     { id: 'account' as const, label: 'Account', icon: User, description: 'Profile and organization settings' },
     { id: 'security' as const, label: 'Security', icon: Shield, description: 'Password, 2FA, and security settings' },
     { id: 'billing' as const, label: 'Billing', icon: CreditCard, description: 'Subscription and payment methods' },
@@ -20,6 +24,10 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'brand':
         return <BrandSettings />;
+      case 'leads':
+        return <LeadScoringSettings />;
+      case 'calendar':
+        return <CalendarSettings />;
       case 'account':
         return (
           <div className="glass-card bg-white/80 dark:bg-gray-800/80 rounded-xl p-8 border border-white/20 backdrop-blur-glass">
