@@ -1,315 +1,561 @@
-import React, { useState, useEffect } from 'react';
-import { ChannelManager } from '../../services/channels/channelManager';
-import type { UnifiedConversation, ChannelType } from '../../services/channels/types';
-import { Badge, Button, Skeleton } from '../ui';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  MessageCircle, 
-  Phone, 
-  Mail, 
-  Smartphone, 
-  Instagram, 
-  Facebook,
-  Globe,
-  Clock,
-  User,
-  Tag,
-  Filter,
-  Search
-} from 'lucide-react';
+  ChatBubbleLeftRightIcon, 
+  EnvelopeIcon, 
+  DevicePhoneMobileIcon,
+  GlobeAltIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  EllipsisVerticalIcon,
+  CheckIcon,
+  ClockIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
+import { format } from 'date-fns';
+import type { UnifiedConversation, ChannelType, MessageContent } from '../../services/channels/types';
 
 interface UnifiedInboxProps {
   onConversationSelect?: (conversation: UnifiedConversation) => void;
-  selectedConversationId?: string;
+  onSendMessage?: (conversationId: string, content: MessageContent) => void;
 }
 
-const channelIcons: Record<ChannelType, React.ComponentType<any>> = {
-  whatsapp: Phone,
-  messenger: Facebook,
-  instagram: Instagram,
-  email: Mail,
-  sms: Smartphone,
-  website: Globe
-};
+interface ConversationFilter {
+  channels: ChannelType[];
+  status: 'all' | 'active' | 'pending' | 'resolved';
+  priority: 'all' | 'low' | 'normal' | 'high' | 'urgent';
+  assignee: 'all' | 'me' | 'unassigned';
+  searchQuery: string;
+}
 
-const channelColors: Record<ChannelType, string> = {
-  whatsapp: 'bg-green-500',
-  messenger: 'bg-blue-500',
-  instagram: 'bg-pink-500',
-  email: 'bg-gray-500',
-  sms: 'bg-orange-500',
-  website: 'bg-purple-500'
-};
+interface Message {
+  id: string;
+  content: MessageContent;
+  timestamp: Date;
+  isFromCustomer: boolean;
+  deliveryStatus: 'sent' | 'delivered' | 'read' | 'failed';
+  channelType: ChannelType;
+}
 
-const priorityColors: Record<string, string> = {
-  low: 'bg-gray-100 text-gray-800',
-  normal: 'bg-blue-100 text-blue-800',
-  high: 'bg-orange-100 text-orange-800',
-  urgent: 'bg-red-100 text-red-800'
-};
-
-export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
+const UnifiedInbox: React.FC<UnifiedInboxProps> = ({ 
   onConversationSelect,
-  selectedConversationId
+  onSendMessage 
 }) => {
   const [conversations, setConversations] = useState<UnifiedConversation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedChannel, setSelectedChannel] = useState<ChannelType | 'all'>('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [channelManager] = useState(() => new ChannelManager());
+  const [selectedConversation, setSelectedConversation] = useState<UnifiedConversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [filter, setFilter] = useState<ConversationFilter>({
+    channels: [],
+    status: 'all',
+    priority: 'all',
+    assignee: 'all',
+    searchQuery: ''
+  });
+  const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
+  // Channel icons mapping
+  const channelIcons = {
+    whatsapp: DevicePhoneMobileIcon,
+    instagram: ChatBubbleLeftRightIcon,
+    email: EnvelopeIcon,
+    website: GlobeAltIcon,
+    sms: DevicePhoneMobileIcon,
+    messenger: ChatBubbleLeftRightIcon
+  };
+
+  // Channel colors mapping
+  const channelColors = {
+    whatsapp: 'bg-green-500',
+    instagram: 'bg-pink-500',
+    email: 'bg-blue-500',
+    website: 'bg-purple-500',
+    sms: 'bg-yellow-500',
+    messenger: 'bg-indigo-500'
+  };
+
+  // Priority colors
+  const priorityColors = {
+    low: 'text-gray-500',
+    normal: 'text-blue-500',
+    high: 'text-orange-500',
+    urgent: 'text-red-500'
+  };
+
+  // Load conversations
   useEffect(() => {
     loadConversations();
-  }, []);
+  }, [filter]);
 
-  const loadConversations = async () => {
+  // Load messages for selected conversation
+  useEffect(() => {
+    if (selectedConversation) {
+      loadMessages(selectedConversation.id);
+    }
+  }, [selectedConversation]);
+
+  const loadConversations = useCallback(async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const unifiedConversations = await channelManager.getUnifiedConversations();
-      setConversations(unifiedConversations);
+      // This would call your API to load conversations
+      // For now, using mock data
+      const mockConversations: UnifiedConversation[] = [
+        {
+          id: 'conv-1',
+          customerIdentity: {
+            id: 'cust-1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            phone: '+1234567890',
+            channels: ['whatsapp', 'email']
+          },
+          channels: [
+            { type: 'whatsapp', conversationId: 'wa-1', lastMessage: new Date(), unreadCount: 2 },
+            { type: 'email', conversationId: 'em-1', lastMessage: new Date(), unreadCount: 0 }
+          ],
+          assignedAgentId: 'agent-1',
+          priority: 'normal',
+          tags: ['support', 'billing'],
+          lastActivity: new Date(),
+          totalMessages: 15
+        },
+        {
+          id: 'conv-2',
+          customerIdentity: {
+            id: 'cust-2',
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+            channels: ['instagram', 'website']
+          },
+          channels: [
+            { type: 'instagram', conversationId: 'ig-1', lastMessage: new Date(), unreadCount: 1 },
+            { type: 'website', conversationId: 'web-1', lastMessage: new Date(), unreadCount: 3 }
+          ],
+          priority: 'high',
+          tags: ['sales', 'demo'],
+          lastActivity: new Date(),
+          totalMessages: 8
+        }
+      ];
+      
+      setConversations(mockConversations);
     } catch (error) {
-      console.error('Failed to load conversations:', error);
+      console.error('Error loading conversations:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  }, [filter]);
+
+  const loadMessages = async (conversationId: string) => {
+    try {
+      // This would call your API to load messages
+      // For now, using mock data
+      const mockMessages: Message[] = [
+        {
+          id: 'msg-1',
+          content: { text: 'Hello, I need help with my order' },
+          timestamp: new Date(Date.now() - 3600000),
+          isFromCustomer: true,
+          deliveryStatus: 'read',
+          channelType: 'whatsapp'
+        },
+        {
+          id: 'msg-2',
+          content: { text: 'Hi! I\'d be happy to help you with your order. Can you provide your order number?' },
+          timestamp: new Date(Date.now() - 3300000),
+          isFromCustomer: false,
+          deliveryStatus: 'read',
+          channelType: 'whatsapp'
+        },
+        {
+          id: 'msg-3',
+          content: { text: 'My order number is #12345' },
+          timestamp: new Date(Date.now() - 3000000),
+          isFromCustomer: true,
+          deliveryStatus: 'read',
+          channelType: 'whatsapp'
+        }
+      ];
+      
+      setMessages(mockMessages);
+    } catch (error) {
+      console.error('Error loading messages:', error);
     }
   };
 
-  const filteredConversations = conversations.filter(conversation => {
-    const matchesChannel = selectedChannel === 'all' || 
-      conversation.channels.some(ch => ch.type === selectedChannel);
-    
-    const matchesSearch = searchTerm === '' || 
-      conversation.customerIdentity.phone?.includes(searchTerm) ||
-      conversation.customerIdentity.socialId?.includes(searchTerm) ||
-      conversation.customerIdentity.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleConversationClick = (conversation: UnifiedConversation) => {
+    setSelectedConversation(conversation);
+    onConversationSelect?.(conversation);
+  };
 
-    return matchesChannel && matchesSearch;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation) return;
+
+    const messageContent: MessageContent = { text: newMessage };
+    
+    try {
+      await onSendMessage?.(selectedConversation.id, messageContent);
+      
+      // Add message to local state
+      const newMsg: Message = {
+        id: `msg-${Date.now()}`,
+        content: messageContent,
+        timestamp: new Date(),
+        isFromCustomer: false,
+        deliveryStatus: 'sent',
+        channelType: selectedConversation.channels[0].type
+      };
+      
+      setMessages(prev => [...prev, newMsg]);
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const filteredConversations = conversations.filter(conv => {
+    // Filter by channels
+    if (filter.channels.length > 0) {
+      const hasMatchingChannel = conv.channels.some(ch => filter.channels.includes(ch.type));
+      if (!hasMatchingChannel) return false;
+    }
+
+    // Filter by priority
+    if (filter.priority !== 'all' && conv.priority !== filter.priority) {
+      return false;
+    }
+
+    // Filter by search query
+    if (filter.searchQuery) {
+      const query = filter.searchQuery.toLowerCase();
+      const customerName = conv.customerIdentity.name?.toLowerCase() || '';
+      const customerEmail = conv.customerIdentity.email?.toLowerCase() || '';
+      const tags = conv.tags.join(' ').toLowerCase();
+      
+      if (!customerName.includes(query) && !customerEmail.includes(query) && !tags.includes(query)) {
+        return false;
+      }
+    }
+
+    return true;
   });
 
-  const getChannelStats = () => {
-    const stats: Record<ChannelType, { count: number; unread: number }> = {
-      whatsapp: { count: 0, unread: 0 },
-      messenger: { count: 0, unread: 0 },
-      instagram: { count: 0, unread: 0 },
-      email: { count: 0, unread: 0 },
-      sms: { count: 0, unread: 0 },
-      website: { count: 0, unread: 0 }
-    };
-
-    conversations.forEach(conversation => {
-      conversation.channels.forEach(channel => {
-        stats[channel.type].count++;
-        stats[channel.type].unread += channel.unreadCount;
-      });
-    });
-
-    return stats;
-  };
-
-  const formatTime = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
-  };
-
-  const getCustomerDisplayName = (conversation: UnifiedConversation) => {
-    return conversation.customerIdentity.name || 
-           conversation.customerIdentity.phone || 
-           conversation.customerIdentity.socialId || 
-           'Unknown Customer';
-  };
-
-  const channelStats = getChannelStats();
-
-  if (loading) {
+  const renderConversationItem = (conversation: UnifiedConversation) => {
+    const totalUnread = conversation.channels.reduce((sum, ch) => sum + ch.unreadCount, 0);
+    const primaryChannel = conversation.channels[0];
+    const ChannelIcon = channelIcons[primaryChannel.type];
+    
     return (
-      <div className="flex flex-col h-full">
-        <div className="p-4 border-b">
-          <Skeleton className="h-8 w-full mb-4" />
-          <div className="flex gap-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-8 w-16" />
-            ))}
+      <div
+        key={conversation.id}
+        onClick={() => handleConversationClick(conversation)}
+        className={`p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer ${
+          selectedConversation?.id === conversation.id ? 'bg-blue-50 border-blue-200' : ''
+        }`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-3 flex-1">
+            <div className="flex-shrink-0">
+              <div className={`w-10 h-10 rounded-full ${channelColors[primaryChannel.type]} flex items-center justify-center`}>
+                <ChannelIcon className="w-5 h-5 text-white" />
+              </div>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {conversation.customerIdentity.name || 'Unknown Customer'}
+                </p>
+                <div className="flex space-x-1">
+                  {conversation.channels.map(ch => {
+                    const Icon = channelIcons[ch.type];
+                    return (
+                      <div
+                        key={ch.type}
+                        className={`w-4 h-4 rounded-full ${channelColors[ch.type]} flex items-center justify-center`}
+                      >
+                        <Icon className="w-2 h-2 text-white" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <p className="text-xs text-gray-500 truncate">
+                {conversation.customerIdentity.email}
+              </p>
+              
+              <div className="flex items-center space-x-2 mt-1">
+                <div className="flex space-x-1">
+                  {conversation.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex-1 p-4">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full mb-4" />
-          ))}
+          
+          <div className="flex flex-col items-end space-y-1">
+            <span className="text-xs text-gray-500">
+              {format(conversation.lastActivity, 'HH:mm')}
+            </span>
+            
+            <div className="flex items-center space-x-2">
+              <span className={`text-xs font-medium ${priorityColors[conversation.priority]}`}>
+                {conversation.priority}
+              </span>
+              
+              {totalUnread > 0 && (
+                <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                  {totalUnread}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     );
-  }
+  };
 
-  return (
-    <div className="flex flex-col h-full bg-white">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Unified Inbox</h2>
-          <Button 
-            variant="outline" 
-            onClick={loadConversations}
-          >
-            Refresh
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Search conversations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Channel Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          <button
-            onClick={() => setSelectedChannel('all')}
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${
-              selectedChannel === 'all'
-                ? 'bg-blue-100 text-blue-800'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <Globe className="h-4 w-4" />
-            All ({conversations.length})
-          </button>
+  const renderMessage = (message: Message) => {
+    const isFromCustomer = message.isFromCustomer;
+    const ChannelIcon = channelIcons[message.channelType];
+    
+    return (
+      <div
+        key={message.id}
+        className={`flex items-start space-x-3 ${isFromCustomer ? 'justify-start' : 'justify-end'}`}
+      >
+        {isFromCustomer && (
+          <div className={`w-8 h-8 rounded-full ${channelColors[message.channelType]} flex items-center justify-center flex-shrink-0`}>
+            <ChannelIcon className="w-4 h-4 text-white" />
+          </div>
+        )}
+        
+        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+          isFromCustomer 
+            ? 'bg-gray-200 text-gray-900' 
+            : 'bg-blue-500 text-white'
+        }`}>
+          <p className="text-sm">{message.content.text}</p>
           
-          {Object.entries(channelStats).map(([channel, stats]) => {
-            const Icon = channelIcons[channel as ChannelType];
-            return (
-              <button
-                key={channel}
-                onClick={() => setSelectedChannel(channel as ChannelType)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${
-                  selectedChannel === channel
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {channel.charAt(0).toUpperCase() + channel.slice(1)} ({stats.count})
-                {stats.unread > 0 && (
-                  <Badge variant="destructive" className="ml-1">
-                    {stats.unread}
-                  </Badge>
-                )}
-              </button>
-            );
-          })}
+          <div className="flex items-center justify-between mt-2">
+            <span className={`text-xs ${isFromCustomer ? 'text-gray-500' : 'text-blue-100'}`}>
+              {format(message.timestamp, 'HH:mm')}
+            </span>
+            
+            {!isFromCustomer && (
+              <div className="flex items-center space-x-1">
+                {message.deliveryStatus === 'sent' && <ClockIcon className="w-3 h-3" />}
+                {message.deliveryStatus === 'delivered' && <CheckIcon className="w-3 h-3" />}
+                {message.deliveryStatus === 'read' && <CheckIcon className="w-3 h-3" />}
+                {message.deliveryStatus === 'failed' && <ExclamationTriangleIcon className="w-3 h-3" />}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {!isFromCustomer && (
+          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-medium text-gray-600">A</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderFilters = () => (
+    <div className="p-4 border-b border-gray-200 space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Channels</label>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(channelIcons).map(([channel, Icon]) => (
+            <button
+              key={channel}
+              onClick={() => {
+                setFilter(prev => ({
+                  ...prev,
+                  channels: prev.channels.includes(channel as ChannelType)
+                    ? prev.channels.filter(c => c !== channel)
+                    : [...prev.channels, channel as ChannelType]
+                }));
+              }}
+              className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+                filter.channels.includes(channel as ChannelType)
+                  ? `${channelColors[channel as ChannelType]} text-white`
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{channel}</span>
+            </button>
+          ))}
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+          <select
+            value={filter.priority}
+            onChange={(e) => setFilter(prev => ({ ...prev, priority: e.target.value as any }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          >
+            <option value="all">All Priorities</option>
+            <option value="low">Low</option>
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Assignee</label>
+          <select
+            value={filter.assignee}
+            onChange={(e) => setFilter(prev => ({ ...prev, assignee: e.target.value as any }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+          >
+            <option value="all">All Assignees</option>
+            <option value="me">Assigned to Me</option>
+            <option value="unassigned">Unassigned</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-gray-100">
       {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto">
-        {filteredConversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <MessageCircle className="h-12 w-12 mb-4" />
-            <p className="text-lg font-medium">No conversations found</p>
-            <p className="text-sm">Try adjusting your filters or search terms</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredConversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                onClick={() => onConversationSelect?.(conversation)}
-                className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedConversationId === conversation.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                }`}
+      <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-xl font-semibold text-gray-900">Inbox</h1>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="p-2 text-gray-400 hover:text-gray-600"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm font-medium text-gray-900 truncate">
-                        {getCustomerDisplayName(conversation)}
-                      </h3>
-                      {conversation.assignedAgentId && (
-                        <Badge variant="secondary" className="text-xs">
-                          <User className="h-3 w-3 mr-1" />
-                          Assigned
-                        </Badge>
-                      )}
-                    </div>
+                <FunnelIcon className="w-5 h-5" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600">
+                <EllipsisVerticalIcon className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
 
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex gap-1">
-                        {conversation.channels.map((channel) => {
-                          const Icon = channelIcons[channel.type];
-                          return (
-                            <div
-                              key={channel.type}
-                              className={`p-1 rounded-full ${channelColors[channel.type]}`}
-                              title={`${channel.type}: ${channel.unreadCount} unread`}
-                            >
-                              <Icon className="h-3 w-3 text-white" />
-                            </div>
-                          );
-                        })}
-                      </div>
+          {/* Search */}
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={filter.searchQuery}
+              onChange={(e) => setFilter(prev => ({ ...prev, searchQuery: e.target.value }))}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
 
-                      {conversation.priority !== 'normal' && (
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${priorityColors[conversation.priority]}`}
-                        >
-                          {conversation.priority}
-                        </Badge>
-                      )}
+        {/* Filters */}
+        {showFilters && renderFilters()}
 
-                      <span className="text-xs text-gray-500">
-                        <Clock className="h-3 w-3 inline mr-1" />
-                        {formatTime(conversation.lastActivity)}
-                      </span>
-                    </div>
+        {/* Conversations */}
+        <div className="flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            filteredConversations.map(renderConversationItem)
+          )}
+        </div>
+      </div>
 
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span>{conversation.totalMessages} messages</span>
-                      {conversation.tags.length > 0 && (
-                        <div className="flex gap-1">
-                          {conversation.tags.slice(0, 2).map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {conversation.tags.length > 2 && (
-                            <span className="text-gray-400">
-                              +{conversation.tags.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedConversation ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-200 bg-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center">
+                    <span className="text-sm font-medium text-gray-600">
+                      {selectedConversation.customerIdentity.name?.charAt(0) || '?'}
+                    </span>
                   </div>
-
-                  <div className="flex flex-col items-end gap-1">
-                    {conversation.channels.some(ch => ch.unreadCount > 0) && (
-                      <Badge variant="destructive" className="text-xs">
-                        {conversation.channels.reduce((sum, ch) => sum + ch.unreadCount, 0)}
-                      </Badge>
-                    )}
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900">
+                      {selectedConversation.customerIdentity.name || 'Unknown Customer'}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {selectedConversation.customerIdentity.email}
+                    </p>
                   </div>
                 </div>
+                
+                <div className="flex items-center space-x-2">
+                  {selectedConversation.channels.map(ch => {
+                    const Icon = channelIcons[ch.type];
+                    return (
+                      <div
+                        key={ch.type}
+                        className={`w-8 h-8 rounded-full ${channelColors[ch.type]} flex items-center justify-center`}
+                      >
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map(renderMessage)}
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="flex space-x-3">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim()}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <ChatBubbleLeftRightIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-xl font-medium text-gray-900">Select a conversation</h2>
+              <p className="text-gray-500">Choose a conversation from the list to start chatting</p>
+            </div>
           </div>
         )}
       </div>
     </div>
   );
-}; 
+};
+
+export default UnifiedInbox; 

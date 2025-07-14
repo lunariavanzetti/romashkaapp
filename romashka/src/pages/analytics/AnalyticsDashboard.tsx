@@ -25,6 +25,8 @@ import { Button } from '../../components/ui';
 import OverviewTab from './OverviewTab';
 import ConversationsTab from './ConversationsTab';
 import AIPerformanceTab from './AIPerformanceTab';
+import RealTimeAnalytics from './RealTimeAnalytics';
+import PredictiveAnalyticsTab from './PredictiveAnalyticsTab';
 
 // Enhanced Analytics Types
 interface SentimentMetrics {
@@ -295,8 +297,9 @@ export default function AnalyticsDashboard() {
             { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
             { id: 'conversations', label: 'Conversations', icon: <MessageSquare className="w-4 h-4" /> },
             { id: 'ai-performance', label: 'AI Performance', icon: <Brain className="w-4 h-4" /> },
+            { id: 'real-time', label: 'Real-Time', icon: <Activity className="w-4 h-4" /> },
+            { id: 'predictive', label: 'Predictive Analytics', icon: <Target className="w-4 h-4" /> },
             { id: 'sentiment', label: 'Sentiment Tracking', icon: <Heart className="w-4 h-4" /> },
-            { id: 'predictive', label: 'Predictive Insights', icon: <Target className="w-4 h-4" /> },
             { id: 'journey', label: 'Customer Journey', icon: <Users className="w-4 h-4" /> }
           ].map(tab => (
             <button
@@ -348,6 +351,28 @@ export default function AnalyticsDashboard() {
               exit={{ opacity: 0, x: 20 }}
             >
               <AIPerformanceTab />
+            </motion.div>
+          )}
+
+          {activeTab === 'real-time' && (
+            <motion.div
+              key="real-time"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+            >
+              <RealTimeAnalytics />
+            </motion.div>
+          )}
+
+          {activeTab === 'predictive' && (
+            <motion.div
+              key="predictive"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+            >
+              <PredictiveAnalyticsTab />
             </motion.div>
           )}
 
