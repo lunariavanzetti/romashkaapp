@@ -17,8 +17,8 @@ import {
   GlobeAltIcon
 } from '@heroicons/react/24/solid';
 import { UnifiedChannelManager, type UnifiedChannelConfig } from '../../services/channels/unifiedChannelManager';
-import { WidgetCustomizer } from '../../components/widget/WidgetCustomizer';
-import { UnifiedInbox } from '../../components/inbox/UnifiedInbox';
+import WidgetCustomizer from '../../components/widget/WidgetCustomizer';
+import UnifiedInbox from '../../components/inbox/UnifiedInbox';
 import type { ChannelType, ChannelConfig, MessageContent } from '../../services/channels/types';
 
 interface ChannelStatus {

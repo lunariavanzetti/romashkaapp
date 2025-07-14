@@ -472,5 +472,16 @@ Tags: ${item.tags.join(', ')}
   }
 }
 
+// Create singleton instance
+const openaiService = new OpenAIService({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY || '',
+  model: 'gpt-4o-mini',
+  maxTokens: 1000,
+  temperature: 0.7,
+  presencePenalty: 0.6,
+  frequencyPenalty: 0.5
+});
+
 export default OpenAIService;
+export { openaiService };
 export type { AIResponse, ConversationContext, BusinessContext, CustomerProfile, KnowledgeItem, Message, Entity, CustomerPreferences }; 
