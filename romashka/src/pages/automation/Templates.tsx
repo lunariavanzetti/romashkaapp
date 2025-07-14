@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Card, CardContent, CardActions, Button, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Card, CardContent, CardActions, Button, Typography, Alert } from '@mui/material';
 import Grid from '@mui/material/Grid';
 
 const templates = [
@@ -9,8 +10,27 @@ const templates = [
 ];
 
 export default function Templates() {
+  const navigate = useNavigate();
+
+  const handleGoToAdvancedTemplates = () => {
+    navigate('/templates');
+  };
+
   return (
     <Box sx={{ p: 3 }}>
+      <Alert severity="info" sx={{ mb: 3 }}>
+        <Typography variant="body2">
+          This is the basic template library. For advanced response templates with AI training, variables, and analytics, 
+          <Button 
+            size="small" 
+            onClick={handleGoToAdvancedTemplates}
+            sx={{ ml: 1 }}
+          >
+            go to the new Templates system
+          </Button>
+        </Typography>
+      </Alert>
+      
       <Typography variant="h6" mb={2}>Template Library</Typography>
       <Grid container spacing={2}>
         {templates.map(t => (
