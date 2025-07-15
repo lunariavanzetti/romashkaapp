@@ -33,13 +33,10 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
   const { logout } = useAuthStore();
 
   const handleLogout = async (e: React.MouseEvent) => {
-    console.log('🔥 LOGOUT BUTTON CLICKED!');
-    alert('Logout button clicked!'); // Temporary visual confirmation
     e.preventDefault();
     e.stopPropagation();
     try {
       await logout();
-      console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -114,35 +111,17 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        {/* Simple test button - FORCED UPDATE */}
-        <button
-          onClick={() => {
-            console.log('🔥 SIMPLE LOGOUT TEST - FORCED UPDATE!');
-            alert('Simple logout clicked - FORCED UPDATE!');
-            logout();
-          }}
-          style={{
-            width: '100%',
-            padding: '15px',
-            backgroundColor: 'red',
-            color: 'white',
-            border: '5px solid yellow',
-            fontSize: '18px',
-            cursor: 'pointer',
-            fontWeight: 'bold'
-          }}
-        >
-          🚨 LOGOUT TEST - FORCED UPDATE 🚨
-        </button>
-        
-        {/* Original button for comparison */}
         <button
           type="button"
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium w-full text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 mt-2"
+          className={`
+            flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium w-full
+            text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400
+            ${!open && 'justify-center'}
+          `}
         >
           <LogOut size={20} />
-          {open && <span className="text-sm">Sign Out (Original)</span>}
+          {open && <span className="text-sm">Sign Out</span>}
         </button>
       </div>
     </aside>
