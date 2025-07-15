@@ -14,6 +14,7 @@ import {
   Puzzle
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuthStore } from '../../stores/authStore';
 
 const navLinks = [
   { label: 'Dashboard', icon: <Home size={20} />, to: '/dashboard' },
@@ -29,6 +30,7 @@ const navLinks = [
 
 const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onToggle }) => {
   const location = useLocation();
+  const { logout } = useAuthStore();
 
   return (
     <aside className={`
@@ -100,6 +102,7 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <button
+          onClick={logout}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium w-full
             text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400
