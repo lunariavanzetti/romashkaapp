@@ -114,24 +114,25 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
 
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        {/* Simple test button */}
+        {/* Simple test button - FORCED UPDATE */}
         <button
           onClick={() => {
-            console.log('🔥 SIMPLE LOGOUT TEST!');
-            alert('Simple logout clicked!');
+            console.log('🔥 SIMPLE LOGOUT TEST - FORCED UPDATE!');
+            alert('Simple logout clicked - FORCED UPDATE!');
             logout();
           }}
           style={{
             width: '100%',
-            padding: '10px',
+            padding: '15px',
             backgroundColor: 'red',
             color: 'white',
-            border: '3px solid yellow',
-            fontSize: '16px',
-            cursor: 'pointer'
+            border: '5px solid yellow',
+            fontSize: '18px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
           }}
         >
-          LOGOUT TEST
+          🚨 LOGOUT TEST - FORCED UPDATE 🚨
         </button>
         
         {/* Original button for comparison */}
