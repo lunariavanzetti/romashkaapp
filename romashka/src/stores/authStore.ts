@@ -59,8 +59,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   logout: async () => {
+    console.log('Starting logout process...');
     set({ loading: true, error: null });
-    await signOut();
-    set({ user: null, loading: false, error: null });
+    try {
+      const result = await signOut();
+      console.log('Sign out result:', result);
+      if (result.error) {
+        console.error('Sign out error:', result.error);
+        set({ loading: false, error: result.error });
+        return;
+      }
+      set({ user: null, loading: false, error: null });
+      console.log('Redirecting to sign-in page...');
+      // Redirect to sign-in page after logout
+      window.location.href = '/signin';
+    } catch (error) {
+      console.error('Logout exception:', error);
+      set({ loading: false, error: error instanceof Error ? error.message : 'Logout failed' });
+    }
   },
 })); 
