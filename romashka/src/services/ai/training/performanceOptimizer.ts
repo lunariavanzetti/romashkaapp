@@ -115,7 +115,7 @@ export class PerformanceOptimizer {
 
   private constructor() {
     this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY!,
+      apiKey: import.meta.env.VITE_OPENAI_API_KEY!,
     });
   }
 
