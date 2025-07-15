@@ -32,8 +32,11 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
   const location = useLocation();
   const { logout } = useAuthStore();
 
-  const handleLogout = async () => {
-    console.log('Logout button clicked');
+  const handleLogout = async (e: React.MouseEvent) => {
+    console.log('🔥 LOGOUT BUTTON CLICKED!');
+    alert('Logout button clicked!'); // Temporary visual confirmation
+    e.preventDefault();
+    e.stopPropagation();
     try {
       await logout();
       console.log('Logout successful');
@@ -112,6 +115,7 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
       {/* Footer */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <button
+          type="button"
           onClick={handleLogout}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium w-full
