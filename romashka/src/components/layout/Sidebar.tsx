@@ -113,10 +113,22 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div 
+        className="p-4 border-t border-gray-200 dark:border-gray-700"
+        onClick={() => console.log('Footer div clicked!')}
+      >
         <button
           type="button"
           onClick={handleLogout}
+          onMouseDown={() => console.log('Mouse down on logout button')}
+          onMouseUp={() => console.log('Mouse up on logout button')}
+          style={{ 
+            zIndex: 9999, 
+            position: 'relative',
+            backgroundColor: 'red', // Temporary to make it obvious
+            color: 'white',
+            border: '2px solid yellow' // Temporary to make it obvious
+          }}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium w-full
             text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400
