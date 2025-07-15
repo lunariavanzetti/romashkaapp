@@ -25,6 +25,7 @@ import IntegrationsPage from './pages/integrations/index';
 import SettingsPage from './pages/settings/index';
 import ChannelsPage from './pages/channels/ChannelsPage';
 import WhatsAppPage from './pages/channels/whatsapp/index';
+import PlaygroundPage from './pages/playground/PlaygroundPage';
 import TemplatesPage from './pages/templates/index';
 import PersonalitySettings from './pages/settings/personality/PersonalitySettings';
 import TrainingAnalyticsDashboard from './pages/ai-training/TrainingAnalyticsDashboard';
@@ -67,8 +68,14 @@ const AppContent = () => {
         <Route path="/channels" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
         <Route path="/channel" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
         <Route path="/channels/whatsapp" element={<div className="pt-24"><ProtectedRoute><WhatsAppPage /></ProtectedRoute></div>} />
+        <Route path="/channels/instagram" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
+        <Route path="/channels/email" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
+        <Route path="/channels/widget" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
+        <Route path="/playground" element={<div className="pt-24"><ProtectedRoute><PlaygroundPage /></ProtectedRoute></div>} />
         <Route path="/templates" element={<div className="pt-24"><ProtectedRoute><TemplatesPage /></ProtectedRoute></div>} />
+        <Route path="/personality" element={<div className="pt-24"><ProtectedRoute><PersonalitySettings /></ProtectedRoute></div>} />
         <Route path="/settings/personality" element={<div className="pt-24"><ProtectedRoute><PersonalitySettings /></ProtectedRoute></div>} />
+        <Route path="/training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
         <Route path="/ai-training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
         <Route path="/security" element={<div className="pt-24"><ProtectedRoute><SecurityDashboard /></ProtectedRoute></div>} />
         <Route path="/analytics/real-time" element={<div className="pt-24"><ProtectedRoute><RealTimeAnalytics /></ProtectedRoute></div>} />
