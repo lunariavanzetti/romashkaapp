@@ -8,12 +8,15 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('ProtectedRoute: Checking session...');
     checkSession();
     // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
+    console.log('ProtectedRoute: Auth state changed', { loading, user: !!user });
     if (!loading && !user) {
+      console.log('ProtectedRoute: No user found, redirecting to signin');
       navigate('/signin', { replace: true });
     }
   }, [loading, user, navigate]);

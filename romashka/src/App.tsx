@@ -32,6 +32,7 @@ import SecurityDashboard from './pages/security/SecurityDashboard';
 import RealTimeAnalytics from './pages/analytics/RealTimeAnalytics';
 import ReportingDashboard from './pages/analytics/ReportingDashboard';
 import PredictiveAnalyticsTab from './pages/analytics/PredictiveAnalyticsTab';
+import Debug from './pages/Debug';
 
 // Component to conditionally render Navigation
 const AppContent = () => {
@@ -73,6 +74,7 @@ const AppContent = () => {
         <Route path="/analytics/real-time" element={<div className="pt-24"><ProtectedRoute><RealTimeAnalytics /></ProtectedRoute></div>} />
         <Route path="/analytics/reporting" element={<div className="pt-24"><ProtectedRoute><ReportingDashboard /></ProtectedRoute></div>} />
         <Route path="/analytics/predictive" element={<div className="pt-24"><ProtectedRoute><PredictiveAnalyticsTab /></ProtectedRoute></div>} />
+        <Route path="/debug" element={<div className="pt-24"><Debug /></div>} />
         <Route path="/onboarding" element={<div className="pt-24"><Onboarding /></div>} />
         <Route path="*" element={<div className="pt-24"><Landing /></div>} />
       </Routes>
