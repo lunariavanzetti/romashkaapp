@@ -26,6 +26,7 @@ import SettingsPage from './pages/settings/index';
 import ChannelsPage from './pages/channels/ChannelsPage';
 import WhatsAppPage from './pages/channels/whatsapp/index';
 import TemplatesPage from './pages/templates/index';
+import PersonalitySettings from './pages/settings/personality/PersonalitySettings';
 import TrainingAnalyticsDashboard from './pages/ai-training/TrainingAnalyticsDashboard';
 import SecurityDashboard from './pages/security/SecurityDashboard';
 import RealTimeAnalytics from './pages/analytics/RealTimeAnalytics';
@@ -63,8 +64,10 @@ const AppContent = () => {
         <Route path="/integrations" element={<div className="pt-24"><ProtectedRoute><IntegrationsPage /></ProtectedRoute></div>} />
         <Route path="/settings" element={<div className="pt-24"><ProtectedRoute><SettingsPage /></ProtectedRoute></div>} />
         <Route path="/channels" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
+        <Route path="/channel" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
         <Route path="/channels/whatsapp" element={<div className="pt-24"><ProtectedRoute><WhatsAppPage /></ProtectedRoute></div>} />
         <Route path="/templates" element={<div className="pt-24"><ProtectedRoute><TemplatesPage /></ProtectedRoute></div>} />
+        <Route path="/settings/personality" element={<div className="pt-24"><ProtectedRoute><PersonalitySettings /></ProtectedRoute></div>} />
         <Route path="/ai-training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
         <Route path="/security" element={<div className="pt-24"><ProtectedRoute><SecurityDashboard /></ProtectedRoute></div>} />
         <Route path="/analytics/real-time" element={<div className="pt-24"><ProtectedRoute><RealTimeAnalytics /></ProtectedRoute></div>} />
