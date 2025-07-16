@@ -17,8 +17,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     console.log('ProtectedRoute: Auth state changed', { loading, user: !!user });
     if (!loading && !user) {
       console.log('ProtectedRoute: No user found, redirecting to signin');
-      // Store the current path before redirecting to signin
-      sessionStorage.setItem('returnUrl', window.location.pathname);
       navigate('/signin', { replace: true });
     }
   }, [loading, user, navigate]);

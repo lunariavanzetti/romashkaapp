@@ -40,14 +40,8 @@ const AppContent = () => {
   const location = useLocation();
   const isDashboardRoute = location.pathname.startsWith('/dashboard') || location.pathname === '/analytics';
   
-  // Debug logging
-  console.log('🔍 ROUTE DEBUG:', {
-    pathname: location.pathname,
-    search: location.search,
-    hash: location.hash,
-    isDashboardRoute,
-    timestamp: new Date().toISOString()
-  });
+  // Debug logging (temporarily disabled)
+  // console.log('🔍 ROUTE DEBUG:', { pathname: location.pathname, isDashboardRoute });
   
   return (
     <>
