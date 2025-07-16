@@ -101,9 +101,16 @@ const App = () => {
   const { initializeAuth } = useAuthStore();
 
   useEffect(() => {
-    // Store the current path if it's not dashboard/signin/signup
+    // Clean up any stored onboarding path (bug fix)
+    const storedPath = sessionStorage.getItem('intendedPath');
+    if (storedPath === '/onboarding') {
+      console.log('🧡 Cleaning up stored onboarding path');
+      sessionStorage.removeItem('intendedPath');
+    }
+    
+    // Store the current path if it's not dashboard/signin/signup/onboarding
     const currentPath = window.location.pathname;
-    if (currentPath !== '/dashboard' && currentPath !== '/signin' && currentPath !== '/signup' && currentPath !== '/') {
+    if (currentPath !== '/dashboard' && currentPath !== '/signin' && currentPath !== '/signup' && currentPath !== '/' && currentPath !== '/onboarding') {
       console.log('🔄 Storing intended path:', currentPath);
       sessionStorage.setItem('intendedPath', currentPath);
     }
