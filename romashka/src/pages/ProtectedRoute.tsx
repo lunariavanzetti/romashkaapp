@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '../components/ui';
 import { useAuthStore } from '../stores/authStore';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, checkSession } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  console.log('🛡️ ProtectedRoute - Current path:', location.pathname, 'User:', !!user, 'Loading:', loading);
 
   useEffect(() => {
     console.log('ProtectedRoute: Checking session...');

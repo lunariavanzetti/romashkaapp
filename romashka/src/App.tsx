@@ -85,6 +85,8 @@ const AppContent = () => {
         <Route path="/analytics/reporting" element={<div className="pt-24"><ProtectedRoute><ReportingDashboard /></ProtectedRoute></div>} />
         <Route path="/analytics/predictive" element={<div className="pt-24"><ProtectedRoute><PredictiveAnalyticsTab /></ProtectedRoute></div>} />
         <Route path="/debug" element={<div className="pt-24"><Debug /></div>} />
+        <Route path="/test-training" element={<div className="pt-24"><h1>🧪 TEST TRAINING PAGE - NO PROTECTION</h1></div>} />
+        <Route path="/test-personality" element={<div className="pt-24"><h1>🧪 TEST PERSONALITY PAGE - NO PROTECTION</h1></div>} />
         <Route path="/onboarding" element={<div className="pt-24"><Onboarding /></div>} />
         <Route path="*" element={<div className="pt-24"><Landing /></div>} />
       </Routes>
