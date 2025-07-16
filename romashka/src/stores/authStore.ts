@@ -32,6 +32,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onAuthStateChange((user) => {
       console.log('Auth state changed:', user);
       set({ user, loading: false });
+      
+      // If user just logged in, redirect to their intended destination
+      if (user && typeof window !== 'undefined') {
+        const returnUrl = sessionStorage.getItem('returnUrl');
+        if (returnUrl && returnUrl !== '/signin' && returnUrl !== '/signup') {
+          console.log('Redirecting to stored return URL:', returnUrl);
+          sessionStorage.removeItem('returnUrl');
+          window.location.href = returnUrl;
+        }
+      }
     });
   },
   
