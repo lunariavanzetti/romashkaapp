@@ -32,6 +32,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     onAuthStateChange((user) => {
       console.log('Auth state changed:', user);
       set({ user, loading: false });
+      
+      // If user just authenticated and we're on dashboard, check for intended path
+      if (user && typeof window !== 'undefined' && window.location.pathname === '/dashboard') {
+        const intendedPath = sessionStorage.getItem('intendedPath');
+        if (intendedPath && intendedPath !== '/dashboard') {
+          console.log('🎯 Redirecting to intended path:', intendedPath);
+          sessionStorage.removeItem('intendedPath');
+          setTimeout(() => {
+            window.location.href = intendedPath;
+          }, 100); // Small delay to ensure state is set
+        }
+      }
     });
   },
   

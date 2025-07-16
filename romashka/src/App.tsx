@@ -99,6 +99,13 @@ const App = () => {
   const { initializeAuth } = useAuthStore();
 
   useEffect(() => {
+    // Store the current path if it's not dashboard/signin/signup
+    const currentPath = window.location.pathname;
+    if (currentPath !== '/dashboard' && currentPath !== '/signin' && currentPath !== '/signup' && currentPath !== '/') {
+      console.log('🔄 Storing intended path:', currentPath);
+      sessionStorage.setItem('intendedPath', currentPath);
+    }
+    
     // Initialize auth to handle OAuth redirects
     initializeAuth();
   }, [initializeAuth]);
