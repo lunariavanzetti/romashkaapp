@@ -157,6 +157,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       // Show confetti and success message for 3 seconds, then redirect
       setTimeout(() => {
+        // Use window.location.href to force a complete reload and refresh auth state
         window.location.href = '/dashboard';
       }, 3000);
       
@@ -221,8 +222,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
       set({ isLoading: false });
       
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
+      // Redirect to dashboard with a small delay to ensure database is updated
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 100);
       
     } catch (error) {
       console.error('Onboarding skip error:', error);

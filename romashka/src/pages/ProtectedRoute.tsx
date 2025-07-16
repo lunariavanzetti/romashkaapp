@@ -24,6 +24,8 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       if (user) {
         try {
           console.log('🔍 Checking onboarding status for user:', user.id);
+          
+          // Add cache-busting to ensure fresh data
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('onboarding_completed')
@@ -58,18 +60,28 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       }
     };
 
-    checkOnboardingStatus();
-  }, [user]);
+    // Only check onboarding status if user exists and we're not already loading
+    if (user && !loading) {
+      checkOnboardingStatus();
+    }
+  }, [user, loading]);
 
+  // Handle navigation logic
   useEffect(() => {
-    console.log('ProtectedRoute: Auth state changed', { 
+    console.log('ProtectedRoute: Navigation logic check', { 
       loading, 
       user: !!user, 
       onboardingStatus, 
       currentPath: location.pathname 
     });
     
-    if (!loading && !user) {
+    // Don't do anything if still loading auth or onboarding status
+    if (loading || onboardingStatus.loading) {
+      return;
+    }
+    
+    // No user - redirect to signin
+    if (!user) {
       console.log('ProtectedRoute: No user found, redirecting to signin');
       // Store current path before redirecting
       if (location.pathname !== '/signin' && location.pathname !== '/signup') {
@@ -77,33 +89,28 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         sessionStorage.setItem('protectedRoutePath', location.pathname);
       }
       navigate('/signin', { replace: true });
-    } else if (!loading && user && !onboardingStatus.loading) {
-      console.log('🎯 Decision point:', {
-        userExists: !!user,
-        onboardingCompleted: onboardingStatus.completed,
-        currentPath: location.pathname,
-        isOnboardingPage: location.pathname === '/onboarding'
-      });
-      
-      // User is authenticated, check onboarding status
-      if (!onboardingStatus.completed && location.pathname !== '/onboarding') {
-        console.log('🎯 ProtectedRoute: User needs onboarding, redirecting...');
-        // Store the intended path
-        sessionStorage.setItem('protectedRoutePath', location.pathname);
-        navigate('/onboarding', { replace: true });
-        return;
-      }
-      
-      // User is authenticated and onboarded, check if we need to redirect back
-      const storedPath = sessionStorage.getItem('protectedRoutePath');
-      if (storedPath && storedPath !== location.pathname && location.pathname === '/dashboard') {
-        console.log('🎯 ProtectedRoute redirecting back to:', storedPath);
-        sessionStorage.removeItem('protectedRoutePath');
-        navigate(storedPath, { replace: true });
-      }
+      return;
+    }
+    
+    // User exists but hasn't completed onboarding
+    if (!onboardingStatus.completed && location.pathname !== '/onboarding') {
+      console.log('🎯 ProtectedRoute: User needs onboarding, redirecting...');
+      // Store the intended path
+      sessionStorage.setItem('protectedRoutePath', location.pathname);
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+    
+    // User is authenticated and onboarded, check if we need to redirect back
+    const storedPath = sessionStorage.getItem('protectedRoutePath');
+    if (storedPath && storedPath !== location.pathname && location.pathname === '/dashboard') {
+      console.log('🎯 ProtectedRoute redirecting back to:', storedPath);
+      sessionStorage.removeItem('protectedRoutePath');
+      navigate(storedPath, { replace: true });
     }
   }, [loading, user, onboardingStatus, navigate, location.pathname]);
 
+  // Show loading state
   if (loading || onboardingStatus.loading) return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-tech bg-circuit bg-cover bg-center">
       <div className="glass-card bg-glassDark/80 rounded-2xl shadow-glass p-8 flex flex-col items-center border border-white/20 backdrop-blur-glass">
@@ -112,6 +119,10 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       </div>
     </div>
   );
+  
+  // Don't render anything if no user (will be redirected)
   if (!user) return null;
+  
+  // Render children if user exists and onboarding is complete
   return <>{children}</>;
-} 
+}
