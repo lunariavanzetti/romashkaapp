@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { AnimatedBackground, AnimatedInput, Confetti, SuccessMessage } from '../components/ui';
 import { StepIndicator, QuestionCard, OptionCard, NavigationButtons } from '../components/onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { useAuthStore } from '../stores/authStore';
+import { supabase } from '../services/supabaseClient';
 
 const onboardingSteps = [
   {
@@ -187,10 +190,53 @@ export default function Onboarding() {
     submitOnboarding,
     skipOnboarding,
   } = useOnboardingStore();
+  
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const [checkingStatus, setCheckingStatus] = useState(true);
 
   const [validationError, setValidationError] = useState<string | null>(null);
+  
+  // Check if user has already completed onboarding
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (user) {
+        try {
+          console.log('🔍 Onboarding page: Checking if user already completed onboarding');
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('onboarding_completed')
+            .eq('id', user.id)
+            .single();
+          
+          if (!error && profile?.onboarding_completed) {
+            console.log('✅ User already completed onboarding, redirecting to dashboard');
+            navigate('/dashboard', { replace: true });
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking onboarding status:', error);
+        }
+      }
+      setCheckingStatus(false);
+    };
+    
+    checkOnboardingStatus();
+  }, [user, navigate]);
 
   const currentQuestion = onboardingSteps[currentStep];
+  
+  // Show loading while checking onboarding status
+  if (checkingStatus) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <AnimatedBackground />
+        <div className="relative z-10 text-center">
+          <div className="text-white font-heading text-xl animate-pulse">Checking onboarding status...</div>
+        </div>
+      </div>
+    );
+  }
 
   const validateCurrentStep = (): boolean => {
     const field = currentQuestion.field as keyof typeof answers;
