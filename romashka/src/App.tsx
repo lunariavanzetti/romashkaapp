@@ -40,6 +40,15 @@ const AppContent = () => {
   const location = useLocation();
   const isDashboardRoute = location.pathname.startsWith('/dashboard') || location.pathname === '/analytics';
   
+  // Debug logging
+  console.log('🔍 ROUTE DEBUG:', {
+    pathname: location.pathname,
+    search: location.search,
+    hash: location.hash,
+    isDashboardRoute,
+    timestamp: new Date().toISOString()
+  });
+  
   return (
     <>
       {!isDashboardRoute && <Navigation />}
@@ -71,11 +80,11 @@ const AppContent = () => {
         <Route path="/channels/instagram" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
         <Route path="/channels/email" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
         <Route path="/channels/widget" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
-        <Route path="/playground" element={<div className="pt-24"><ProtectedRoute><PlaygroundPage /></ProtectedRoute></div>} />
+        <Route path="/playground" element={<div className="pt-24"><ProtectedRoute><div><h1>🎮 PLAYGROUND PAGE LOADED</h1><PlaygroundPage /></div></ProtectedRoute></div>} />
         <Route path="/templates" element={<div className="pt-24"><ProtectedRoute><TemplatesPage /></ProtectedRoute></div>} />
-        <Route path="/personality" element={<div className="pt-24"><ProtectedRoute><PersonalitySettings /></ProtectedRoute></div>} />
+        <Route path="/personality" element={<div className="pt-24"><ProtectedRoute><div><h1>🎭 PERSONALITY PAGE LOADED</h1><PersonalitySettings /></div></ProtectedRoute></div>} />
         <Route path="/settings/personality" element={<div className="pt-24"><ProtectedRoute><PersonalitySettings /></ProtectedRoute></div>} />
-        <Route path="/training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
+        <Route path="/training" element={<div className="pt-24"><ProtectedRoute><div><h1>🎯 TRAINING PAGE LOADED</h1><TrainingAnalyticsDashboard /></div></ProtectedRoute></div>} />
         <Route path="/ai-training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
         <Route path="/security" element={<div className="pt-24"><ProtectedRoute><SecurityDashboard /></ProtectedRoute></div>} />
         <Route path="/analytics/real-time" element={<div className="pt-24"><ProtectedRoute><RealTimeAnalytics /></ProtectedRoute></div>} />
