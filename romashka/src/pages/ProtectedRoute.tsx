@@ -23,18 +23,29 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     const checkOnboardingStatus = async () => {
       if (user) {
         try {
+          console.log('🔍 Checking onboarding status for user:', user.id);
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('onboarding_completed')
             .eq('id', user.id)
             .single();
 
+          console.log('📊 Profile query result:', { profile, error });
+
           if (error) {
             console.error('Error checking onboarding status:', error);
-            setOnboardingStatus({ completed: false, loading: false });
+            // If no profile exists, create one and mark as needing onboarding
+            if (error.code === 'PGRST116') {
+              console.log('📝 No profile found, user needs onboarding');
+              setOnboardingStatus({ completed: false, loading: false });
+            } else {
+              setOnboardingStatus({ completed: false, loading: false });
+            }
           } else {
+            const completed = profile?.onboarding_completed === true;
+            console.log('✅ Onboarding status:', completed);
             setOnboardingStatus({ 
-              completed: profile?.onboarding_completed || false, 
+              completed, 
               loading: false 
             });
           }
@@ -51,7 +62,13 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }, [user]);
 
   useEffect(() => {
-    console.log('ProtectedRoute: Auth state changed', { loading, user: !!user, onboardingStatus });
+    console.log('ProtectedRoute: Auth state changed', { 
+      loading, 
+      user: !!user, 
+      onboardingStatus, 
+      currentPath: location.pathname 
+    });
+    
     if (!loading && !user) {
       console.log('ProtectedRoute: No user found, redirecting to signin');
       // Store current path before redirecting
@@ -61,6 +78,13 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       }
       navigate('/signin', { replace: true });
     } else if (!loading && user && !onboardingStatus.loading) {
+      console.log('🎯 Decision point:', {
+        userExists: !!user,
+        onboardingCompleted: onboardingStatus.completed,
+        currentPath: location.pathname,
+        isOnboardingPage: location.pathname === '/onboarding'
+      });
+      
       // User is authenticated, check onboarding status
       if (!onboardingStatus.completed && location.pathname !== '/onboarding') {
         console.log('🎯 ProtectedRoute: User needs onboarding, redirecting...');
