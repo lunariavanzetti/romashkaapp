@@ -185,6 +185,7 @@ export default function Onboarding() {
     nextStep,
     previousStep,
     submitOnboarding,
+    skipOnboarding,
   } = useOnboardingStore();
 
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -220,6 +221,10 @@ export default function Onboarding() {
     if (validateCurrentStep()) {
       await submitOnboarding();
     }
+  };
+
+  const handleSkip = async () => {
+    await skipOnboarding();
   };
 
   const canProceed = () => {
@@ -383,6 +388,7 @@ export default function Onboarding() {
           onPrevious={handlePrevious}
           onNext={handleNext}
           onSubmit={handleSubmit}
+          onSkip={handleSkip}
           canProceed={canProceed()}
           isLoading={isLoading}
         />

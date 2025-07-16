@@ -27,6 +27,7 @@ interface OnboardingState {
   previousStep: () => void;
   goToStep: (step: number) => void;
   submitOnboarding: () => Promise<void>;
+  skipOnboarding: () => Promise<void>;
   resetOnboarding: () => void;
   setShowConfetti: (show: boolean) => void;
   setShowSuccess: (show: boolean) => void;
@@ -185,5 +186,50 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   setShowSuccess: (show) => {
     set({ showSuccess: show });
+  },
+
+  skipOnboarding: async () => {
+    set({ isLoading: true, error: null });
+    
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Auth error:', userError);
+        throw new Error('Authentication error: ' + userError.message);
+      }
+      
+      if (!user) {
+        throw new Error('No authenticated user found');
+      }
+
+      console.log('Skipping onboarding for user:', user.id);
+
+      // Mark onboarding as completed in the database without saving answers
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          onboarding_completed: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw new Error('Failed to update profile: ' + profileError.message);
+      }
+
+      set({ isLoading: false });
+      
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
+      
+    } catch (error) {
+      console.error('Onboarding skip error:', error);
+      set({ 
+        isLoading: false, 
+        error: error instanceof Error ? error.message : 'Failed to skip onboarding' 
+      });
+    }
   },
 })); 

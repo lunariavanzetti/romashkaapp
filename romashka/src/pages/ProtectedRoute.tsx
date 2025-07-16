@@ -1,12 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '../components/ui';
 import { useAuthStore } from '../stores/authStore';
+import { supabase } from '../services/supabaseClient';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading, checkSession } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const [onboardingStatus, setOnboardingStatus] = useState<{ completed: boolean; loading: boolean }>({ completed: false, loading: true });
   
   console.log('🛡️ ProtectedRoute - Current path:', location.pathname, 'User:', !!user, 'Loading:', loading);
 
@@ -16,8 +18,40 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     // eslint-disable-next-line
   }, []);
 
+  // Check onboarding status when user is available
   useEffect(() => {
-    console.log('ProtectedRoute: Auth state changed', { loading, user: !!user });
+    const checkOnboardingStatus = async () => {
+      if (user) {
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('onboarding_completed')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+            console.error('Error checking onboarding status:', error);
+            setOnboardingStatus({ completed: false, loading: false });
+          } else {
+            setOnboardingStatus({ 
+              completed: profile?.onboarding_completed || false, 
+              loading: false 
+            });
+          }
+        } catch (error) {
+          console.error('Error checking onboarding status:', error);
+          setOnboardingStatus({ completed: false, loading: false });
+        }
+      } else {
+        setOnboardingStatus({ completed: false, loading: false });
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user]);
+
+  useEffect(() => {
+    console.log('ProtectedRoute: Auth state changed', { loading, user: !!user, onboardingStatus });
     if (!loading && !user) {
       console.log('ProtectedRoute: No user found, redirecting to signin');
       // Store current path before redirecting
@@ -26,8 +60,17 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         sessionStorage.setItem('protectedRoutePath', location.pathname);
       }
       navigate('/signin', { replace: true });
-    } else if (!loading && user) {
-      // User is authenticated, check if we need to redirect back
+    } else if (!loading && user && !onboardingStatus.loading) {
+      // User is authenticated, check onboarding status
+      if (!onboardingStatus.completed && location.pathname !== '/onboarding') {
+        console.log('🎯 ProtectedRoute: User needs onboarding, redirecting...');
+        // Store the intended path
+        sessionStorage.setItem('protectedRoutePath', location.pathname);
+        navigate('/onboarding', { replace: true });
+        return;
+      }
+      
+      // User is authenticated and onboarded, check if we need to redirect back
       const storedPath = sessionStorage.getItem('protectedRoutePath');
       if (storedPath && storedPath !== location.pathname && location.pathname === '/dashboard') {
         console.log('🎯 ProtectedRoute redirecting back to:', storedPath);
@@ -35,9 +78,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         navigate(storedPath, { replace: true });
       }
     }
-  }, [loading, user, navigate, location.pathname]);
+  }, [loading, user, onboardingStatus, navigate, location.pathname]);
 
-  if (loading) return (
+  if (loading || onboardingStatus.loading) return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-tech bg-circuit bg-cover bg-center">
       <div className="glass-card bg-glassDark/80 rounded-2xl shadow-glass p-8 flex flex-col items-center border border-white/20 backdrop-blur-glass">
         <Skeleton width={80} height={80} className="rounded-full animate-pulse" />
