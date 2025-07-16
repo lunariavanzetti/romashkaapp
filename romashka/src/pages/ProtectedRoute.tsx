@@ -20,9 +20,22 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     console.log('ProtectedRoute: Auth state changed', { loading, user: !!user });
     if (!loading && !user) {
       console.log('ProtectedRoute: No user found, redirecting to signin');
+      // Store current path before redirecting
+      if (location.pathname !== '/signin' && location.pathname !== '/signup') {
+        console.log('🔄 ProtectedRoute storing path:', location.pathname);
+        sessionStorage.setItem('protectedRoutePath', location.pathname);
+      }
       navigate('/signin', { replace: true });
+    } else if (!loading && user) {
+      // User is authenticated, check if we need to redirect back
+      const storedPath = sessionStorage.getItem('protectedRoutePath');
+      if (storedPath && storedPath !== location.pathname && location.pathname === '/dashboard') {
+        console.log('🎯 ProtectedRoute redirecting back to:', storedPath);
+        sessionStorage.removeItem('protectedRoutePath');
+        navigate(storedPath, { replace: true });
+      }
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, location.pathname]);
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-tech bg-circuit bg-cover bg-center">
