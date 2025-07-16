@@ -11,7 +11,12 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Puzzle
+  Puzzle,
+  Brain,
+  Phone,
+  TestTube,
+  FileText,
+  UserCheck
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
@@ -23,6 +28,12 @@ const navLinks = [
   { label: 'Knowledge Base', icon: <Book size={20} />, to: '/knowledge' },
   { label: 'Automation', icon: <Zap size={20} />, to: '/automation' },
   { label: 'Integrations', icon: <Puzzle size={20} />, to: '/integrations' },
+  // Enterprise Features
+  { label: 'AI Training', icon: <Brain size={20} />, to: '/training' },
+  { label: 'Personality', icon: <UserCheck size={20} />, to: '/personality' },
+  { label: 'Channels', icon: <Phone size={20} />, to: '/channels' },
+  { label: 'Playground', icon: <TestTube size={20} />, to: '/playground' },
+  { label: 'Templates', icon: <FileText size={20} />, to: '/templates' },
   { label: 'Team', icon: <Users size={20} />, to: '/team' },
   { label: 'Settings', icon: <Settings size={20} />, to: '/settings' },
   { label: 'Billing', icon: <CreditCard size={20} />, to: '/billing' },
