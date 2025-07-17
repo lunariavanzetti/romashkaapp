@@ -455,7 +455,7 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT 
-        rm.metric_name,
+        rm.metric_name::TEXT,
         SUM(rm.metric_value) as metric_value,
         COUNT(*)::INTEGER as count,
         AVG(rm.metric_value) as avg_value,
