@@ -20,10 +20,30 @@ import {
   Brain,
   Heart,
   Volume2,
-  Sliders
+  Sliders,
+  CheckCircle,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore';
+import { 
+  BotConfiguration, 
+  PersonalityTraits, 
+  ResponseStyle,
+  TestScenario,
+  BotConfigFormData,
+  PlaygroundAIResponse,
+  BotPerformanceMetrics,
+  PlaygroundABTest,
+  TestScenarioResult,
+  PlaygroundConversation
+} from '../../types/playground';
+import { botConfigurationService } from '../../services/botConfigurationService';
+import { playgroundAIService } from '../../services/playgroundAIService';
+import { testScenarioService } from '../../services/testScenarioService';
+import { abTestingService } from '../../services/abTestingService';
 
-// Bot Personality Configuration
+// Legacy interface for backward compatibility
 interface BotPersonality {
   name: string;
   avatar: string;
@@ -117,43 +137,183 @@ const testScenarios: TestScenario[] = [
 ];
 
 export default function PlaygroundPage() {
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'personality' | 'testing' | 'abtest'>('personality');
-  const [personality, setPersonality] = useState<BotPersonality>(defaultPersonality);
+  
+  // Real bot configuration state
+  const [botConfig, setBotConfig] = useState<BotConfiguration | null>(null);
+  const [formData, setFormData] = useState<BotConfigFormData>({
+    bot_name: 'ROMASHKA Assistant',
+    avatar_emoji: '🤖',
+    personality_traits: {
+      formality: 50,
+      enthusiasm: 50,
+      technical_depth: 50,
+      empathy: 50
+    },
+    response_style: 'conversational',
+    custom_instructions: ''
+  });
+  
+  // Testing state
   const [testMessage, setTestMessage] = useState('');
-  const [testResponse, setTestResponse] = useState('');
+  const [testResponse, setTestResponse] = useState<PlaygroundAIResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [testHistory, setTestHistory] = useState<{message: string, response: string, timestamp: Date}[]>([]);
-  const [abTests, setAbTests] = useState<ABTestConfig[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [testHistory, setTestHistory] = useState<PlaygroundConversation[]>([]);
+  
+  // Test scenarios state
+  const [availableScenarios, setAvailableScenarios] = useState<TestScenario[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<TestScenario | null>(null);
+  const [scenarioResults, setScenarioResults] = useState<TestScenarioResult[]>([]);
+  
+  // A/B testing state
+  const [abTests, setAbTests] = useState<PlaygroundABTest[]>([]);
+  const [performanceMetrics, setPerformanceMetrics] = useState<BotPerformanceMetrics[]>([]);
+  
+  // UI state
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
-  // Personality customization handlers
+  // Legacy personality state for backward compatibility
+  const [personality, setPersonality] = useState<BotPersonality>(defaultPersonality);
+
+  // Load initial data
+  useEffect(() => {
+    if (user) {
+      loadPlaygroundData();
+    }
+  }, [user]);
+
+  const loadPlaygroundData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Load bot configuration
+      const config = await botConfigurationService.loadBotConfig();
+      if (config) {
+        setBotConfig(config);
+        setFormData({
+          bot_name: config.bot_name,
+          avatar_emoji: config.avatar_emoji,
+          personality_traits: config.personality_traits,
+          response_style: config.response_style,
+          custom_instructions: config.custom_instructions || ''
+        });
+      }
+
+      // Load test scenarios
+      const scenarios = testScenarioService.getAllScenarios();
+      setAvailableScenarios(scenarios);
+
+      // Load A/B tests
+      const tests = await abTestingService.getABTests();
+      setAbTests(tests);
+
+      // Load performance metrics if config exists
+      if (config) {
+        const metrics = await botConfigurationService.getPerformanceMetrics(config.id);
+        // Convert metrics to array format for display
+        setPerformanceMetrics([]);
+      }
+
+    } catch (err) {
+      console.error('Error loading playground data:', err);
+      setError('Failed to load playground data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Configuration handlers
   const updatePersonality = (field: keyof BotPersonality, value: any) => {
     setPersonality(prev => ({ ...prev, [field]: value }));
+    // Also update real form data
+    if (field === 'formality' || field === 'enthusiasm' || field === 'technicality' || field === 'empathy') {
+      setFormData(prev => ({
+        ...prev,
+        personality_traits: {
+          ...prev.personality_traits,
+          [field === 'technicality' ? 'technical_depth' : field]: value
+        }
+      }));
+    }
   };
 
   const updateSliderValue = (field: keyof BotPersonality, value: number) => {
-    setPersonality(prev => ({ ...prev, [field]: value }));
+    updatePersonality(field, value);
   };
 
-  // Test message handler
+  const updateFormData = (field: keyof BotConfigFormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Save bot configuration
+  const handleSaveConfiguration = async () => {
+    if (!user) return;
+
+    try {
+      setIsSaving(true);
+      setSaveStatus('saving');
+      setError(null);
+
+      const savedConfig = await botConfigurationService.saveBotConfig(formData);
+      setBotConfig(savedConfig);
+      setSaveStatus('success');
+
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (err) {
+      console.error('Error saving bot configuration:', err);
+      setError('Failed to save bot configuration. Please try again.');
+      setSaveStatus('error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Test message handler with real AI
   const testBotResponse = async () => {
     if (!testMessage.trim()) return;
     
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // Simulate API call to test bot response
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Ensure we have a saved configuration first
+      let currentConfig = botConfig;
+      if (!currentConfig) {
+        currentConfig = await botConfigurationService.saveBotConfig(formData);
+        setBotConfig(currentConfig);
+      }
+
+      // Generate real AI response
+      const response = await playgroundAIService.generateTestResponse(
+        testMessage,
+        currentConfig
+      );
       
-      const mockResponse = `Based on your personality settings (${personality.tone}, ${personality.formality}% formal, ${personality.enthusiasm}% enthusiastic), here's how I would respond: "${testMessage}" - This is a simulated response that considers your bot's personality configuration.`;
+      setTestResponse(response);
       
-      setTestResponse(mockResponse);
-      setTestHistory(prev => [...prev, {
+      // Add to test history
+      const historyEntry: PlaygroundConversation = {
+        id: `test_${Date.now()}`,
         message: testMessage,
-        response: mockResponse,
-        timestamp: new Date()
-      }]);
+        response: response.response,
+        timestamp: new Date(),
+        confidence: response.confidence,
+        processingTime: response.response_time
+      };
+      
+      setTestHistory(prev => [...prev, historyEntry]);
+      
+      // Clear test message
+      setTestMessage('');
+      
     } catch (error) {
       console.error('Test failed:', error);
+      setError('Failed to generate AI response. Please check your OpenAI API key and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -190,10 +350,60 @@ export default function PlaygroundPage() {
     setAbTests(prev => [...prev, newTest]);
   };
 
-  const runScenarioTest = (scenario: TestScenario) => {
-    setSelectedScenario(scenario);
-    // Simulate running the scenario
-    console.log('Running scenario:', scenario.name);
+  // Run test scenario with real AI
+  const runScenarioTest = async (scenario: TestScenario) => {
+    if (!botConfig) {
+      setError('Please save your bot configuration first before running test scenarios.');
+      return;
+    }
+
+    try {
+      setSelectedScenario(scenario);
+      setIsLoading(true);
+      setError(null);
+
+      const result = await testScenarioService.runTestScenario(scenario.id, botConfig);
+      
+      // Add to scenario results
+      setScenarioResults(prev => {
+        const filtered = prev.filter(r => r.scenario_id !== scenario.id);
+        return [...filtered, result];
+      });
+
+      setSelectedScenario(null);
+    } catch (error) {
+      console.error('Error running scenario test:', error);
+      setError(`Failed to run test scenario: ${scenario.name}. Please try again.`);
+      setSelectedScenario(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Run all test scenarios
+  const runAllScenarios = async () => {
+    if (!botConfig) {
+      setError('Please save your bot configuration first before running all test scenarios.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { results, summary } = await testScenarioService.runAllScenarios(botConfig);
+      setScenarioResults(results);
+      
+      // Show insights
+      const insights = testScenarioService.getPerformanceInsights(results);
+      console.log('Performance insights:', insights);
+      
+    } catch (error) {
+      console.error('Error running all scenarios:', error);
+      setError('Failed to run all test scenarios. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -371,11 +581,33 @@ export default function PlaygroundPage() {
                 </div>
               </div>
 
+              {/* Error Message */}
+              {error && (
+                <div className="flex items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  <p className="text-red-700 dark:text-red-300">{error}</p>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex gap-4">
-                <Button variant="primary" icon={<Save className="w-4 h-4" />}>
-                  Save Personality
+                <Button 
+                  variant="primary" 
+                  icon={saveStatus === 'saving' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  onClick={handleSaveConfiguration}
+                  loading={isSaving}
+                  disabled={!user}
+                >
+                  {saveStatus === 'saving' ? 'Saving...' : 'Save Configuration'}
                 </Button>
+                
+                {saveStatus === 'success' && (
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm">Configuration saved!</span>
+                  </div>
+                )}
+                
                 <Button variant="outline" icon={<Download className="w-4 h-4" />}>
                   Export Config
                 </Button>
@@ -428,44 +660,141 @@ export default function PlaygroundPage() {
               {/* Test Response */}
               {testResponse && (
                 <div className="glass-card p-6 rounded-xl">
-                  <h3 className="text-lg font-heading font-semibold text-primary-deep-blue dark:text-white mb-4">
-                    Bot Response
-                  </h3>
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                    <p className="text-gray-700 dark:text-gray-300">{testResponse}</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-heading font-semibold text-primary-deep-blue dark:text-white">
+                      Bot Response
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span>Confidence: {Math.round(testResponse.confidence * 100)}%</span>
+                      <span>Response Time: {testResponse.response_time}ms</span>
+                      <span>Tokens: {testResponse.tokens_used}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                    <p className="text-gray-700 dark:text-gray-300">{testResponse.response}</p>
+                  </div>
+
+                  {/* Personality Analysis */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Personality Analysis</h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>Formality:</span>
+                          <span>{testResponse.personality_score.detected_formality}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Enthusiasm:</span>
+                          <span>{testResponse.personality_score.detected_enthusiasm}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Technical Depth:</span>
+                          <span>{testResponse.personality_score.detected_technical_depth}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Empathy:</span>
+                          <span>{testResponse.personality_score.detected_empathy}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-gray-900 dark:text-white">Performance Metrics</h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>Consistency:</span>
+                          <span>{Math.round(testResponse.personality_score.consistency_score * 100)}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Config Alignment:</span>
+                          <span>{Math.round(testResponse.personality_score.alignment_with_config * 100)}%</span>
+                        </div>
+                        {testResponse.intent_detected && (
+                          <div className="flex justify-between">
+                            <span>Intent:</span>
+                            <span className="capitalize">{testResponse.intent_detected}</span>
+                          </div>
+                        )}
+                        {testResponse.sentiment && (
+                          <div className="flex justify-between">
+                            <span>Sentiment:</span>
+                            <span className="capitalize">{testResponse.sentiment}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Test Scenarios */}
               <div className="glass-card p-6 rounded-xl">
-                <h2 className="text-xl font-heading font-semibold text-primary-deep-blue dark:text-white mb-4">
-                  Pre-built Test Scenarios
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-heading font-semibold text-primary-deep-blue dark:text-white">
+                    Pre-built Test Scenarios
+                  </h2>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={runAllScenarios}
+                    disabled={!botConfig || isLoading}
+                    loading={isLoading}
+                    icon={<Play className="w-3 h-3" />}
+                  >
+                    Run All Scenarios
+                  </Button>
+                </div>
                 
                 <div className="space-y-4">
-                  {testScenarios.map(scenario => (
-                    <div key={scenario.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium text-gray-900 dark:text-white">
-                            {scenario.name}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {scenario.description}
-                          </p>
+                  {availableScenarios.map(scenario => {
+                    const result = scenarioResults.find(r => r.scenario_id === scenario.id);
+                    const isRunning = selectedScenario?.id === scenario.id && isLoading;
+                    
+                    return (
+                      <div key={scenario.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-gray-900 dark:text-white">
+                                {scenario.name}
+                              </h3>
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                scenario.difficulty_level === 'easy' ? 'bg-green-100 text-green-800' :
+                                scenario.difficulty_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {scenario.difficulty_level}
+                              </span>
+                              <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full capitalize">
+                                {scenario.category.replace('-', ' ')}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                              {scenario.description} ({scenario.test_messages.length} test messages)
+                            </p>
+                            {result && (
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                                <span>Quality: {Math.round(result.average_quality_score)}%</span>
+                                <span>Response Time: {Math.round(result.average_response_time)}ms</span>
+                                <span>Confidence: {Math.round(result.average_confidence * 100)}%</span>
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            variant={result ? "outline" : "primary"}
+                            size="sm"
+                            onClick={() => runScenarioTest(scenario)}
+                            disabled={!botConfig || isRunning}
+                            loading={isRunning}
+                            icon={isRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                          >
+                            {isRunning ? 'Running...' : result ? 'Re-run' : 'Run Test'}
+                          </Button>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => runScenarioTest(scenario)}
-                          icon={<Play className="w-3 h-3" />}
-                        >
-                          Run Test
-                        </Button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>
