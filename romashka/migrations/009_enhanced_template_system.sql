@@ -2,6 +2,9 @@
 -- AI-optimized template system with variables, analytics, and auto-suggestions
 -- Phase 2 Implementation
 
+-- Enable required extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Template Variables table
 CREATE TABLE IF NOT EXISTS template_variables (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -275,11 +278,13 @@ BEGIN
         t.name,
         t.content,
         CASE 
-            WHEN similarity(customer_message_text, t.content) > 0.3 THEN similarity(customer_message_text, t.content)
+            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 1) || '%' THEN 0.8
+            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 2) || '%' THEN 0.6
             ELSE 0.1 + (t.usage_count::DECIMAL / 1000)
         END as confidence,
         CASE 
-            WHEN similarity(customer_message_text, t.content) > 0.3 THEN 'Content similarity'
+            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 1) || '%' THEN 'Content match'
+            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 2) || '%' THEN 'Partial match'
             ELSE 'Usage frequency'
         END as match_reason
     FROM templates t
@@ -346,6 +351,7 @@ SELECT
     1
 FROM templates t
 WHERE t.id IN (SELECT id FROM templates LIMIT 5)
+AND t.created_by IS NOT NULL
 ON CONFLICT (template_id, variable_name) DO NOTHING;
 
 INSERT INTO template_variables (template_id, user_id, variable_name, variable_type, is_required, options, placeholder, description, sort_order)
@@ -361,6 +367,7 @@ SELECT
     2
 FROM templates t
 WHERE t.id IN (SELECT id FROM templates LIMIT 5)
+AND t.created_by IS NOT NULL
 ON CONFLICT (template_id, variable_name) DO NOTHING;
 
 -- Insert sample template triggers
@@ -374,6 +381,7 @@ SELECT
     1
 FROM templates t
 WHERE t.name ILIKE '%order%'
+AND t.created_by IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 INSERT INTO template_triggers (template_id, user_id, trigger_type, trigger_value, confidence_threshold, priority)
@@ -386,4 +394,5 @@ SELECT
     1
 FROM templates t
 WHERE t.name ILIKE '%billing%' OR t.name ILIKE '%payment%'
+AND t.created_by IS NOT NULL
 ON CONFLICT DO NOTHING;
