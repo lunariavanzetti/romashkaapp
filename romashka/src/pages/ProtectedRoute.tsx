@@ -12,18 +12,37 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   
   console.log('🛡️ ProtectedRoute - Current path:', location.pathname, 'User:', !!user, 'Loading:', loading);
 
+  // Define routes that don't require onboarding completion
+  const exemptRoutes = [
+    '/analytics',
+    '/security',
+    '/dashboard/analytics',
+    '/analytics/real-time',
+    '/analytics/reporting',
+    '/analytics/predictive'
+  ];
+
+  const isExemptRoute = exemptRoutes.some(route => location.pathname.startsWith(route));
+
   useEffect(() => {
     console.log('ProtectedRoute: Checking session...');
     checkSession();
     // eslint-disable-next-line
   }, []);
 
-  // Check onboarding status when user is available
+  // Check onboarding status when user is available (skip for exempt routes)
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (user) {
         try {
           console.log('🔍 Checking onboarding status for user:', user.id);
+          
+          // Skip onboarding check for exempt routes
+          if (isExemptRoute) {
+            console.log('📊 Exempting route from onboarding check:', location.pathname);
+            setOnboardingStatus({ completed: true, loading: false });
+            return;
+          }
           
           // Add cache-busting to ensure fresh data
           const { data: profile, error } = await supabase

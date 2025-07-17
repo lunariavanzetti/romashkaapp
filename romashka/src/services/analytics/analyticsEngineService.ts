@@ -1,59 +1,37 @@
 import { supabase } from '../supabaseClient';
-import { securityMonitoringService } from '../security/securityMonitoringService';
 import type { 
-  LiveMetrics,
-  ConversationAnalytics,
-  PerformanceMetrics,
-  TimeRange,
-  TimeSeries,
+  RealtimeAnalytics,
+  HistoricalAnalytics,
+  PredictiveAnalytics,
   ChannelMetrics,
-  ChannelActivity,
+  TimeSeries,
   VolumePredict,
-  VolumeForcast,
   StaffingPrediction,
   PerformanceForecast,
   SeasonalPattern,
-  OptimizationSuggestion,
-  BusinessInsight,
-  RealTimeMetrics,
-  ConversationSummary,
-  AgentMetrics,
-  LiveAlert,
-  PredictiveInsight
+  AIPerformanceMetrics,
+  ConversationAnalytics,
+  BusinessIntelligence,
+  ROIAnalysis
 } from '../../types/analytics';
 
 export class AnalyticsEngineService {
-  private static instance: AnalyticsEngineService;
-  private updateInterval: NodeJS.Timeout | null = null;
-  private isRunning: boolean = false;
-
-  public static getInstance(): AnalyticsEngineService {
-    if (!AnalyticsEngineService.instance) {
-      AnalyticsEngineService.instance = new AnalyticsEngineService();
-    }
-    return AnalyticsEngineService.instance;
-  }
-
-  constructor() {
-    this.startRealTimeUpdates();
-  }
+  private cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  private cache = new Map<string, { data: any; timestamp: number }>();
 
   // ================================
   // REAL-TIME ANALYTICS
   // ================================
 
-  async getRealtimeAnalytics(): Promise<{
-    activeConversations: number;
-    averageResponseTime: number;
-    resolutionRate: number;
-    customerSatisfaction: number;
-    aiPerformanceScore: number;
-    channelDistribution: ChannelMetrics[];
-  }> {
+  async getRealtimeAnalytics(): Promise<RealtimeAnalytics> {
+    const cacheKey = 'realtime_analytics';
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
+
     try {
       const [
         activeConversations,
-        avgResponseTime,
+        averageResponseTime,
         resolutionRate,
         customerSatisfaction,
         aiPerformanceScore,
@@ -67,69 +45,32 @@ export class AnalyticsEngineService {
         this.getChannelDistribution()
       ]);
 
-      return {
+      const data: RealtimeAnalytics = {
         activeConversations,
-        averageResponseTime: avgResponseTime,
+        averageResponseTime,
         resolutionRate,
         customerSatisfaction,
         aiPerformanceScore,
-        channelDistribution
-      };
-
-    } catch (error) {
-      console.error('Error getting realtime analytics:', error);
-      throw error;
-    }
-  }
-
-  async getLiveMetrics(): Promise<LiveMetrics> {
-    try {
-      const [
-        activeConversations,
-        avgResponseTime,
-        satisfactionScore,
-        aiResolutionRate,
-        agentProductivity,
-        queueLength
-      ] = await Promise.all([
-        this.getActiveConversationsCount(),
-        this.getAverageResponseTime(),
-        this.getCustomerSatisfactionScore(),
-        this.getAIResolutionRate(),
-        this.getAgentProductivity(),
-        this.getQueueLength()
-      ]);
-
-      return {
-        activeConversations,
-        avgResponseTime,
-        satisfactionScore,
-        aiResolutionRate,
-        agentProductivity,
-        queueLength,
+        channelDistribution,
         lastUpdated: new Date().toISOString()
       };
 
+      this.setCachedData(cacheKey, data);
+      return data;
     } catch (error) {
-      console.error('Error getting live metrics:', error);
+      console.error('Error fetching real-time analytics:', error);
       throw error;
     }
   }
 
-  // ================================
-  // HISTORICAL ANALYTICS
-  // ================================
-
   async getHistoricalAnalytics(
-    timeRange: TimeRange,
+    timeRange: { start: string; end: string },
     granularity: 'hour' | 'day' | 'week' | 'month' = 'day'
-  ): Promise<{
-    conversationVolume: TimeSeries[];
-    responseTimesTrend: TimeSeries[];
-    satisfactionTrend: TimeSeries[];
-    resolutionRateTrend: TimeSeries[];
-    channelPerformance: ChannelActivity[];
-  }> {
+  ): Promise<HistoricalAnalytics> {
+    const cacheKey = `historical_analytics_${timeRange.start}_${timeRange.end}_${granularity}`;
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
+
     try {
       const [
         conversationVolume,
@@ -139,36 +80,36 @@ export class AnalyticsEngineService {
         channelPerformance
       ] = await Promise.all([
         this.getConversationVolumeTrend(timeRange, granularity),
-        this.getResponseTimesTrend(timeRange, granularity),
+        this.getResponseTimeTrend(timeRange, granularity),
         this.getSatisfactionTrend(timeRange, granularity),
         this.getResolutionRateTrend(timeRange, granularity),
-        this.getChannelPerformanceTrend(timeRange)
+        this.getChannelPerformanceTrend(timeRange, granularity)
       ]);
 
-      return {
+      const data: HistoricalAnalytics = {
+        timeRange,
+        granularity,
         conversationVolume,
         responseTimesTrend,
         satisfactionTrend,
         resolutionRateTrend,
-        channelPerformance
+        channelPerformance,
+        generatedAt: new Date().toISOString()
       };
 
+      this.setCachedData(cacheKey, data);
+      return data;
     } catch (error) {
-      console.error('Error getting historical analytics:', error);
+      console.error('Error fetching historical analytics:', error);
       throw error;
     }
   }
 
-  // ================================
-  // PREDICTIVE ANALYTICS
-  // ================================
+  async getPredictiveAnalytics(forecastDays: number = 30): Promise<PredictiveAnalytics> {
+    const cacheKey = `predictive_analytics_${forecastDays}`;
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
 
-  async getPredictiveAnalytics(): Promise<{
-    volumeForecast: VolumePredict[];
-    staffingRecommendations: StaffingPrediction[];
-    performancePredictions: PerformanceForecast[];
-    seasonalityPatterns: SeasonalPattern[];
-  }> {
     try {
       const [
         volumeForecast,
@@ -176,36 +117,35 @@ export class AnalyticsEngineService {
         performancePredictions,
         seasonalityPatterns
       ] = await Promise.all([
-        this.forecastConversationVolume(),
-        this.calculateStaffingNeeds(),
-        this.predictPerformanceMetrics(),
-        this.detectSeasonalPatterns()
+        this.getVolumeForecast(forecastDays),
+        this.getStaffingRecommendations(forecastDays),
+        this.getPerformancePredictions(forecastDays),
+        this.getSeasonalityPatterns()
       ]);
 
-      return {
+      const data: PredictiveAnalytics = {
+        forecastPeriod: forecastDays,
         volumeForecast,
         staffingRecommendations,
         performancePredictions,
-        seasonalityPatterns
+        seasonalityPatterns,
+        modelAccuracy: 85, // This would be calculated from model performance
+        generatedAt: new Date().toISOString()
       };
 
+      this.setCachedData(cacheKey, data);
+      return data;
     } catch (error) {
-      console.error('Error getting predictive analytics:', error);
+      console.error('Error fetching predictive analytics:', error);
       throw error;
     }
   }
 
-  // ================================
-  // AI PERFORMANCE ANALYTICS
-  // ================================
+  async getAIPerformanceMetrics(): Promise<AIPerformanceMetrics> {
+    const cacheKey = 'ai_performance_metrics';
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
 
-  async getAIPerformanceMetrics(): Promise<{
-    accuracyScore: number;
-    learningProgress: any[];
-    conversationOutcomes: any[];
-    improvementAreas: string[];
-    trainingRecommendations: string[];
-  }> {
     try {
       const [
         accuracyScore,
@@ -221,49 +161,20 @@ export class AnalyticsEngineService {
         this.getTrainingRecommendations()
       ]);
 
-      return {
+      const data: AIPerformanceMetrics = {
         accuracyScore,
         learningProgress,
         conversationOutcomes,
         improvementAreas,
-        trainingRecommendations
+        trainingRecommendations,
+        modelVersion: '1.0',
+        lastTrainingUpdate: new Date().toISOString()
       };
 
+      this.setCachedData(cacheKey, data);
+      return data;
     } catch (error) {
-      console.error('Error getting AI performance metrics:', error);
-      throw error;
-    }
-  }
-
-  // ================================
-  // CONVERSATION TRACKING
-  // ================================
-
-  async trackConversationAnalytics(analytics: ConversationAnalytics): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('conversation_analytics')
-        .insert([{
-          conversation_id: analytics.conversationId,
-          channel_type: analytics.channelType,
-          start_time: analytics.startTime.toISOString(),
-          end_time: analytics.endTime?.toISOString(),
-          message_count: analytics.messageCount,
-          avg_response_time_seconds: Math.round(analytics.responseTime.reduce((a, b) => a + b, 0) / analytics.responseTime.length),
-          resolution_status: analytics.resolutionStatus,
-          customer_satisfaction: analytics.customerSatisfaction,
-          ai_accuracy_score: analytics.aiAccuracy,
-          topics: analytics.topics,
-          created_at: new Date().toISOString()
-        }]);
-
-      if (error) throw error;
-
-      // Update real-time metrics
-      await this.updateRealTimeMetrics();
-
-    } catch (error) {
-      console.error('Error tracking conversation analytics:', error);
+      console.error('Error fetching AI performance metrics:', error);
       throw error;
     }
   }
@@ -272,237 +183,276 @@ export class AnalyticsEngineService {
   // BUSINESS INTELLIGENCE
   // ================================
 
-  async getBusinessInsights(): Promise<BusinessInsight[]> {
+  async getBusinessIntelligence(): Promise<BusinessIntelligence> {
+    const cacheKey = 'business_intelligence';
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
+
     try {
-      const insights: BusinessInsight[] = [];
+      const [
+        kpis,
+        trends,
+        insights,
+        recommendations
+      ] = await Promise.all([
+        this.getKPIs(),
+        this.getTrends(),
+        this.getBusinessInsights(),
+        this.getBusinessRecommendations()
+      ]);
 
-      // Check for performance trends
-      const recentMetrics = await this.getRecentPerformanceMetrics();
-      if (recentMetrics.length > 0) {
-        const avgSatisfaction = recentMetrics.reduce((sum, m) => sum + m.satisfaction, 0) / recentMetrics.length;
-        
-        if (avgSatisfaction > 4.0) {
-          insights.push({
-            type: 'opportunity',
-            title: 'High Customer Satisfaction',
-            description: `Customer satisfaction is at ${avgSatisfaction.toFixed(1)}/5.0, indicating excellent service quality`,
-            impact: 'high',
-            actionRequired: false
-          });
-        }
+      const data: BusinessIntelligence = {
+        kpis,
+        trends,
+        insights,
+        recommendations,
+        generatedAt: new Date().toISOString()
+      };
 
-        if (avgSatisfaction < 3.0) {
-          insights.push({
-            type: 'risk',
-            title: 'Low Customer Satisfaction',
-            description: `Customer satisfaction has dropped to ${avgSatisfaction.toFixed(1)}/5.0, requiring immediate attention`,
-            impact: 'high',
-            actionRequired: true
-          });
-        }
-      }
-
-      // Check for volume trends
-      const volumeTrend = await this.getConversationVolumeTrend({ 
-        start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), 
-        end: new Date() 
-      }, 'day');
-
-      if (volumeTrend.length >= 2) {
-        const recentVolume = volumeTrend[volumeTrend.length - 1].value;
-        const previousVolume = volumeTrend[volumeTrend.length - 2].value;
-        const growthRate = ((recentVolume - previousVolume) / previousVolume) * 100;
-
-        if (growthRate > 20) {
-          insights.push({
-            type: 'trend',
-            title: 'Conversation Volume Surge',
-            description: `Conversation volume has increased by ${growthRate.toFixed(1)}% in the last day`,
-            impact: 'medium',
-            actionRequired: true
-          });
-        }
-      }
-
-      return insights;
-
+      this.setCachedData(cacheKey, data);
+      return data;
     } catch (error) {
-      console.error('Error getting business insights:', error);
-      return [];
+      console.error('Error fetching business intelligence:', error);
+      throw error;
     }
   }
 
-  async getOptimizationSuggestions(): Promise<OptimizationSuggestion[]> {
+  async calculateROI(timeFrame: { start: string; end: string }): Promise<ROIAnalysis> {
+    const cacheKey = `roi_analysis_${timeFrame.start}_${timeFrame.end}`;
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
+
     try {
-      const suggestions: OptimizationSuggestion[] = [];
+      const [
+        costSavings,
+        efficiencyGains,
+        satisfactionImpact,
+        revenueImpact
+      ] = await Promise.all([
+        this.calculateCostSavings(timeFrame),
+        this.calculateEfficiencyGains(timeFrame),
+        this.calculateSatisfactionImpact(timeFrame),
+        this.calculateRevenueImpact(timeFrame)
+      ]);
 
-      // Analyze response time optimization
-      const avgResponseTime = await this.getAverageResponseTime();
-      if (avgResponseTime > 300) { // 5 minutes
-        suggestions.push({
-          area: 'response_time',
-          currentPerformance: avgResponseTime,
-          potentialImprovement: 180, // 3 minutes
-          actionItems: [
-            'Implement canned responses for common questions',
-            'Optimize AI model for faster processing',
-            'Add more agents during peak hours'
-          ],
-          implementationEffort: 'medium',
-          expectedROI: 25
-        });
-      }
+      const totalROI = costSavings + efficiencyGains + revenueImpact;
 
-      // Analyze AI accuracy optimization
-      const aiAccuracy = await this.getAIAccuracyScore();
-      if (aiAccuracy < 0.8) {
-        suggestions.push({
-          area: 'ai_accuracy',
-          currentPerformance: aiAccuracy,
-          potentialImprovement: 0.9,
-          actionItems: [
-            'Retrain AI model with recent conversation data',
-            'Expand knowledge base content',
-            'Implement feedback loop for AI responses'
-          ],
-          implementationEffort: 'high',
-          expectedROI: 35
-        });
-      }
+      const data: ROIAnalysis = {
+        timeFrame,
+        costSavings,
+        efficiencyGains,
+        customerSatisfactionImpact: satisfactionImpact,
+        revenueImpact,
+        totalROI,
+        roiPercentage: Math.round((totalROI / 100000) * 100), // Assuming 100k investment
+        calculatedAt: new Date().toISOString()
+      };
 
-      return suggestions;
-
+      this.setCachedData(cacheKey, data);
+      return data;
     } catch (error) {
-      console.error('Error getting optimization suggestions:', error);
-      return [];
+      console.error('Error calculating ROI:', error);
+      throw error;
     }
   }
 
   // ================================
-  // PRIVATE METHODS
+  // CONVERSATION ANALYTICS
   // ================================
 
-  private async startRealTimeUpdates(): Promise<void> {
-    if (this.isRunning) return;
-    
-    this.isRunning = true;
-    this.updateInterval = setInterval(async () => {
-      try {
-        await this.updateRealTimeMetrics();
-      } catch (error) {
-        console.error('Error updating real-time metrics:', error);
+  async getConversationAnalytics(conversationId: string): Promise<ConversationAnalytics> {
+    try {
+      const { data: analytics, error } = await supabase
+        .from('conversation_analytics')
+        .select(`
+          *,
+          conversation:conversations(*)
+        `)
+        .eq('conversation_id', conversationId)
+        .single();
+
+      if (error) throw error;
+
+      if (!analytics) {
+        // If analytics don't exist, create them
+        return await this.createConversationAnalytics(conversationId);
       }
-    }, 30000); // Update every 30 seconds
+
+      return analytics;
+    } catch (error) {
+      console.error('Error fetching conversation analytics:', error);
+      throw error;
+    }
   }
 
-  private async updateRealTimeMetrics(): Promise<void> {
+  async updateConversationAnalytics(conversationId: string, updates: Partial<ConversationAnalytics>): Promise<void> {
     try {
-      const metrics = await this.getLiveMetrics();
-      
-      // Store in realtime_metrics table
-      await supabase
-        .from('realtime_metrics')
-        .insert([{
-          timestamp: new Date().toISOString(),
-          active_conversations: metrics.activeConversations,
-          response_time: metrics.avgResponseTime,
-          satisfaction: metrics.satisfactionScore,
-          ai_resolution: metrics.aiResolutionRate,
-          queue_length: metrics.queueLength,
-          agent_utilization: metrics.agentProductivity
-        }]);
+      const { error } = await supabase
+        .from('conversation_analytics')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('conversation_id', conversationId);
 
-      // Store in performance_metrics table
-      await supabase
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating conversation analytics:', error);
+      throw error;
+    }
+  }
+
+  // ================================
+  // PERFORMANCE METRICS
+  // ================================
+
+  async recordPerformanceMetric(
+    metricName: string,
+    metricType: string,
+    value: number,
+    dimensions?: Record<string, any>
+  ): Promise<void> {
+    try {
+      const { error } = await supabase
         .from('performance_metrics')
-        .insert([
-          { metric_type: 'active_conversations', metric_value: metrics.activeConversations },
-          { metric_type: 'avg_response_time', metric_value: metrics.avgResponseTime },
-          { metric_type: 'customer_satisfaction', metric_value: metrics.satisfactionScore },
-          { metric_type: 'ai_resolution_rate', metric_value: metrics.aiResolutionRate },
-          { metric_type: 'agent_productivity', metric_value: metrics.agentProductivity }
-        ]);
+        .insert({
+          metric_name: metricName,
+          metric_type: metricType,
+          metric_value: value,
+          dimensions: dimensions || {},
+          timestamp: new Date().toISOString()
+        });
 
+      if (error) throw error;
     } catch (error) {
-      console.error('Error updating real-time metrics:', error);
+      console.error('Error recording performance metric:', error);
+      throw error;
     }
   }
+
+  async getPerformanceMetrics(
+    metricType?: string,
+    timeRange?: { start: string; end: string }
+  ): Promise<Array<{ metric_name: string; metric_value: number; timestamp: string; dimensions: any }>> {
+    try {
+      let query = supabase
+        .from('performance_metrics')
+        .select('*')
+        .order('timestamp', { ascending: false });
+
+      if (metricType) {
+        query = query.eq('metric_type', metricType);
+      }
+
+      if (timeRange) {
+        query = query
+          .gte('timestamp', timeRange.start)
+          .lte('timestamp', timeRange.end);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching performance metrics:', error);
+      throw error;
+    }
+  }
+
+  // ================================
+  // PRIVATE HELPER METHODS
+  // ================================
 
   private async getActiveConversationsCount(): Promise<number> {
-    const { count } = await supabase
+    const { count, error } = await supabase
       .from('conversations')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'active');
-    
+
+    if (error) throw error;
     return count || 0;
   }
 
   private async getAverageResponseTime(): Promise<number> {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('conversation_analytics')
       .select('avg_response_time_seconds')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      .not('avg_response_time_seconds', 'is', null)
+      .gte('started_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+    if (error) throw error;
 
     if (!data || data.length === 0) return 120; // Default 2 minutes
 
-    const avgTime = data.reduce((sum, item) => sum + (item.avg_response_time_seconds || 0), 0) / data.length;
-    return Math.round(avgTime);
+    const sum = data.reduce((acc, item) => acc + (item.avg_response_time_seconds || 0), 0);
+    return Math.round(sum / data.length);
   }
 
   private async getResolutionRate(): Promise<number> {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('conversation_analytics')
-      .select('resolution_status')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      .select('resolved_by')
+      .not('resolved_by', 'is', null)
+      .gte('started_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+    if (error) throw error;
 
     if (!data || data.length === 0) return 0.85; // Default 85%
 
-    const resolvedCount = data.filter(item => item.resolution_status === 'resolved').length;
-    return resolvedCount / data.length;
+    const resolved = data.filter(item => item.resolved_by !== 'abandoned').length;
+    return Math.round((resolved / data.length) * 100) / 100;
   }
 
   private async getCustomerSatisfactionScore(): Promise<number> {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('conversation_analytics')
       .select('customer_satisfaction')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .not('customer_satisfaction', 'is', null);
+      .not('customer_satisfaction', 'is', null)
+      .gte('started_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+
+    if (error) throw error;
 
     if (!data || data.length === 0) return 4.2; // Default 4.2/5
 
-    const avgSatisfaction = data.reduce((sum, item) => sum + (item.customer_satisfaction || 0), 0) / data.length;
-    return Math.round(avgSatisfaction * 10) / 10;
+    const sum = data.reduce((acc, item) => acc + (item.customer_satisfaction || 0), 0);
+    return Math.round((sum / data.length) * 10) / 10;
   }
 
   private async getAIPerformanceScore(): Promise<number> {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('conversation_analytics')
       .select('ai_accuracy_score')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .not('ai_accuracy_score', 'is', null);
+      .not('ai_accuracy_score', 'is', null)
+      .gte('started_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-    if (!data || data.length === 0) return 0.85; // Default 85%
+    if (error) throw error;
 
-    const avgAccuracy = data.reduce((sum, item) => sum + (item.ai_accuracy_score || 0), 0) / data.length;
-    return Math.round(avgAccuracy * 100) / 100;
+    if (!data || data.length === 0) return 0.88; // Default 88%
+
+    const sum = data.reduce((acc, item) => acc + (item.ai_accuracy_score || 0), 0);
+    return Math.round((sum / data.length) * 100) / 100;
   }
 
   private async getChannelDistribution(): Promise<ChannelMetrics[]> {
-    const { data } = await supabase
-      .from('conversation_analytics')
+    const { data, error } = await supabase
+      .from('conversations')
       .select('channel_type')
       .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
+    if (error) throw error;
+
     if (!data || data.length === 0) {
       return [
-        { channel: 'whatsapp', count: 15, percentage: 45 },
-        { channel: 'email', count: 12, percentage: 36 },
-        { channel: 'widget', count: 6, percentage: 19 }
+        { channel: 'website', count: 60, percentage: 60 },
+        { channel: 'whatsapp', count: 25, percentage: 25 },
+        { channel: 'email', count: 15, percentage: 15 }
       ];
     }
 
     const channelCounts = data.reduce((acc, item) => {
-      const channel = item.channel_type || 'unknown';
+      const channel = item.channel_type || 'website';
       acc[channel] = (acc[channel] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -515,260 +465,522 @@ export class AnalyticsEngineService {
     }));
   }
 
-  private async getAIResolutionRate(): Promise<number> {
-    const { data } = await supabase
-      .from('conversation_analytics')
-      .select('resolution_status')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-    if (!data || data.length === 0) return 0.78; // Default 78%
-
-    const aiResolvedCount = data.filter(item => 
-      item.resolution_status === 'resolved' || item.resolution_status === 'ai_resolved'
-    ).length;
-    
-    return aiResolvedCount / data.length;
-  }
-
-  private async getAgentProductivity(): Promise<number> {
-    // This would calculate based on active agents and their conversation load
-    return 0.82; // Default 82% productivity
-  }
-
-  private async getQueueLength(): Promise<number> {
-    const { count } = await supabase
-      .from('conversations')
-      .select('*', { count: 'exact', head: true })
-      .eq('status', 'pending');
-    
-    return count || 0;
-  }
-
-  private async getConversationVolumeTrend(timeRange: TimeRange, granularity: string): Promise<TimeSeries[]> {
-    const { data } = await supabase
+  private async getConversationVolumeTrend(
+    timeRange: { start: string; end: string },
+    granularity: string
+  ): Promise<TimeSeries[]> {
+    const { data, error } = await supabase
       .from('daily_analytics')
       .select('date, total_conversations')
-      .gte('date', timeRange.start.toISOString().split('T')[0])
-      .lte('date', timeRange.end.toISOString().split('T')[0])
+      .gte('date', timeRange.start)
+      .lte('date', timeRange.end)
       .order('date', { ascending: true });
 
-    if (!data || data.length === 0) {
-      // Return sample data if no data exists
-      return this.generateSampleTimeSeries(timeRange, granularity);
-    }
+    if (error) throw error;
 
-    return data.map(item => ({
-      timestamp: new Date(item.date).toISOString(),
-      value: item.total_conversations
+    return (data || []).map(item => ({
+      timestamp: item.date,
+      value: item.total_conversations || 0
     }));
   }
 
-  private async getResponseTimesTrend(timeRange: TimeRange, granularity: string): Promise<TimeSeries[]> {
-    const { data } = await supabase
+  private async getResponseTimeTrend(
+    timeRange: { start: string; end: string },
+    granularity: string
+  ): Promise<TimeSeries[]> {
+    const { data, error } = await supabase
       .from('daily_analytics')
       .select('date, avg_response_time_seconds')
-      .gte('date', timeRange.start.toISOString().split('T')[0])
-      .lte('date', timeRange.end.toISOString().split('T')[0])
+      .gte('date', timeRange.start)
+      .lte('date', timeRange.end)
       .order('date', { ascending: true });
 
-    if (!data || data.length === 0) {
-      return this.generateSampleTimeSeries(timeRange, granularity, 120);
-    }
+    if (error) throw error;
 
-    return data.map(item => ({
-      timestamp: new Date(item.date).toISOString(),
-      value: item.avg_response_time_seconds
+    return (data || []).map(item => ({
+      timestamp: item.date,
+      value: item.avg_response_time_seconds || 0
     }));
   }
 
-  private async getSatisfactionTrend(timeRange: TimeRange, granularity: string): Promise<TimeSeries[]> {
-    const { data } = await supabase
+  private async getSatisfactionTrend(
+    timeRange: { start: string; end: string },
+    granularity: string
+  ): Promise<TimeSeries[]> {
+    const { data, error } = await supabase
       .from('daily_analytics')
       .select('date, avg_customer_satisfaction')
-      .gte('date', timeRange.start.toISOString().split('T')[0])
-      .lte('date', timeRange.end.toISOString().split('T')[0])
+      .gte('date', timeRange.start)
+      .lte('date', timeRange.end)
       .order('date', { ascending: true });
 
-    if (!data || data.length === 0) {
-      return this.generateSampleTimeSeries(timeRange, granularity, 4.2);
-    }
+    if (error) throw error;
 
-    return data.map(item => ({
-      timestamp: new Date(item.date).toISOString(),
-      value: item.avg_customer_satisfaction
+    return (data || []).map(item => ({
+      timestamp: item.date,
+      value: item.avg_customer_satisfaction || 0
     }));
   }
 
-  private async getResolutionRateTrend(timeRange: TimeRange, granularity: string): Promise<TimeSeries[]> {
-    const { data } = await supabase
+  private async getResolutionRateTrend(
+    timeRange: { start: string; end: string },
+    granularity: string
+  ): Promise<TimeSeries[]> {
+    const { data, error } = await supabase
       .from('daily_analytics')
       .select('date, resolution_rate')
-      .gte('date', timeRange.start.toISOString().split('T')[0])
-      .lte('date', timeRange.end.toISOString().split('T')[0])
+      .gte('date', timeRange.start)
+      .lte('date', timeRange.end)
       .order('date', { ascending: true });
 
-    if (!data || data.length === 0) {
-      return this.generateSampleTimeSeries(timeRange, granularity, 0.85);
-    }
+    if (error) throw error;
 
-    return data.map(item => ({
-      timestamp: new Date(item.date).toISOString(),
-      value: item.resolution_rate
+    return (data || []).map(item => ({
+      timestamp: item.date,
+      value: item.resolution_rate || 0
     }));
   }
 
-  private async getChannelPerformanceTrend(timeRange: TimeRange): Promise<ChannelActivity[]> {
-    const { data } = await supabase
+  private async getChannelPerformanceTrend(
+    timeRange: { start: string; end: string },
+    granularity: string
+  ): Promise<Array<{ channel: string; performance: TimeSeries[] }>> {
+    const { data, error } = await supabase
       .from('daily_analytics')
       .select('date, channel_distribution')
-      .gte('date', timeRange.start.toISOString().split('T')[0])
-      .lte('date', timeRange.end.toISOString().split('T')[0])
+      .gte('date', timeRange.start)
+      .lte('date', timeRange.end)
       .order('date', { ascending: true });
 
-    if (!data || data.length === 0) {
-      return [
-        { channel: 'whatsapp', activity: 75, trend: 'up' },
-        { channel: 'email', activity: 60, trend: 'stable' },
-        { channel: 'widget', activity: 45, trend: 'down' }
-      ];
-    }
+    if (error) throw error;
 
     // Process channel distribution data
-    const channelData = data.reduce((acc, item) => {
+    const channelData: Record<string, TimeSeries[]> = {};
+    
+    for (const item of data || []) {
       const distribution = item.channel_distribution || {};
-      Object.entries(distribution).forEach(([channel, count]) => {
-        if (!acc[channel]) acc[channel] = [];
-        acc[channel].push(count as number);
-      });
-      return acc;
-    }, {} as Record<string, number[]>);
+      
+      for (const [channel, value] of Object.entries(distribution)) {
+        if (!channelData[channel]) {
+          channelData[channel] = [];
+        }
+        channelData[channel].push({
+          timestamp: item.date,
+          value: typeof value === 'number' ? value : 0
+        });
+      }
+    }
 
-    return Object.entries(channelData).map(([channel, counts]) => ({
+    return Object.entries(channelData).map(([channel, performance]) => ({
       channel,
-      activity: counts.reduce((sum, count) => sum + count, 0),
-      trend: counts.length > 1 && counts[counts.length - 1] > counts[counts.length - 2] ? 'up' : 
-             counts.length > 1 && counts[counts.length - 1] < counts[counts.length - 2] ? 'down' : 'stable'
+      performance
     }));
   }
 
-  private generateSampleTimeSeries(timeRange: TimeRange, granularity: string, baseValue: number = 50): TimeSeries[] {
-    const timeSeries: TimeSeries[] = [];
-    const start = new Date(timeRange.start);
-    const end = new Date(timeRange.end);
-    const duration = end.getTime() - start.getTime();
-    const points = Math.min(30, Math.max(7, Math.floor(duration / (24 * 60 * 60 * 1000))));
+  private async getVolumeForecast(days: number): Promise<VolumePredict[]> {
+    const { data, error } = await supabase
+      .from('predictive_analytics')
+      .select('*')
+      .eq('prediction_type', 'volume_forecast')
+      .gte('prediction_date', new Date().toISOString().split('T')[0])
+      .lte('prediction_date', new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+      .order('prediction_date', { ascending: true });
 
-    for (let i = 0; i < points; i++) {
-      const timestamp = new Date(start.getTime() + (i * duration) / points);
-      const variation = (Math.random() - 0.5) * 0.2; // ±10% variation
-      const value = baseValue * (1 + variation);
-      
-      timeSeries.push({
-        timestamp: timestamp.toISOString(),
-        value: Math.round(value * 100) / 100
-      });
-    }
+    if (error) throw error;
 
-    return timeSeries;
+    return (data || []).map(item => ({
+      date: new Date(item.prediction_date),
+      predictedVolume: item.predicted_value,
+      confidence: item.confidence_level,
+      seasonalAdjustment: 1.0 // Would be calculated based on historical patterns
+    }));
   }
 
-  // Additional private methods for predictive analytics
-  private async forecastConversationVolume(): Promise<VolumePredict[]> {
-    const historicalData = await this.getConversationVolumeTrend({
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      end: new Date()
-    }, 'day');
-
-    // Simple linear regression for forecasting
-    const forecast: VolumePredict[] = [];
-    const avgGrowth = historicalData.length > 1 ? 
-      (historicalData[historicalData.length - 1].value - historicalData[0].value) / historicalData.length : 0;
-
-    for (let i = 1; i <= 14; i++) {
-      const forecastDate = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
-      const predictedValue = historicalData[historicalData.length - 1]?.value || 50;
-      
-      forecast.push({
-        date: forecastDate,
-        predictedVolume: Math.max(0, Math.round(predictedValue + avgGrowth * i)),
-        confidence: Math.max(0.5, 0.9 - (i * 0.05)),
-        seasonalAdjustment: 1.0
-      });
-    }
-
-    return forecast;
+  private async getStaffingRecommendations(days: number): Promise<StaffingPrediction[]> {
+    const volumeForecast = await this.getVolumeForecast(days);
+    
+    return volumeForecast.map(forecast => ({
+      date: forecast.date,
+      recommendedStaff: Math.ceil(forecast.predictedVolume / 20), // Assuming 20 conversations per staff member
+      confidence: forecast.confidence,
+      reasoning: `Based on predicted volume of ${forecast.predictedVolume} conversations`
+    }));
   }
 
-  private async calculateStaffingNeeds(): Promise<StaffingPrediction[]> {
-    return [{
-      date: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      requiredAgents: 3,
-      currentAgents: 2,
-      confidenceLevel: 0.85,
-      peakHours: ['09:00', '14:00', '18:00']
-    }];
+  private async getPerformancePredictions(days: number): Promise<PerformanceForecast[]> {
+    const { data, error } = await supabase
+      .from('predictive_analytics')
+      .select('*')
+      .eq('prediction_type', 'satisfaction_trend')
+      .gte('prediction_date', new Date().toISOString().split('T')[0])
+      .lte('prediction_date', new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+      .order('prediction_date', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map(item => ({
+      date: new Date(item.prediction_date),
+      predictedSatisfaction: item.predicted_value,
+      predictedResponseTime: 120, // Would be calculated from separate prediction
+      confidence: item.confidence_level
+    }));
   }
 
-  private async predictPerformanceMetrics(): Promise<PerformanceForecast[]> {
-    return [{
-      metric: 'customer_satisfaction',
-      currentValue: 4.2,
-      predictedValue: 4.3,
-      confidence: 0.8,
-      timeframe: '7_days'
-    }];
-  }
-
-  private async detectSeasonalPatterns(): Promise<SeasonalPattern[]> {
-    return [{
-      pattern: 'weekly',
-      description: 'Higher conversation volume on Mondays and Fridays',
-      confidence: 0.85,
-      impact: 'medium'
-    }];
+  private async getSeasonalityPatterns(): Promise<SeasonalPattern[]> {
+    // This would analyze historical data to identify seasonal patterns
+    return [
+      {
+        pattern: 'daily',
+        description: 'Peak hours: 9-11 AM and 2-4 PM',
+        strength: 0.75,
+        recommendations: ['Increase staffing during peak hours']
+      },
+      {
+        pattern: 'weekly',
+        description: 'Higher volume on Tuesdays and Wednesdays',
+        strength: 0.65,
+        recommendations: ['Schedule more agents mid-week']
+      },
+      {
+        pattern: 'monthly',
+        description: 'Increased activity at month-end',
+        strength: 0.55,
+        recommendations: ['Prepare for month-end spikes']
+      }
+    ];
   }
 
   private async getAIAccuracyScore(): Promise<number> {
-    return 0.85; // Default 85% accuracy
+    const { data, error } = await supabase
+      .from('conversation_analytics')
+      .select('ai_accuracy_score')
+      .not('ai_accuracy_score', 'is', null)
+      .gte('started_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) return 0.88;
+
+    const sum = data.reduce((acc, item) => acc + (item.ai_accuracy_score || 0), 0);
+    return Math.round((sum / data.length) * 100) / 100;
   }
 
-  private async getLearningProgress(): Promise<any[]> {
-    return [];
+  private async getLearningProgress(): Promise<Array<{ date: string; accuracy: number; improvement: number }>> {
+    const { data, error } = await supabase
+      .from('daily_analytics')
+      .select('date, ai_accuracy_score')
+      .not('ai_accuracy_score', 'is', null)
+      .gte('date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+      .order('date', { ascending: true });
+
+    if (error) throw error;
+
+    return (data || []).map((item, index, array) => ({
+      date: item.date,
+      accuracy: item.ai_accuracy_score || 0,
+      improvement: index > 0 ? 
+        ((item.ai_accuracy_score || 0) - (array[index - 1].ai_accuracy_score || 0)) : 0
+    }));
   }
 
-  private async getConversationOutcomes(): Promise<any[]> {
-    return [];
+  private async getConversationOutcomes(): Promise<Array<{ outcome: string; count: number; percentage: number }>> {
+    const { data, error } = await supabase
+      .from('conversation_analytics')
+      .select('resolved_by')
+      .not('resolved_by', 'is', null)
+      .gte('started_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      return [
+        { outcome: 'ai_resolved', count: 60, percentage: 60 },
+        { outcome: 'human_resolved', count: 35, percentage: 35 },
+        { outcome: 'abandoned', count: 5, percentage: 5 }
+      ];
+    }
+
+    const outcomes = data.reduce((acc, item) => {
+      const outcome = item.resolved_by || 'abandoned';
+      acc[outcome] = (acc[outcome] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const total = data.length;
+    return Object.entries(outcomes).map(([outcome, count]) => ({
+      outcome,
+      count,
+      percentage: Math.round((count / total) * 100)
+    }));
   }
 
   private async getImprovementAreas(): Promise<string[]> {
-    return ['Response time optimization', 'Knowledge base expansion'];
+    const accuracy = await this.getAIAccuracyScore();
+    const satisfaction = await this.getCustomerSatisfactionScore();
+    const responseTime = await this.getAverageResponseTime();
+
+    const areas: string[] = [];
+
+    if (accuracy < 0.85) {
+      areas.push('AI model accuracy needs improvement');
+    }
+    if (satisfaction < 4.0) {
+      areas.push('Customer satisfaction scores could be higher');
+    }
+    if (responseTime > 180) {
+      areas.push('Response times are longer than optimal');
+    }
+
+    return areas.length > 0 ? areas : ['Performance is meeting targets'];
   }
 
   private async getTrainingRecommendations(): Promise<string[]> {
-    return ['Update FAQ responses', 'Add seasonal content'];
-  }
+    const areas = await this.getImprovementAreas();
+    const recommendations: string[] = [];
 
-  private async getRecentPerformanceMetrics(): Promise<any[]> {
-    const { data } = await supabase
-      .from('realtime_metrics')
-      .select('*')
-      .gte('timestamp', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-      .order('timestamp', { ascending: false })
-      .limit(50);
-
-    return data || [];
-  }
-
-  // ================================
-  // CLEANUP
-  // ================================
-
-  public stopUpdates(): void {
-    this.isRunning = false;
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
+    if (areas.includes('AI model accuracy needs improvement')) {
+      recommendations.push('Increase training data volume');
+      recommendations.push('Review and improve conversation patterns');
     }
+    if (areas.includes('Customer satisfaction scores could be higher')) {
+      recommendations.push('Enhance response personalization');
+      recommendations.push('Improve sentiment analysis');
+    }
+    if (areas.includes('Response times are longer than optimal')) {
+      recommendations.push('Optimize knowledge base structure');
+      recommendations.push('Implement faster retrieval algorithms');
+    }
+
+    return recommendations.length > 0 ? recommendations : ['Continue current training approach'];
+  }
+
+  private async getKPIs(): Promise<Record<string, { current: number; target: number; trend: string; status: string }>> {
+    const [
+      satisfaction,
+      responseTime,
+      resolutionRate,
+      aiAccuracy
+    ] = await Promise.all([
+      this.getCustomerSatisfactionScore(),
+      this.getAverageResponseTime(),
+      this.getResolutionRate(),
+      this.getAIAccuracyScore()
+    ]);
+
+    return {
+      customerSatisfaction: {
+        current: satisfaction,
+        target: 4.5,
+        trend: satisfaction >= 4.5 ? 'up' : 'stable',
+        status: satisfaction >= 4.5 ? 'good' : satisfaction >= 4.0 ? 'warning' : 'critical'
+      },
+      responseTime: {
+        current: responseTime,
+        target: 120,
+        trend: responseTime <= 120 ? 'down' : 'up',
+        status: responseTime <= 120 ? 'good' : responseTime <= 180 ? 'warning' : 'critical'
+      },
+      resolutionRate: {
+        current: resolutionRate,
+        target: 0.9,
+        trend: resolutionRate >= 0.9 ? 'up' : 'stable',
+        status: resolutionRate >= 0.9 ? 'good' : resolutionRate >= 0.8 ? 'warning' : 'critical'
+      },
+      aiAccuracy: {
+        current: aiAccuracy,
+        target: 0.9,
+        trend: aiAccuracy >= 0.9 ? 'up' : 'stable',
+        status: aiAccuracy >= 0.9 ? 'good' : aiAccuracy >= 0.8 ? 'warning' : 'critical'
+      }
+    };
+  }
+
+  private async getTrends(): Promise<Record<string, Array<{ date: string; value: number }>>> {
+    const timeRange = {
+      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      end: new Date().toISOString().split('T')[0]
+    };
+
+    const [
+      satisfactionTrend,
+      volumeTrend,
+      responseTimeTrend
+    ] = await Promise.all([
+      this.getSatisfactionTrend(timeRange, 'day'),
+      this.getConversationVolumeTrend(timeRange, 'day'),
+      this.getResponseTimeTrend(timeRange, 'day')
+    ]);
+
+    return {
+      satisfaction: satisfactionTrend.map(t => ({ date: t.timestamp, value: t.value })),
+      volume: volumeTrend.map(t => ({ date: t.timestamp, value: t.value })),
+      responseTime: responseTimeTrend.map(t => ({ date: t.timestamp, value: t.value }))
+    };
+  }
+
+  private async getBusinessInsights(): Promise<Array<{ type: string; title: string; description: string; impact: string }>> {
+    return [
+      {
+        type: 'opportunity',
+        title: 'AI Resolution Rate Increasing',
+        description: 'AI is successfully resolving 60% of conversations, reducing agent workload',
+        impact: 'high'
+      },
+      {
+        type: 'trend',
+        title: 'Peak Hours Identified',
+        description: 'Highest conversation volume occurs between 9-11 AM and 2-4 PM',
+        impact: 'medium'
+      },
+      {
+        type: 'risk',
+        title: 'Response Time Variance',
+        description: 'Response times vary significantly across channels, affecting satisfaction',
+        impact: 'medium'
+      }
+    ];
+  }
+
+  private async getBusinessRecommendations(): Promise<Array<{ priority: string; title: string; description: string; expectedImpact: string }>> {
+    return [
+      {
+        priority: 'high',
+        title: 'Optimize Peak Hour Staffing',
+        description: 'Increase agent availability during 9-11 AM and 2-4 PM to handle volume spikes',
+        expectedImpact: 'Reduce average response time by 25%'
+      },
+      {
+        priority: 'medium',
+        title: 'Enhance AI Training',
+        description: 'Improve AI model with more training data to increase resolution rate',
+        expectedImpact: 'Increase AI resolution rate from 60% to 75%'
+      },
+      {
+        priority: 'low',
+        title: 'Channel Performance Analysis',
+        description: 'Analyze and optimize performance across different communication channels',
+        expectedImpact: 'Improve overall satisfaction by 10%'
+      }
+    ];
+  }
+
+  private async calculateCostSavings(timeFrame: { start: string; end: string }): Promise<number> {
+    // Calculate cost savings from AI automation
+    const { data: analytics, error } = await supabase
+      .from('conversation_analytics')
+      .select('resolved_by')
+      .not('resolved_by', 'is', null)
+      .gte('started_at', timeFrame.start)
+      .lte('started_at', timeFrame.end);
+
+    if (error) throw error;
+
+    const aiResolved = analytics?.filter(a => a.resolved_by === 'ai').length || 0;
+    const costPerAgentConversation = 5; // $5 per agent-handled conversation
+    const costPerAIConversation = 0.5; // $0.50 per AI-handled conversation
+
+    return aiResolved * (costPerAgentConversation - costPerAIConversation);
+  }
+
+  private async calculateEfficiencyGains(timeFrame: { start: string; end: string }): Promise<number> {
+    // Calculate efficiency gains from faster response times
+    const { data: analytics, error } = await supabase
+      .from('conversation_analytics')
+      .select('total_duration_seconds, resolved_by')
+      .not('total_duration_seconds', 'is', null)
+      .gte('started_at', timeFrame.start)
+      .lte('started_at', timeFrame.end);
+
+    if (error) throw error;
+
+    const averageDuration = analytics?.reduce((acc, a) => acc + (a.total_duration_seconds || 0), 0) || 0;
+    const totalConversations = analytics?.length || 1;
+    const avgDurationMinutes = averageDuration / (totalConversations * 60);
+
+    // Assume 20% efficiency gain from automation
+    const efficiencyGain = avgDurationMinutes * 0.2 * totalConversations;
+    return Math.round(efficiencyGain * 10); // Convert to dollar value
+  }
+
+  private async calculateSatisfactionImpact(timeFrame: { start: string; end: string }): Promise<number> {
+    const { data: analytics, error } = await supabase
+      .from('conversation_analytics')
+      .select('customer_satisfaction')
+      .not('customer_satisfaction', 'is', null)
+      .gte('started_at', timeFrame.start)
+      .lte('started_at', timeFrame.end);
+
+    if (error) throw error;
+
+    const avgSatisfaction = analytics?.reduce((acc, a) => acc + (a.customer_satisfaction || 0), 0) || 0;
+    const totalRatings = analytics?.length || 1;
+
+    return Math.round((avgSatisfaction / totalRatings) * 20) / 10; // Scale to 0-10
+  }
+
+  private async calculateRevenueImpact(timeFrame: { start: string; end: string }): Promise<number> {
+    // Calculate revenue impact from improved customer satisfaction and faster resolution
+    const { data: analytics, error } = await supabase
+      .from('conversation_analytics')
+      .select('lead_qualified, revenue_generated')
+      .gte('started_at', timeFrame.start)
+      .lte('started_at', timeFrame.end);
+
+    if (error) throw error;
+
+    const qualifiedLeads = analytics?.filter(a => a.lead_qualified).length || 0;
+    const totalRevenue = analytics?.reduce((acc, a) => acc + (a.revenue_generated || 0), 0) || 0;
+
+    return qualifiedLeads * 500 + totalRevenue; // $500 per qualified lead + direct revenue
+  }
+
+  private async createConversationAnalytics(conversationId: string): Promise<ConversationAnalytics> {
+    // Create analytics for a conversation that doesn't have them
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('id', conversationId)
+      .single();
+
+    if (convError) throw convError;
+
+    const analyticsData = {
+      conversation_id: conversationId,
+      started_at: conversation.created_at,
+      total_messages: 0,
+      customer_messages: 0,
+      ai_messages: 0,
+      agent_messages: 0,
+      resolved_by: conversation.status === 'resolved' ? 'ai' : null,
+      ai_accuracy_score: 0.85
+    };
+
+    const { data, error } = await supabase
+      .from('conversation_analytics')
+      .insert(analyticsData)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  private getCachedData(key: string): any {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCachedData(key: string, data: any): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
   }
 }
 
-export const analyticsEngine = AnalyticsEngineService.getInstance();
+// Export singleton instance
+export const analyticsEngineService = new AnalyticsEngineService();
