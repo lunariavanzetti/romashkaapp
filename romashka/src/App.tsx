@@ -30,6 +30,7 @@ import PlaygroundPage from './pages/playground/PlaygroundPage';
 import TemplatesPage from './pages/templates/index';
 import PersonalitySettings from './pages/settings/personality/PersonalitySettings';
 import TrainingAnalyticsDashboard from './pages/ai-training/TrainingAnalyticsDashboard';
+import TrainingDashboard from './pages/training/TrainingDashboard';
 import SecurityDashboard from './pages/security/SecurityDashboard';
 import RealTimeAnalytics from './pages/analytics/RealTimeAnalytics';
 import ReportingDashboard from './pages/analytics/ReportingDashboard';
@@ -80,7 +81,7 @@ const AppContent = () => {
         <Route path="/templates" element={<div className="pt-24"><ProtectedRoute><TemplatesPage /></ProtectedRoute></div>} />
         <Route path="/personality" element={<div className="pt-24"><ProtectedRoute><div><h1>🎭 PERSONALITY PAGE LOADED</h1><PersonalitySettings /></div></ProtectedRoute></div>} />
         <Route path="/settings/personality" element={<div className="pt-24"><ProtectedRoute><PersonalitySettings /></ProtectedRoute></div>} />
-        <Route path="/training" element={<div className="pt-24"><ProtectedRoute><div><h1>🎯 TRAINING PAGE LOADED</h1><p>This is just a simple placeholder component.</p><p>If you see this, the routing works!</p></div></ProtectedRoute></div>} />
+        <Route path="/training" element={<div className="pt-24"><ProtectedRoute><TrainingDashboard /></ProtectedRoute></div>} />
         <Route path="/ai-training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
         <Route path="/security" element={<div className="pt-24"><ProtectedRoute><SecurityDashboard /></ProtectedRoute></div>} />
         <Route path="/analytics/real-time" element={<div className="pt-24"><ProtectedRoute><RealTimeAnalytics /></ProtectedRoute></div>} />
