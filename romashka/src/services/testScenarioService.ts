@@ -1,374 +1,565 @@
+// ROMASHKA Test Scenario Service
+// Predefined test scenarios for AI playground
+
+import { supabase } from '../lib/supabase';
 import { 
   TestScenario, 
-  TestScenarioResult, 
-  BotConfiguration,
-  TestScenarioCategory,
-  TestMessage
+  TestScenarioResult,
+  PlaygroundSession,
+  PlaygroundAPIResponse
 } from '../types/playground';
 import { playgroundAIService } from './playgroundAIService';
-import { botConfigurationService } from './botConfigurationService';
 
 export class TestScenarioService {
-  private scenarios: Map<string, TestScenario> = new Map();
+  // Predefined test scenarios
+  private predefinedScenarios: TestScenario[] = [
+    // Basic scenarios
+    {
+      id: 'basic-product-inquiry',
+      name: 'Basic Product Inquiry',
+      category: 'customer_service',
+      difficulty: 'basic',
+      message: 'Hi, I\'m interested in learning more about your product. Can you tell me about the main features?',
+      expected_outcome: 'Provide clear information about product features',
+      success_criteria: [
+        'Responds with product information',
+        'Maintains appropriate tone',
+        'Asks relevant follow-up questions'
+      ],
+      tags: ['product', 'inquiry', 'basic']
+    },
+    {
+      id: 'basic-greeting',
+      name: 'Basic Greeting',
+      category: 'general',
+      difficulty: 'basic',
+      message: 'Hello! How are you today?',
+      expected_outcome: 'Respond with appropriate greeting and offer help',
+      success_criteria: [
+        'Responds warmly',
+        'Offers assistance',
+        'Maintains personality'
+      ],
+      tags: ['greeting', 'basic', 'general']
+    },
+    {
+      id: 'basic-pricing',
+      name: 'Basic Pricing Question',
+      category: 'sales',
+      difficulty: 'basic',
+      message: 'What are your pricing options?',
+      expected_outcome: 'Provide pricing information or guide to pricing resources',
+      success_criteria: [
+        'Addresses pricing question',
+        'Provides helpful information',
+        'Maintains professional tone'
+      ],
+      tags: ['pricing', 'sales', 'basic']
+    },
 
-  constructor() {
-    this.initializeScenarios();
-  }
+    // Intermediate scenarios
+    {
+      id: 'intermediate-technical-issue',
+      name: 'Technical Support Issue',
+      category: 'technical_support',
+      difficulty: 'intermediate',
+      message: 'I\'m having trouble with the integration. The API keeps returning a 403 error. Can you help me troubleshoot this?',
+      expected_outcome: 'Provide technical troubleshooting steps',
+      success_criteria: [
+        'Shows technical understanding',
+        'Provides specific troubleshooting steps',
+        'Maintains appropriate technical depth'
+      ],
+      tags: ['technical', 'troubleshooting', 'api', 'intermediate']
+    },
+    {
+      id: 'intermediate-billing-dispute',
+      name: 'Billing Dispute',
+      category: 'customer_service',
+      difficulty: 'intermediate',
+      message: 'I was charged twice for my subscription this month. This is really frustrating and I need this resolved immediately.',
+      expected_outcome: 'Handle billing concern with empathy and clear resolution steps',
+      success_criteria: [
+        'Shows empathy for frustration',
+        'Provides clear resolution steps',
+        'Maintains professional composure'
+      ],
+      tags: ['billing', 'dispute', 'empathy', 'intermediate']
+    },
+    {
+      id: 'intermediate-feature-request',
+      name: 'Feature Request',
+      category: 'general',
+      difficulty: 'intermediate',
+      message: 'I love using your product, but I really need a dark mode option. Are there any plans to add this feature?',
+      expected_outcome: 'Acknowledge request and provide information about feature development',
+      success_criteria: [
+        'Acknowledges positive feedback',
+        'Addresses feature request appropriately',
+        'Maintains engagement'
+      ],
+      tags: ['feature', 'request', 'feedback', 'intermediate']
+    },
+
+    // Advanced scenarios
+    {
+      id: 'advanced-complex-complaint',
+      name: 'Complex Complaint',
+      category: 'customer_service',
+      difficulty: 'advanced',
+      message: 'This is the third time I\'m contacting support about the same issue. Your previous agents promised it would be fixed, but it\'s still not working. I\'m considering canceling my subscription and switching to a competitor. This is completely unacceptable.',
+      expected_outcome: 'Handle escalated complaint with high empathy and comprehensive solution',
+      success_criteria: [
+        'Shows deep empathy and understanding',
+        'Acknowledges previous frustrations',
+        'Provides comprehensive resolution plan',
+        'Maintains professional composure under pressure'
+      ],
+      tags: ['complaint', 'escalation', 'retention', 'advanced']
+    },
+    {
+      id: 'advanced-technical-integration',
+      name: 'Complex Technical Integration',
+      category: 'technical_support',
+      difficulty: 'advanced',
+      message: 'I\'m trying to integrate your API with our existing microservices architecture. We\'re using Kubernetes with istio service mesh, and I\'m getting intermittent timeout errors specifically when making batch requests. The error only occurs during peak traffic hours. I need detailed guidance on rate limiting and best practices for our specific setup.',
+      expected_outcome: 'Provide comprehensive technical guidance for complex integration',
+      success_criteria: [
+        'Demonstrates deep technical understanding',
+        'Provides specific solutions for complex scenario',
+        'Addresses all technical aspects mentioned'
+      ],
+      tags: ['technical', 'integration', 'microservices', 'advanced']
+    },
+    {
+      id: 'advanced-sales-objection',
+      name: 'Sales Objection Handling',
+      category: 'sales',
+      difficulty: 'advanced',
+      message: 'I\'ve been comparing your solution with your competitors, and frankly, they offer similar features at a lower price point. Your product seems overpriced for what it offers. Why should I choose you over them when I can get the same functionality for 40% less?',
+      expected_outcome: 'Address price objection with value proposition and competitive differentiation',
+      success_criteria: [
+        'Acknowledges price concern professionally',
+        'Highlights unique value proposition',
+        'Differentiates from competitors',
+        'Maintains sales momentum'
+      ],
+      tags: ['sales', 'objection', 'competitive', 'advanced']
+    }
+  ];
 
   /**
-   * Initialize predefined test scenarios
+   * Get all predefined test scenarios
    */
-  private initializeScenarios(): void {
-    const scenarios: TestScenario[] = [
-      {
-        id: 'product-inquiry-basic',
-        name: 'Product Inquiry - Basic',
-        description: 'Customer asking about product features and pricing',
-        category: 'product-inquiry',
-        difficulty_level: 'easy',
-        test_messages: [
-          { message: 'What are your pricing plans?', expected_intent: 'pricing_inquiry' },
-          { message: 'Can you tell me about your features?', expected_intent: 'feature_inquiry' },
-          { message: 'Do you offer enterprise features?', expected_intent: 'enterprise_inquiry' }
-        ],
-        expected_behaviors: ['helpful', 'informative', 'sales-oriented']
-      },
-      {
-        id: 'product-inquiry-advanced',
-        name: 'Product Inquiry - Advanced',
-        description: 'Complex product questions requiring detailed knowledge',
-        category: 'product-inquiry',
-        difficulty_level: 'hard',
-        test_messages: [
-          { message: 'How does your API rate limiting work and what are the exact limits?', expected_intent: 'technical_inquiry' },
-          { message: 'Can I get a demo of your product for my team of 50 people?', expected_intent: 'demo_request' },
-          { message: 'What integrations do you support and do you have webhooks?', expected_intent: 'integration_inquiry' }
-        ],
-        expected_behaviors: ['technical', 'detailed', 'solution-focused']
-      },
-      {
-        id: 'technical-support-basic',
-        name: 'Technical Support - Basic',
-        description: 'Common technical issues and troubleshooting',
-        category: 'technical-support',
-        difficulty_level: 'medium',
-        test_messages: [
-          { message: 'I cannot log into my account', expected_intent: 'login_issue' },
-          { message: 'The app keeps crashing on my phone', expected_intent: 'technical_issue' },
-          { message: 'How do I reset my password?', expected_intent: 'password_reset' }
-        ],
-        expected_behaviors: ['empathetic', 'solution-focused', 'technical']
-      },
-      {
-        id: 'technical-support-advanced',
-        name: 'Technical Support - Advanced',
-        description: 'Complex technical problems requiring deep troubleshooting',
-        category: 'technical-support',
-        difficulty_level: 'hard',
-        test_messages: [
-          { message: 'My integration stopped working after the latest API update', expected_intent: 'integration_issue' },
-          { message: 'I\'m getting a 403 error when trying to access the dashboard', expected_intent: 'access_error' },
-          { message: 'The webhook is not receiving data, but the logs show it\'s being sent', expected_intent: 'webhook_issue' }
-        ],
-        expected_behaviors: ['technical', 'methodical', 'solution-focused']
-      },
-      {
-        id: 'billing-questions-basic',
-        name: 'Billing Questions - Basic',
-        description: 'Common billing and payment inquiries',
-        category: 'billing-questions',
-        difficulty_level: 'easy',
-        test_messages: [
-          { message: 'Why was I charged twice this month?', expected_intent: 'billing_inquiry' },
-          { message: 'How do I cancel my subscription?', expected_intent: 'cancellation_request' },
-          { message: 'Can I get a refund for last month?', expected_intent: 'refund_request' }
-        ],
-        expected_behaviors: ['careful', 'policy-aware', 'empathetic']
-      },
-      {
-        id: 'billing-questions-complex',
-        name: 'Billing Questions - Complex',
-        description: 'Complex billing scenarios and edge cases',
-        category: 'billing-questions',
-        difficulty_level: 'hard',
-        test_messages: [
-          { message: 'I was charged for overages but I don\'t think I exceeded my limits', expected_intent: 'billing_dispute' },
-          { message: 'Can I change my billing cycle from monthly to annual mid-subscription?', expected_intent: 'billing_change' },
-          { message: 'I need a detailed invoice breakdown for our accounting department', expected_intent: 'invoice_request' }
-        ],
-        expected_behaviors: ['careful', 'detailed', 'policy-aware']
-      },
-      {
-        id: 'complaint-handling',
-        name: 'Complaint Handling',
-        description: 'Handling customer complaints and negative feedback',
-        category: 'complaint-handling',
-        difficulty_level: 'hard',
-        test_messages: [
-          { message: 'Your service is terrible and I want to speak to a manager!', expected_intent: 'complaint', expected_tone: 'angry' },
-          { message: 'I\'ve been waiting 3 days for support and no one has responded', expected_intent: 'escalation_request', expected_tone: 'frustrated' },
-          { message: 'This is the worst customer service I\'ve ever experienced', expected_intent: 'complaint', expected_tone: 'angry' }
-        ],
-        expected_behaviors: ['empathetic', 'de-escalating', 'solution-focused']
-      },
-      {
-        id: 'sales-inquiry',
-        name: 'Sales Inquiry',
-        description: 'Sales-focused conversations and lead qualification',
-        category: 'sales-inquiry',
-        difficulty_level: 'medium',
-        test_messages: [
-          { message: 'I\'m interested in your enterprise plan for my company', expected_intent: 'sales_inquiry' },
-          { message: 'Can you help me understand which plan would be best for us?', expected_intent: 'plan_recommendation' },
-          { message: 'Do you offer custom pricing for large organizations?', expected_intent: 'pricing_negotiation' }
-        ],
-        expected_behaviors: ['sales-oriented', 'consultative', 'helpful']
-      },
-      {
-        id: 'general-conversation',
-        name: 'General Conversation',
-        description: 'Casual conversation and general inquiries',
-        category: 'general-conversation',
-        difficulty_level: 'easy',
-        test_messages: [
-          { message: 'Hi there! How are you today?', expected_intent: 'greeting' },
-          { message: 'What can you help me with?', expected_intent: 'capabilities_inquiry' },
-          { message: 'Thank you for your help!', expected_intent: 'gratitude' }
-        ],
-        expected_behaviors: ['friendly', 'welcoming', 'helpful']
-      }
-    ];
-
-    scenarios.forEach(scenario => {
-      this.scenarios.set(scenario.id, scenario);
-    });
-  }
-
-  /**
-   * Get all available test scenarios
-   */
-  getAllScenarios(): TestScenario[] {
-    return Array.from(this.scenarios.values());
+  getPredefinedScenarios(): TestScenario[] {
+    return this.predefinedScenarios;
   }
 
   /**
    * Get scenarios by category
    */
-  getScenariosByCategory(category: TestScenarioCategory): TestScenario[] {
-    return Array.from(this.scenarios.values()).filter(
-      scenario => scenario.category === category
-    );
+  getScenariosByCategory(category: string): TestScenario[] {
+    return this.predefinedScenarios.filter(scenario => scenario.category === category);
   }
 
   /**
-   * Get scenarios by difficulty level
+   * Get scenarios by difficulty
    */
-  getScenariosByDifficulty(difficulty: 'easy' | 'medium' | 'hard'): TestScenario[] {
-    return Array.from(this.scenarios.values()).filter(
-      scenario => scenario.difficulty_level === difficulty
-    );
+  getScenariosByDifficulty(difficulty: string): TestScenario[] {
+    return this.predefinedScenarios.filter(scenario => scenario.difficulty === difficulty);
   }
 
   /**
    * Get a specific scenario by ID
    */
-  getScenario(scenarioId: string): TestScenario | null {
-    return this.scenarios.get(scenarioId) || null;
+  getScenarioById(id: string): TestScenario | null {
+    return this.predefinedScenarios.find(scenario => scenario.id === id) || null;
   }
 
   /**
-   * Run a specific test scenario
+   * Run a test scenario against a bot configuration
    */
   async runTestScenario(
     scenarioId: string,
-    botConfig: BotConfiguration
-  ): Promise<TestScenarioResult> {
-    const scenario = this.scenarios.get(scenarioId);
-    if (!scenario) {
-      throw new Error(`Test scenario '${scenarioId}' not found`);
-    }
-
-    return await playgroundAIService.runTestScenario(scenario, botConfig);
-  }
-
-  /**
-   * Run all scenarios for a bot configuration
-   */
-  async runAllScenarios(botConfig: BotConfiguration): Promise<{
-    results: TestScenarioResult[];
-    summary: {
-      total_scenarios: number;
-      average_response_time: number;
-      average_quality_score: number;
-      average_confidence: number;
-      performance_by_category: { [category: string]: number };
-      performance_by_difficulty: { [difficulty: string]: number };
-    };
-  }> {
-    const results: TestScenarioResult[] = [];
-    const allScenarios = this.getAllScenarios();
-
-    // Run all scenarios sequentially to avoid overwhelming the API
-    for (const scenario of allScenarios) {
-      try {
-        const result = await playgroundAIService.runTestScenario(scenario, botConfig);
-        results.push(result);
-        
-        // Add small delay between scenarios to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      } catch (error) {
-        console.error(`Failed to run scenario ${scenario.id}:`, error);
+    session: PlaygroundSession,
+    userId: string
+  ): Promise<PlaygroundAPIResponse<TestScenarioResult>> {
+    try {
+      const scenario = this.getScenarioById(scenarioId);
+      if (!scenario) {
+        return {
+          success: false,
+          error: 'Scenario not found'
+        };
       }
-    }
 
-    // Calculate summary statistics
-    const summary = this.calculateScenarioSummary(results);
+      // Generate AI response
+      const aiResponse = await playgroundAIService.generateResponse(
+        scenario.message,
+        session
+      );
 
-    return { results, summary };
-  }
+      // Evaluate if test passed
+      const passed = this.evaluateTestResult(
+        scenario,
+        aiResponse.response,
+        aiResponse.quality_score,
+        aiResponse.personality_analysis
+      );
 
-  /**
-   * Calculate summary statistics for scenario results
-   */
-  private calculateScenarioSummary(results: TestScenarioResult[]) {
-    if (results.length === 0) {
+      // Create test result
+      const testResult: Omit<TestScenarioResult, 'id' | 'created_at'> = {
+        session_id: session.id,
+        user_id: userId,
+        scenario_name: scenario.name,
+        scenario_category: scenario.category,
+        test_message: scenario.message,
+        expected_outcome: scenario.expected_outcome,
+        ai_response: aiResponse.response,
+        response_time_ms: aiResponse.response_time_ms,
+        passed: passed,
+        quality_score: aiResponse.quality_score,
+        personality_analysis: aiResponse.personality_analysis,
+        notes: this.generateTestNotes(scenario, aiResponse, passed)
+      };
+
+      // Save to database
+      const { data, error } = await supabase
+        .from('test_scenario_results')
+        .insert([testResult])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving test scenario result:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
       return {
-        total_scenarios: 0,
-        average_response_time: 0,
-        average_quality_score: 0,
-        average_confidence: 0,
-        performance_by_category: {},
-        performance_by_difficulty: {}
+        success: true,
+        data: data as TestScenarioResult,
+        message: `Test scenario "${scenario.name}" completed successfully`
+      };
+
+    } catch (error) {
+      console.error('Error running test scenario:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
 
-    const totalResponseTime = results.reduce((sum, r) => sum + r.average_response_time, 0);
-    const totalQuality = results.reduce((sum, r) => sum + r.average_quality_score, 0);
-    const totalConfidence = results.reduce((sum, r) => sum + r.average_confidence, 0);
+  /**
+   * Run multiple test scenarios
+   */
+  async runMultipleScenarios(
+    scenarioIds: string[],
+    session: PlaygroundSession,
+    userId: string
+  ): Promise<PlaygroundAPIResponse<TestScenarioResult[]>> {
+    try {
+      const results: TestScenarioResult[] = [];
+      const errors: string[] = [];
 
-    // Group by category and difficulty
-    const categoryGroups: { [key: string]: TestScenarioResult[] } = {};
-    const difficultyGroups: { [key: string]: TestScenarioResult[] } = {};
-
-    results.forEach(result => {
-      const scenario = this.scenarios.get(result.scenario_id);
-      if (scenario) {
-        // Group by category
-        if (!categoryGroups[scenario.category]) {
-          categoryGroups[scenario.category] = [];
+      for (const scenarioId of scenarioIds) {
+        const result = await this.runTestScenario(scenarioId, session, userId);
+        
+        if (result.success && result.data) {
+          results.push(result.data);
+        } else {
+          errors.push(`Failed to run scenario ${scenarioId}: ${result.error}`);
         }
-        categoryGroups[scenario.category].push(result);
 
-        // Group by difficulty
-        if (!difficultyGroups[scenario.difficulty_level]) {
-          difficultyGroups[scenario.difficulty_level] = [];
-        }
-        difficultyGroups[scenario.difficulty_level].push(result);
+        // Add small delay between tests to avoid rate limiting
+        await this.delay(500);
       }
-    });
 
-    // Calculate averages by category
-    const performanceByCategory: { [category: string]: number } = {};
-    Object.keys(categoryGroups).forEach(category => {
-      const categoryResults = categoryGroups[category];
-      const avgQuality = categoryResults.reduce((sum, r) => sum + r.average_quality_score, 0) / categoryResults.length;
-      performanceByCategory[category] = Math.round(avgQuality);
-    });
+      return {
+        success: true,
+        data: results,
+        message: `Completed ${results.length} out of ${scenarioIds.length} scenarios`,
+        ...(errors.length > 0 && { error: errors.join('; ') })
+      };
 
-    // Calculate averages by difficulty
-    const performanceByDifficulty: { [difficulty: string]: number } = {};
-    Object.keys(difficultyGroups).forEach(difficulty => {
-      const difficultyResults = difficultyGroups[difficulty];
-      const avgQuality = difficultyResults.reduce((sum, r) => sum + r.average_quality_score, 0) / difficultyResults.length;
-      performanceByDifficulty[difficulty] = Math.round(avgQuality);
-    });
-
-    return {
-      total_scenarios: results.length,
-      average_response_time: Math.round(totalResponseTime / results.length),
-      average_quality_score: Math.round(totalQuality / results.length),
-      average_confidence: Math.round((totalConfidence / results.length) * 100) / 100,
-      performance_by_category: performanceByCategory,
-      performance_by_difficulty: performanceByDifficulty
-    };
+    } catch (error) {
+      console.error('Error running multiple scenarios:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   /**
-   * Get performance insights based on scenario results
+   * Get test results for a session
    */
-  getPerformanceInsights(results: TestScenarioResult[]): string[] {
-    const insights: string[] = [];
-    const summary = this.calculateScenarioSummary(results);
+  async getTestResults(sessionId: string): Promise<PlaygroundAPIResponse<TestScenarioResult[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('test_scenario_results')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: false });
 
-    // Response time insights
-    if (summary.average_response_time > 3000) {
-      insights.push('Response times are slower than optimal. Consider simplifying personality settings or custom instructions.');
-    } else if (summary.average_response_time < 1500) {
-      insights.push('Excellent response times! Your configuration is well-optimized.');
+      if (error) {
+        console.error('Error fetching test results:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: data as TestScenarioResult[]
+      };
+
+    } catch (error) {
+      console.error('Error fetching test results:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
-
-    // Quality insights
-    if (summary.average_quality_score < 70) {
-      insights.push('Response quality could be improved. Review your personality settings and custom instructions.');
-    } else if (summary.average_quality_score > 85) {
-      insights.push('Outstanding response quality! Your bot is performing excellently.');
-    }
-
-    // Category-specific insights
-    if (summary.performance_by_category['complaint-handling'] && summary.performance_by_category['complaint-handling'] < 70) {
-      insights.push('Consider increasing empathy settings for better complaint handling.');
-    }
-
-    if (summary.performance_by_category['technical-support'] && summary.performance_by_category['technical-support'] < 70) {
-      insights.push('Technical support responses could be improved. Consider increasing technical depth settings.');
-    }
-
-    // Difficulty-specific insights
-    if (summary.performance_by_difficulty['hard'] && summary.performance_by_difficulty['hard'] < 60) {
-      insights.push('Performance on complex scenarios needs improvement. Consider adding more detailed custom instructions.');
-    }
-
-    if (insights.length === 0) {
-      insights.push('Your bot configuration is performing well across all test scenarios!');
-    }
-
-    return insights;
   }
 
   /**
-   * Create a custom test scenario
+   * Get test results for a user
    */
-  createCustomScenario(
-    name: string,
-    description: string,
-    category: TestScenarioCategory,
-    testMessages: TestMessage[],
-    difficulty: 'easy' | 'medium' | 'hard' = 'medium'
+  async getUserTestResults(userId: string): Promise<PlaygroundAPIResponse<TestScenarioResult[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('test_scenario_results')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user test results:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: data as TestScenarioResult[]
+      };
+
+    } catch (error) {
+      console.error('Error fetching user test results:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Evaluate if a test passed based on the response
+   */
+  private evaluateTestResult(
+    scenario: TestScenario,
+    response: string,
+    qualityScore: number,
+    personalityAnalysis: any
+  ): boolean {
+    // Basic quality threshold
+    if (qualityScore < 0.6) {
+      return false;
+    }
+
+    // Personality alignment threshold
+    if (personalityAnalysis.alignment_score < 0.7) {
+      return false;
+    }
+
+    // Response length check
+    if (response.length < 20) {
+      return false;
+    }
+
+    // Scenario-specific checks
+    switch (scenario.difficulty) {
+      case 'basic':
+        return qualityScore >= 0.6;
+      case 'intermediate':
+        return qualityScore >= 0.7 && personalityAnalysis.alignment_score >= 0.7;
+      case 'advanced':
+        return qualityScore >= 0.8 && personalityAnalysis.alignment_score >= 0.8;
+      default:
+        return qualityScore >= 0.6;
+    }
+  }
+
+  /**
+   * Generate test notes
+   */
+  private generateTestNotes(
+    scenario: TestScenario,
+    aiResponse: any,
+    passed: boolean
+  ): string {
+    const notes: string[] = [];
+
+    if (passed) {
+      notes.push('✅ Test passed successfully');
+    } else {
+      notes.push('❌ Test failed');
+    }
+
+    notes.push(`Quality Score: ${(aiResponse.quality_score * 100).toFixed(1)}%`);
+    notes.push(`Personality Alignment: ${(aiResponse.personality_analysis.alignment_score * 100).toFixed(1)}%`);
+    notes.push(`Response Time: ${aiResponse.response_time_ms}ms`);
+
+    // Add scenario-specific notes
+    if (scenario.difficulty === 'advanced' && aiResponse.quality_score < 0.8) {
+      notes.push('⚠️ Advanced scenario requires higher quality score');
+    }
+
+    if (aiResponse.personality_analysis.alignment_score < 0.7) {
+      notes.push('⚠️ Personality alignment could be improved');
+    }
+
+    if (aiResponse.response_time_ms > 3000) {
+      notes.push('⚠️ Response time is slower than optimal');
+    }
+
+    return notes.join('\n');
+  }
+
+  /**
+   * Create custom test scenario
+   */
+  async createCustomScenario(
+    scenario: Omit<TestScenario, 'id'>
   ): TestScenario {
     const customScenario: TestScenario = {
-      id: `custom_${Date.now()}`,
-      name: name,
-      description: description,
-      category: category,
-      test_messages: testMessages,
-      expected_behaviors: [],
-      difficulty_level: difficulty
+      id: `custom-${Date.now()}`,
+      ...scenario
     };
 
-    this.scenarios.set(customScenario.id, customScenario);
     return customScenario;
   }
 
   /**
-   * Remove a custom scenario
+   * Get test statistics for a session
    */
-  removeCustomScenario(scenarioId: string): boolean {
-    if (scenarioId.startsWith('custom_')) {
-      return this.scenarios.delete(scenarioId);
+  async getSessionTestStats(sessionId: string): Promise<PlaygroundAPIResponse<{
+    total_tests: number;
+    passed_tests: number;
+    failed_tests: number;
+    avg_quality_score: number;
+    avg_response_time: number;
+    avg_personality_alignment: number;
+    tests_by_category: Record<string, number>;
+    tests_by_difficulty: Record<string, number>;
+  }>> {
+    try {
+      const results = await this.getTestResults(sessionId);
+      
+      if (!results.success || !results.data) {
+        return {
+          success: false,
+          error: 'Failed to fetch test results'
+        };
+      }
+
+      const data = results.data;
+      const totalTests = data.length;
+      const passedTests = data.filter(result => result.passed).length;
+      const failedTests = totalTests - passedTests;
+
+      const avgQualityScore = totalTests > 0 ? 
+        data.reduce((sum, result) => sum + result.quality_score, 0) / totalTests : 0;
+
+      const avgResponseTime = totalTests > 0 ? 
+        data.reduce((sum, result) => sum + result.response_time_ms, 0) / totalTests : 0;
+
+      const avgPersonalityAlignment = totalTests > 0 ? 
+        data.reduce((sum, result) => sum + result.personality_analysis.alignment_score, 0) / totalTests : 0;
+
+      const testsByCategory = data.reduce((acc, result) => {
+        acc[result.scenario_category] = (acc[result.scenario_category] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const testsByDifficulty = data.reduce((acc, result) => {
+        const scenario = this.getScenarioById(result.scenario_name);
+        if (scenario) {
+          acc[scenario.difficulty] = (acc[scenario.difficulty] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
+      return {
+        success: true,
+        data: {
+          total_tests: totalTests,
+          passed_tests: passedTests,
+          failed_tests: failedTests,
+          avg_quality_score: avgQualityScore,
+          avg_response_time: avgResponseTime,
+          avg_personality_alignment: avgPersonalityAlignment,
+          tests_by_category: testsByCategory,
+          tests_by_difficulty: testsByDifficulty
+        }
+      };
+
+    } catch (error) {
+      console.error('Error getting session test stats:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
-    return false; // Don't allow deletion of predefined scenarios
+  }
+
+  /**
+   * Delete test result
+   */
+  async deleteTestResult(resultId: string): Promise<PlaygroundAPIResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('test_scenario_results')
+        .delete()
+        .eq('id', resultId);
+
+      if (error) {
+        console.error('Error deleting test result:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: true,
+        message: 'Test result deleted successfully'
+      };
+
+    } catch (error) {
+      console.error('Error deleting test result:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Utility function to add delay
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 
-// Create singleton instance
+// Export singleton instance
 export const testScenarioService = new TestScenarioService();

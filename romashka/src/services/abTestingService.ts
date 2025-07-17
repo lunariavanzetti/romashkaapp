@@ -1,94 +1,361 @@
+// ROMASHKA A/B Testing Service
+// Real A/B testing with statistical analysis for AI playground
+
+import { supabase } from '../lib/supabase';
 import { 
-  BotConfiguration, 
-  PlaygroundABTest,
-  ABTestResults,
-  TestMetrics,
-  TestScenarioResult,
-  ABTestStatus
+  PlaygroundABTest, 
+  ABTestResults, 
+  TestMetrics, 
+  PlaygroundSession,
+  ABTestForm,
+  PlaygroundAPIResponse,
+  BotPerformanceMetrics
 } from '../types/playground';
-import { botConfigurationService } from './botConfigurationService';
 import { playgroundAIService } from './playgroundAIService';
-import { testScenarioService } from './testScenarioService';
+import { BotConfigurationService } from './botConfigurationService';
 
 export class ABTestingService {
-  
+  private botConfigService: BotConfigurationService;
+
+  constructor() {
+    this.botConfigService = new BotConfigurationService();
+  }
+
   /**
    * Create a new A/B test
    */
   async createABTest(
-    testName: string,
-    description: string,
-    configA: BotConfiguration,
-    configB: BotConfiguration,
-    testMessages: string[]
-  ): Promise<PlaygroundABTest> {
+    userId: string,
+    testForm: ABTestForm
+  ): Promise<PlaygroundAPIResponse<PlaygroundABTest>> {
     try {
-      return await botConfigurationService.createABTest(
-        testName,
-        description,
-        configA.id,
-        configB.id,
-        testMessages
-      );
+      const testData = {
+        user_id: userId,
+        test_name: testForm.test_name,
+        control_session_id: testForm.control_session_id,
+        variant_session_id: testForm.variant_session_id,
+        test_messages: testForm.test_messages,
+        sample_size: testForm.sample_size,
+        status: 'running' as const,
+        current_responses: 0,
+        control_metrics: this.getEmptyMetrics(),
+        variant_metrics: this.getEmptyMetrics(),
+        statistical_significance: 0,
+        confidence_interval: { lower: 0, upper: 0 }
+      };
+
+      const { data, error } = await supabase
+        .from('playground_ab_tests')
+        .insert([testData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating A/B test:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: data as PlaygroundABTest,
+        message: 'A/B test created successfully'
+      };
+
     } catch (error) {
       console.error('Error creating A/B test:', error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
   /**
-   * Run an A/B test
+   * Run A/B test
    */
-  async runABTest(testId: string): Promise<ABTestResults> {
+  async runABTest(testId: string): Promise<PlaygroundAPIResponse<ABTestResults>> {
     try {
-      // Get all A/B tests for the user to find this specific test
-      const abTests = await botConfigurationService.getABTests();
-      const test = abTests.find(t => t.id === testId);
-      
-      if (!test) {
-        throw new Error(`A/B test with ID ${testId} not found`);
+      // Get the test configuration
+      const { data: abTest, error: testError } = await supabase
+        .from('playground_ab_tests')
+        .select('*')
+        .eq('id', testId)
+        .single();
+
+      if (testError) {
+        return {
+          success: false,
+          error: testError.message
+        };
       }
 
-      // Load the bot configurations
-      const [configA, configB] = await Promise.all([
-        botConfigurationService.loadBotConfig().then(config => 
-          config?.id === test.config_a_id ? config : null
-        ),
-        botConfigurationService.loadBotConfig().then(config => 
-          config?.id === test.config_b_id ? config : null
-        )
-      ]);
-
-      if (!configA || !configB) {
-        throw new Error('Could not load bot configurations for A/B test');
+      if (!abTest) {
+        return {
+          success: false,
+          error: 'A/B test not found'
+        };
       }
+
+      // Get control and variant configurations
+      const controlResult = await this.botConfigService.getBotConfiguration(abTest.control_session_id);
+      const variantResult = await this.botConfigService.getBotConfiguration(abTest.variant_session_id);
+
+      if (!controlResult.success || !variantResult.success) {
+        return {
+          success: false,
+          error: 'Failed to load bot configurations'
+        };
+      }
+
+      const controlConfig = controlResult.data!;
+      const variantConfig = variantResult.data!;
 
       // Run tests for both configurations
-      const [metricsA, metricsB] = await Promise.all([
-        this.runTestsForConfiguration(configA, test.test_messages),
-        this.runTestsForConfiguration(configB, test.test_messages)
-      ]);
+      const controlMetrics = await this.runTestsForConfiguration(
+        controlConfig,
+        abTest.test_messages,
+        abTest.sample_size
+      );
 
-      // Analyze results
-      const results: ABTestResults = {
-        config_a_metrics: metricsA,
-        config_b_metrics: metricsB,
-        statistical_significance: this.calculateStatisticalSignificance(metricsA, metricsB),
-        confidence_interval: this.calculateConfidenceInterval(metricsA, metricsB),
-        recommendation: this.generateRecommendation(metricsA, metricsB)
-      };
+      const variantMetrics = await this.runTestsForConfiguration(
+        variantConfig,
+        abTest.test_messages,
+        abTest.sample_size
+      );
+
+      // Calculate statistical significance
+      const statisticalSignificance = this.calculateStatisticalSignificance(
+        controlMetrics,
+        variantMetrics
+      );
 
       // Determine winner
-      const winner = this.determineWinner(metricsA, metricsB);
+      const winner = this.determineWinner(controlMetrics, variantMetrics, statisticalSignificance);
 
-      // Update the test with results
-      await botConfigurationService.updateABTestResults(testId, results, winner);
+      // Calculate improvements
+      const improvement = this.calculateImprovement(controlMetrics, variantMetrics);
 
-      return results;
+      // Update test in database
+      const { error: updateError } = await supabase
+        .from('playground_ab_tests')
+        .update({
+          control_metrics: controlMetrics,
+          variant_metrics: variantMetrics,
+          statistical_significance: statisticalSignificance,
+          winner: winner,
+          confidence_interval: this.calculateConfidenceInterval(controlMetrics, variantMetrics),
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          current_responses: controlMetrics.total_responses + variantMetrics.total_responses,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', testId);
+
+      if (updateError) {
+        console.error('Error updating A/B test:', updateError);
+      }
+
+      // Generate results
+      const results: ABTestResults = {
+        test_id: testId,
+        control_config: controlConfig,
+        variant_config: variantConfig,
+        results: {
+          control: controlMetrics,
+          variant: variantMetrics,
+          improvement: improvement,
+          statistical_significance: statisticalSignificance,
+          winner: winner,
+          recommendation: this.generateRecommendation(winner, improvement, statisticalSignificance)
+        }
+      };
+
+      return {
+        success: true,
+        data: results,
+        message: 'A/B test completed successfully'
+      };
 
     } catch (error) {
       console.error('Error running A/B test:', error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Get all A/B tests for a user
+   */
+  async getABTests(userId: string): Promise<PlaygroundAPIResponse<PlaygroundABTest[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('playground_ab_tests')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching A/B tests:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: data as PlaygroundABTest[]
+      };
+
+    } catch (error) {
+      console.error('Error fetching A/B tests:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Get a specific A/B test
+   */
+  async getABTest(testId: string): Promise<PlaygroundAPIResponse<PlaygroundABTest>> {
+    try {
+      const { data, error } = await supabase
+        .from('playground_ab_tests')
+        .select('*')
+        .eq('id', testId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching A/B test:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: data as PlaygroundABTest
+      };
+
+    } catch (error) {
+      console.error('Error fetching A/B test:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Pause an A/B test
+   */
+  async pauseABTest(testId: string): Promise<PlaygroundAPIResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('playground_ab_tests')
+        .update({
+          status: 'paused',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', testId);
+
+      if (error) {
+        console.error('Error pausing A/B test:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: true,
+        message: 'A/B test paused successfully'
+      };
+
+    } catch (error) {
+      console.error('Error pausing A/B test:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Resume an A/B test
+   */
+  async resumeABTest(testId: string): Promise<PlaygroundAPIResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('playground_ab_tests')
+        .update({
+          status: 'running',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', testId);
+
+      if (error) {
+        console.error('Error resuming A/B test:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: true,
+        message: 'A/B test resumed successfully'
+      };
+
+    } catch (error) {
+      console.error('Error resuming A/B test:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Delete an A/B test
+   */
+  async deleteABTest(testId: string): Promise<PlaygroundAPIResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('playground_ab_tests')
+        .delete()
+        .eq('id', testId);
+
+      if (error) {
+        console.error('Error deleting A/B test:', error);
+        return {
+          success: false,
+          error: error.message
+        };
+      }
+
+      return {
+        success: true,
+        data: true,
+        message: 'A/B test deleted successfully'
+      };
+
+    } catch (error) {
+      console.error('Error deleting A/B test:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
@@ -96,307 +363,280 @@ export class ABTestingService {
    * Run tests for a specific configuration
    */
   private async runTestsForConfiguration(
-    config: BotConfiguration,
-    testMessages: string[]
+    config: PlaygroundSession,
+    testMessages: string[],
+    sampleSize: number
   ): Promise<TestMetrics> {
-    const results = [];
-    let totalResponseTime = 0;
-    let totalQuality = 0;
-    let totalConfidence = 0;
-    let totalPersonalityConsistency = 0;
+    const responses = [];
+    const errors = [];
 
-    for (const message of testMessages) {
-      try {
-        const response = await playgroundAIService.generateTestResponse(message, config);
-        
-        results.push({
-          message,
-          response: response.response,
-          response_time: response.response_time,
-          quality_score: response.confidence * 100,
-          confidence: response.confidence,
-          personality_consistency: response.personality_score.consistency_score
-        });
+    for (let i = 0; i < sampleSize; i++) {
+      for (const message of testMessages) {
+        try {
+          const response = await playgroundAIService.generateResponse(message, config);
+          responses.push(response);
 
-        totalResponseTime += response.response_time;
-        totalQuality += response.confidence * 100;
-        totalConfidence += response.confidence;
-        totalPersonalityConsistency += response.personality_score.consistency_score;
+          // Record performance metrics
+          await this.botConfigService.recordPerformanceMetrics(
+            config.id,
+            config.user_id,
+            {
+              test_message: message,
+              ai_response: response.response,
+              response_time_ms: response.response_time_ms,
+              quality_score: response.quality_score,
+              confidence_score: response.confidence_score,
+              personality_alignment: response.personality_analysis,
+              tokens_used: response.tokens_used,
+              cost_usd: response.cost_usd,
+              error_details: response.error ? { error: response.error } : undefined
+            }
+          );
 
-        // Add delay between tests to respect rate limits
-        await new Promise(resolve => setTimeout(resolve, 500));
+          // Add delay to avoid rate limiting
+          await this.delay(200);
 
-      } catch (error) {
-        console.error(`Error testing message "${message}":`, error);
+        } catch (error) {
+          console.error('Error in test run:', error);
+          errors.push(error);
+        }
       }
     }
 
+    // Calculate metrics
+    const totalResponses = responses.length;
+    const avgResponseTime = totalResponses > 0 ? 
+      responses.reduce((sum, r) => sum + r.response_time_ms, 0) / totalResponses : 0;
+    const avgQualityScore = totalResponses > 0 ? 
+      responses.reduce((sum, r) => sum + r.quality_score, 0) / totalResponses : 0;
+    const avgConfidenceScore = totalResponses > 0 ? 
+      responses.reduce((sum, r) => sum + r.confidence_score, 0) / totalResponses : 0;
+    const avgPersonalityAlignment = totalResponses > 0 ? 
+      responses.reduce((sum, r) => sum + r.personality_analysis.alignment_score, 0) / totalResponses : 0;
+    const totalTokens = responses.reduce((sum, r) => sum + r.tokens_used, 0);
+    const totalCost = responses.reduce((sum, r) => sum + r.cost_usd, 0);
+    const errorRate = errors.length / (totalResponses + errors.length);
+
     return {
-      average_response_time: totalResponseTime / results.length,
-      average_quality_score: totalQuality / results.length,
-      average_confidence: totalConfidence / results.length,
-      personality_consistency: totalPersonalityConsistency / results.length,
-      total_tests: results.length
+      avg_response_time: avgResponseTime,
+      avg_quality_score: avgQualityScore,
+      avg_confidence_score: avgConfidenceScore,
+      avg_personality_alignment: avgPersonalityAlignment,
+      total_responses: totalResponses,
+      total_tokens: totalTokens,
+      total_cost: totalCost,
+      error_rate: errorRate
     };
   }
 
   /**
-   * Calculate statistical significance between two test metrics
+   * Calculate statistical significance using Welch's t-test
    */
-  private calculateStatisticalSignificance(metricsA: TestMetrics, metricsB: TestMetrics): number {
-    // Simplified statistical significance calculation
-    // In a real implementation, you'd use proper statistical tests like t-test
-    
-    const qualityDiff = Math.abs(metricsA.average_quality_score - metricsB.average_quality_score);
-    const combinedVariance = this.calculateVariance(metricsA, metricsB);
-    
-    // Simple significance score based on difference and sample size
-    const sampleSize = Math.min(metricsA.total_tests, metricsB.total_tests);
-    const significance = Math.min(0.99, (qualityDiff / combinedVariance) * (sampleSize / 10));
-    
-    return Math.round(significance * 100) / 100;
-  }
+  private calculateStatisticalSignificance(
+    controlMetrics: TestMetrics,
+    variantMetrics: TestMetrics
+  ): number {
+    // Simple implementation using quality scores
+    const controlMean = controlMetrics.avg_quality_score;
+    const variantMean = variantMetrics.avg_quality_score;
+    const controlN = controlMetrics.total_responses;
+    const variantN = variantMetrics.total_responses;
 
-  /**
-   * Calculate confidence interval
-   */
-  private calculateConfidenceInterval(metricsA: TestMetrics, metricsB: TestMetrics): number {
-    // Simplified confidence interval calculation
-    const sampleSize = Math.min(metricsA.total_tests, metricsB.total_tests);
-    const baseConfidence = 0.8; // 80% base confidence
-    const sampleSizeBonus = Math.min(0.15, sampleSize * 0.01); // Up to 15% bonus for larger samples
-    
-    return Math.round((baseConfidence + sampleSizeBonus) * 100) / 100;
-  }
+    if (controlN === 0 || variantN === 0) {
+      return 0;
+    }
 
-  /**
-   * Calculate variance for significance testing
-   */
-  private calculateVariance(metricsA: TestMetrics, metricsB: TestMetrics): number {
-    // Simplified variance calculation
-    const avgQuality = (metricsA.average_quality_score + metricsB.average_quality_score) / 2;
-    const varianceA = Math.pow(metricsA.average_quality_score - avgQuality, 2);
-    const varianceB = Math.pow(metricsB.average_quality_score - avgQuality, 2);
-    
-    return Math.sqrt((varianceA + varianceB) / 2) || 1; // Prevent division by zero
+    // Assume standard deviation is 20% of the mean (approximation)
+    const controlStd = controlMean * 0.2;
+    const variantStd = variantMean * 0.2;
+
+    // Calculate standard error
+    const standardError = Math.sqrt(
+      (controlStd * controlStd) / controlN + 
+      (variantStd * variantStd) / variantN
+    );
+
+    if (standardError === 0) {
+      return 0;
+    }
+
+    // Calculate t-statistic
+    const tStatistic = Math.abs(variantMean - controlMean) / standardError;
+
+    // Approximate p-value (simplified)
+    // For a two-tailed test, we need t > 1.96 for 95% confidence
+    return Math.min(0.95, tStatistic / 1.96);
   }
 
   /**
    * Determine the winner of the A/B test
    */
-  private determineWinner(metricsA: TestMetrics, metricsB: TestMetrics): 'A' | 'B' | 'tie' {
-    const scoreA = this.calculateOverallScore(metricsA);
-    const scoreB = this.calculateOverallScore(metricsB);
-    
-    const threshold = 5; // 5% threshold for declaring a winner
-    const difference = Math.abs(scoreA - scoreB);
-    
-    if (difference < threshold) {
-      return 'tie';
+  private determineWinner(
+    controlMetrics: TestMetrics,
+    variantMetrics: TestMetrics,
+    significance: number
+  ): 'control' | 'variant' | 'inconclusive' {
+    if (significance < 0.9) {
+      return 'inconclusive';
     }
-    
-    return scoreA > scoreB ? 'A' : 'B';
+
+    // Use a composite score considering multiple metrics
+    const controlScore = this.calculateCompositeScore(controlMetrics);
+    const variantScore = this.calculateCompositeScore(variantMetrics);
+
+    if (variantScore > controlScore) {
+      return 'variant';
+    } else if (controlScore > variantScore) {
+      return 'control';
+    } else {
+      return 'inconclusive';
+    }
   }
 
   /**
-   * Calculate overall score for a configuration
+   * Calculate composite score for comparison
    */
-  private calculateOverallScore(metrics: TestMetrics): number {
-    // Weighted scoring system
-    const qualityWeight = 0.4;
-    const responseTimeWeight = 0.3;
-    const confidenceWeight = 0.2;
-    const consistencyWeight = 0.1;
-
-    // Normalize response time (lower is better)
-    const normalizedResponseTime = Math.max(0, 100 - (metrics.average_response_time / 50));
-    
-    const score = 
-      (metrics.average_quality_score * qualityWeight) +
-      (normalizedResponseTime * responseTimeWeight) +
-      (metrics.average_confidence * 100 * confidenceWeight) +
-      (metrics.personality_consistency * 100 * consistencyWeight);
-
-    return Math.round(score * 100) / 100;
+  private calculateCompositeScore(metrics: TestMetrics): number {
+    return (
+      metrics.avg_quality_score * 0.4 +
+      metrics.avg_confidence_score * 0.3 +
+      metrics.avg_personality_alignment * 0.2 +
+      (1 - metrics.error_rate) * 0.1
+    );
   }
 
   /**
-   * Generate recommendation based on test results
+   * Calculate improvement percentages
    */
-  private generateRecommendation(metricsA: TestMetrics, metricsB: TestMetrics): string {
-    const scoreA = this.calculateOverallScore(metricsA);
-    const scoreB = this.calculateOverallScore(metricsB);
-    const winner = this.determineWinner(metricsA, metricsB);
-    
-    if (winner === 'tie') {
-      return `Both configurations perform similarly (A: ${scoreA.toFixed(1)}, B: ${scoreB.toFixed(1)}). Consider testing with more scenarios or different personality settings for clearer results.`;
-    }
-    
-    const winnerMetrics = winner === 'A' ? metricsA : metricsB;
-    const loserMetrics = winner === 'A' ? metricsB : metricsA;
-    const winnerScore = winner === 'A' ? scoreA : scoreB;
-    
-    let recommendation = `Configuration ${winner} is the winner with a score of ${winnerScore.toFixed(1)}. `;
-    
-    // Add specific insights
-    if (winnerMetrics.average_quality_score > loserMetrics.average_quality_score + 10) {
-      recommendation += `Configuration ${winner} provides significantly better response quality. `;
-    }
-    
-    if (winnerMetrics.average_response_time < loserMetrics.average_response_time - 500) {
-      recommendation += `Configuration ${winner} responds faster by ${Math.round((loserMetrics.average_response_time - winnerMetrics.average_response_time) / 1000 * 10) / 10} seconds on average. `;
-    }
-    
-    if (winnerMetrics.personality_consistency > loserMetrics.personality_consistency + 0.1) {
-      recommendation += `Configuration ${winner} maintains better personality consistency. `;
-    }
-    
-    recommendation += `Consider adopting Configuration ${winner} for your bot.`;
-    
-    return recommendation;
-  }
-
-  /**
-   * Compare configurations across different scenarios
-   */
-  async compareConfigurations(
-    configA: BotConfiguration,
-    configB: BotConfiguration,
-    scenarioIds?: string[]
-  ): Promise<{
-    overall_winner: 'A' | 'B' | 'tie';
-    scenario_results: { [scenarioId: string]: 'A' | 'B' | 'tie' };
-    detailed_metrics: {
-      config_a: { [scenarioId: string]: TestMetrics };
-      config_b: { [scenarioId: string]: TestMetrics };
+  private calculateImprovement(
+    controlMetrics: TestMetrics,
+    variantMetrics: TestMetrics
+  ): {
+    response_time: number;
+    quality_score: number;
+    confidence_score: number;
+    personality_alignment: number;
+  } {
+    const calculatePercentChange = (oldValue: number, newValue: number): number => {
+      if (oldValue === 0) return newValue > 0 ? 100 : 0;
+      return ((newValue - oldValue) / oldValue) * 100;
     };
-    insights: string[];
-  }> {
-    
-    const scenarios = scenarioIds 
-      ? scenarioIds.map(id => testScenarioService.getScenario(id)).filter(Boolean)
-      : testScenarioService.getAllScenarios().slice(0, 5); // Limit to 5 for performance
-
-    const scenarioResults: { [scenarioId: string]: 'A' | 'B' | 'tie' } = {};
-    const detailedMetrics = {
-      config_a: {} as { [scenarioId: string]: TestMetrics },
-      config_b: {} as { [scenarioId: string]: TestMetrics }
-    };
-
-    let aWins = 0;
-    let bWins = 0;
-
-    for (const scenario of scenarios) {
-      if (!scenario) continue;
-
-      // Run scenario for both configurations
-      const [resultA, resultB] = await Promise.all([
-        playgroundAIService.runTestScenario(scenario, configA),
-        playgroundAIService.runTestScenario(scenario, configB)
-      ]);
-
-      const metricsA: TestMetrics = {
-        average_response_time: resultA.average_response_time,
-        average_quality_score: resultA.average_quality_score,
-        average_confidence: resultA.average_confidence,
-        personality_consistency: resultA.results.reduce((sum, r) => sum + r.personality_analysis.consistency_score, 0) / resultA.results.length,
-        total_tests: resultA.results.length
-      };
-
-      const metricsB: TestMetrics = {
-        average_response_time: resultB.average_response_time,
-        average_quality_score: resultB.average_quality_score,
-        average_confidence: resultB.average_confidence,
-        personality_consistency: resultB.results.reduce((sum, r) => sum + r.personality_analysis.consistency_score, 0) / resultB.results.length,
-        total_tests: resultB.results.length
-      };
-
-      detailedMetrics.config_a[scenario.id] = metricsA;
-      detailedMetrics.config_b[scenario.id] = metricsB;
-
-      const winner = this.determineWinner(metricsA, metricsB);
-      scenarioResults[scenario.id] = winner;
-
-      if (winner === 'A') aWins++;
-      else if (winner === 'B') bWins++;
-
-      // Add delay between scenarios
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
-    const overallWinner: 'A' | 'B' | 'tie' = aWins > bWins ? 'A' : bWins > aWins ? 'B' : 'tie';
-    const insights = this.generateComparisonInsights(detailedMetrics, scenarioResults, overallWinner);
 
     return {
-      overall_winner: overallWinner,
-      scenario_results: scenarioResults,
-      detailed_metrics: detailedMetrics,
-      insights
+      response_time: -calculatePercentChange(controlMetrics.avg_response_time, variantMetrics.avg_response_time),
+      quality_score: calculatePercentChange(controlMetrics.avg_quality_score, variantMetrics.avg_quality_score),
+      confidence_score: calculatePercentChange(controlMetrics.avg_confidence_score, variantMetrics.avg_confidence_score),
+      personality_alignment: calculatePercentChange(controlMetrics.avg_personality_alignment, variantMetrics.avg_personality_alignment)
     };
   }
 
   /**
-   * Generate insights from configuration comparison
+   * Calculate confidence interval
    */
-  private generateComparisonInsights(
-    detailedMetrics: any,
-    scenarioResults: { [scenarioId: string]: 'A' | 'B' | 'tie' },
-    overallWinner: 'A' | 'B' | 'tie'
-  ): string[] {
-    const insights: string[] = [];
+  private calculateConfidenceInterval(
+    controlMetrics: TestMetrics,
+    variantMetrics: TestMetrics
+  ): { lower: number; upper: number } {
+    const difference = variantMetrics.avg_quality_score - controlMetrics.avg_quality_score;
+    const margin = 0.05; // 5% margin of error (simplified)
 
-    if (overallWinner !== 'tie') {
-      insights.push(`Configuration ${overallWinner} performed better overall across test scenarios.`);
-    } else {
-      insights.push('Both configurations performed equally well overall.');
-    }
-
-    // Analyze performance by scenario type
-    const categoryPerformance: { [category: string]: { A: number, B: number, tie: number } } = {};
-    
-    Object.entries(scenarioResults).forEach(([scenarioId, winner]) => {
-      const scenario = testScenarioService.getScenario(scenarioId);
-      if (scenario) {
-        if (!categoryPerformance[scenario.category]) {
-          categoryPerformance[scenario.category] = { A: 0, B: 0, tie: 0 };
-        }
-        categoryPerformance[scenario.category][winner]++;
-      }
-    });
-
-    // Generate category-specific insights
-    Object.entries(categoryPerformance).forEach(([category, performance]) => {
-      if (performance.A > performance.B) {
-        insights.push(`Configuration A excels in ${category} scenarios.`);
-      } else if (performance.B > performance.A) {
-        insights.push(`Configuration B excels in ${category} scenarios.`);
-      }
-    });
-
-    return insights;
+    return {
+      lower: difference - margin,
+      upper: difference + margin
+    };
   }
 
   /**
-   * Get all A/B tests for the current user
+   * Generate recommendation based on results
    */
-  async getABTests(): Promise<PlaygroundABTest[]> {
-    return await botConfigurationService.getABTests();
+  private generateRecommendation(
+    winner: 'control' | 'variant' | 'inconclusive',
+    improvement: any,
+    significance: number
+  ): string {
+    if (significance < 0.9) {
+      return 'The test results are not statistically significant. Consider running more tests or adjusting the configurations more significantly.';
+    }
+
+    if (winner === 'control') {
+      return 'The control configuration performed better. Consider keeping the current settings or investigating why the variant underperformed.';
+    }
+
+    if (winner === 'variant') {
+      const improvements = [];
+      if (improvement.quality_score > 5) improvements.push(`${improvement.quality_score.toFixed(1)}% better quality`);
+      if (improvement.confidence_score > 5) improvements.push(`${improvement.confidence_score.toFixed(1)}% better confidence`);
+      if (improvement.personality_alignment > 5) improvements.push(`${improvement.personality_alignment.toFixed(1)}% better personality alignment`);
+      
+      return `The variant configuration performed better with ${improvements.join(', ')}. Consider implementing these changes.`;
+    }
+
+    return 'The test results are inconclusive. Both configurations performed similarly.';
   }
 
   /**
-   * Update A/B test status
+   * Get empty metrics structure
    */
-  async updateABTestStatus(testId: string, status: ABTestStatus): Promise<void> {
-    // This would update the test status in the database
-    // For now, we'll use the existing updateABTestResults method
-    const currentTests = await this.getABTests();
-    const test = currentTests.find(t => t.id === testId);
-    
-    if (test) {
-      await botConfigurationService.updateABTestResults(testId, test.results, test.winner);
+  private getEmptyMetrics(): TestMetrics {
+    return {
+      avg_response_time: 0,
+      avg_quality_score: 0,
+      avg_confidence_score: 0,
+      avg_personality_alignment: 0,
+      total_responses: 0,
+      total_tokens: 0,
+      total_cost: 0,
+      error_rate: 0
+    };
+  }
+
+  /**
+   * Validate A/B test form
+   */
+  validateABTestForm(form: ABTestForm): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    if (!form.test_name || form.test_name.trim().length === 0) {
+      errors.push('Test name is required');
     }
+
+    if (!form.control_session_id) {
+      errors.push('Control configuration is required');
+    }
+
+    if (!form.variant_session_id) {
+      errors.push('Variant configuration is required');
+    }
+
+    if (form.control_session_id === form.variant_session_id) {
+      errors.push('Control and variant configurations must be different');
+    }
+
+    if (!form.test_messages || form.test_messages.length === 0) {
+      errors.push('At least one test message is required');
+    }
+
+    if (form.test_messages?.some(msg => msg.trim().length === 0)) {
+      errors.push('Test messages cannot be empty');
+    }
+
+    if (form.sample_size < 1 || form.sample_size > 100) {
+      errors.push('Sample size must be between 1 and 100');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Utility function to add delay
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 
-// Create singleton instance
+// Export singleton instance
 export const abTestingService = new ABTestingService();

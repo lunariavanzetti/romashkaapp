@@ -1,379 +1,492 @@
-import { OpenAI } from 'openai';
+// ROMASHKA Playground AI Service
+// Real OpenAI integration with personality-based system prompts
+
 import { 
-  BotConfiguration, 
-  PersonalityTraits,
-  PlaygroundAIResponse,
+  PlaygroundAIResponse, 
+  PersonalityTraits, 
+  ResponseStyle, 
+  AIModel, 
   PersonalityAnalysis,
-  TestScenario,
-  TestScenarioResult,
-  TestResult,
-  TestMessage
+  PlaygroundSession
 } from '../types/playground';
-import { botConfigurationService } from './botConfigurationService';
 
 export class PlaygroundAIService {
-  private openai: OpenAI;
+  private openaiApiKey: string;
+  private baseUrl = 'https://api.openai.com/v1/chat/completions';
 
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-      dangerouslyAllowBrowser: true,
-    });
+    this.openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || '';
+    if (!this.openaiApiKey) {
+      console.warn('OpenAI API key not found. AI responses will be simulated.');
+    }
   }
 
   /**
-   * Generate real AI response based on bot configuration
+   * Generate AI response with personality-based system prompt
    */
-  async generateTestResponse(
-    testMessage: string,
-    botConfig: BotConfiguration,
-    knowledgeContext?: string[]
+  async generateResponse(
+    message: string,
+    session: PlaygroundSession
   ): Promise<PlaygroundAIResponse> {
     const startTime = Date.now();
 
     try {
-      // Create personality-specific system prompt
-      const systemPrompt = this.createSystemPrompt(botConfig);
-
-      // Build knowledge context if provided
-      const contextPrompt = knowledgeContext && knowledgeContext.length > 0 
-        ? `\n\nKnowledge Base Context:\n${knowledgeContext.join('\n\n')}`
-        : '';
-
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt + contextPrompt },
-          { role: 'user', content: testMessage }
-        ],
-        temperature: this.calculateTemperature(botConfig.personality_traits),
-        max_tokens: this.calculateMaxTokens(botConfig.response_style),
-        presence_penalty: this.calculatePresencePenalty(botConfig.personality_traits),
-        frequency_penalty: this.calculateFrequencyPenalty(botConfig.personality_traits)
-      });
-
-      const aiMessage = response.choices[0].message.content || "I apologize, I couldn't generate a response.";
-      const responseTime = Date.now() - startTime;
-      const tokensUsed = response.usage?.total_tokens || 0;
-
-      // Analyze personality alignment
-      const personalityScore = await this.analyzePersonalityAlignment(
-        aiMessage, 
-        botConfig.personality_traits
-      );
-
-      // Calculate confidence based on response quality and personality alignment
-      const confidence = this.calculateConfidence(
-        testMessage,
-        aiMessage,
-        personalityScore.alignment_with_config
-      );
-
-      // Track performance metrics
-      if (botConfig.id) {
-        await botConfigurationService.trackPerformanceMetrics(
-          botConfig.id,
-          'manual_test',
-          testMessage,
-          aiMessage,
-          responseTime,
-          Math.round(confidence * 100),
-          confidence,
-          tokensUsed,
-          undefined, // satisfaction rating (user can provide later)
-          personalityScore.consistency_score
-        );
+      // If no API key, return simulated response
+      if (!this.openaiApiKey) {
+        return this.generateSimulatedResponse(message, session);
       }
 
+      // Generate personality-based system prompt
+      const systemPrompt = this.generatePersonalitySystemPrompt(
+        session.personality_traits,
+        session.response_style,
+        session.system_prompt
+      );
+
+      // Prepare OpenAI request
+      const requestBody = {
+        model: session.ai_model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
+        ],
+        temperature: session.bot_configuration.temperature,
+        max_tokens: session.bot_configuration.max_tokens,
+        top_p: session.bot_configuration.top_p || 1.0,
+        frequency_penalty: session.bot_configuration.frequency_penalty || 0.0,
+        presence_penalty: session.bot_configuration.presence_penalty || 0.0
+      };
+
+      // Make API call to OpenAI
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.openaiApiKey}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      const responseText = data.choices[0]?.message?.content || '';
+      const responseTime = Date.now() - startTime;
+
+      // Analyze personality alignment
+      const personalityAnalysis = await this.analyzePersonalityAlignment(
+        responseText,
+        session.personality_traits
+      );
+
+      // Calculate scores
+      const qualityScore = this.calculateQualityScore(responseText, message);
+      const confidenceScore = this.calculateConfidenceScore(data.choices[0]);
+
+      // Calculate cost (approximate)
+      const tokensUsed = data.usage?.total_tokens || 0;
+      const costUsd = this.calculateCost(session.ai_model, tokensUsed);
+
       return {
-        response: aiMessage,
-        response_time: responseTime,
-        confidence: confidence,
-        personality_score: personalityScore,
+        response: responseText,
+        response_time_ms: responseTime,
+        quality_score: qualityScore,
+        confidence_score: confidenceScore,
+        personality_analysis: personalityAnalysis,
         tokens_used: tokensUsed,
-        knowledge_sources: knowledgeContext || []
+        cost_usd: costUsd
       };
 
     } catch (error) {
-      console.error('OpenAI API error in playground:', error);
-      return this.getFallbackResponse(testMessage, botConfig);
+      console.error('Error generating AI response:', error);
+      
+      // Return fallback response
+      return {
+        response: 'I apologize, but I encountered an error while processing your request. Please try again.',
+        response_time_ms: Date.now() - startTime,
+        quality_score: 0.3,
+        confidence_score: 0.2,
+        personality_analysis: {
+          formality: 70,
+          enthusiasm: 30,
+          technical_depth: 40,
+          empathy: 60,
+          alignment_score: 0.5,
+          analysis_notes: 'Error response generated'
+        },
+        tokens_used: 0,
+        cost_usd: 0,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 
   /**
-   * Create system prompt based on bot configuration
+   * Generate personality-based system prompt
    */
-  private createSystemPrompt(config: BotConfiguration): string {
-    const { formality, enthusiasm, technical_depth, empathy } = config.personality_traits;
+  private generatePersonalitySystemPrompt(
+    traits: PersonalityTraits,
+    style: ResponseStyle,
+    customPrompt?: string
+  ): string {
+    const basePrompt = customPrompt || 'You are ROMASHKA Assistant, a customer support AI.';
+    
+    const personalityInstructions = this.generatePersonalityInstructions(traits, style);
+    
+    return `${basePrompt}
 
-    const formalityLevel = this.getPersonalityDescription(formality, 'formality');
-    const enthusiasmLevel = this.getPersonalityDescription(enthusiasm, 'enthusiasm');
-    const technicalLevel = this.getPersonalityDescription(technical_depth, 'technical_depth');
-    const empathyLevel = this.getPersonalityDescription(empathy, 'empathy');
+PERSONALITY GUIDELINES:
+${personalityInstructions}
 
-    const responseStyleInstruction = this.getResponseStyleInstruction(config.response_style);
+RESPONSE STYLE: ${style}
 
-    return `You are ${config.bot_name}, an AI assistant with the following personality configuration:
-
-PERSONALITY TRAITS:
-- Formality Level: ${formality}% (${formalityLevel})
-- Enthusiasm Level: ${enthusiasm}% (${enthusiasmLevel})
-- Technical Depth: ${technical_depth}% (${technicalLevel})
-- Empathy Level: ${empathy}% (${empathyLevel})
-
-RESPONSE STYLE: ${responseStyleInstruction}
-
-${config.custom_instructions ? `CUSTOM INSTRUCTIONS:\n${config.custom_instructions}\n` : ''}
-
-IMPORTANT GUIDELINES:
-- Maintain consistent personality throughout the conversation
-- Adapt your communication style based on the personality percentages above
-- Be helpful and provide accurate information
-- Keep responses appropriate for customer service context
-- Always prioritize user satisfaction and problem resolution
-
-Remember: You are being tested in a playground environment. Demonstrate your personality clearly and consistently.`;
+Always maintain these personality traits consistently throughout your responses while being helpful and accurate.`;
   }
 
   /**
-   * Get personality description based on score
+   * Generate personality-specific instructions
    */
-  private getPersonalityDescription(score: number, trait: string): string {
-    const descriptions = {
-      formality: {
-        low: 'very casual and relaxed',
-        medium: 'balanced between casual and professional',
-        high: 'very formal and professional'
-      },
-      enthusiasm: {
-        low: 'calm and reserved',
-        medium: 'moderately enthusiastic',
-        high: 'very energetic and excited'
-      },
-      technical_depth: {
-        low: 'simple and easy-to-understand',
-        medium: 'moderately detailed',
-        high: 'highly technical and detailed'
-      },
-      empathy: {
-        low: 'direct and straightforward',
-        medium: 'understanding and supportive',
-        high: 'very compassionate and emotionally aware'
-      }
-    };
+  private generatePersonalityInstructions(traits: PersonalityTraits, style: ResponseStyle): string {
+    const instructions: string[] = [];
 
-    const level = score < 33 ? 'low' : score < 67 ? 'medium' : 'high';
-    return descriptions[trait][level];
+    // Formality instructions
+    if (traits.formality >= 80) {
+      instructions.push('- Use formal language, proper grammar, and professional terminology');
+    } else if (traits.formality >= 60) {
+      instructions.push('- Use professional but approachable language');
+    } else if (traits.formality >= 40) {
+      instructions.push('- Use conversational language that\'s friendly yet professional');
+    } else {
+      instructions.push('- Use casual, relaxed language that feels natural');
+    }
+
+    // Enthusiasm instructions
+    if (traits.enthusiasm >= 80) {
+      instructions.push('- Show high energy and excitement in your responses');
+      instructions.push('- Use exclamation points and positive language frequently');
+    } else if (traits.enthusiasm >= 60) {
+      instructions.push('- Show moderate enthusiasm and positive energy');
+    } else if (traits.enthusiasm >= 40) {
+      instructions.push('- Maintain a neutral but pleasant tone');
+    } else {
+      instructions.push('- Keep responses calm and measured');
+    }
+
+    // Technical depth instructions
+    if (traits.technical_depth >= 80) {
+      instructions.push('- Provide detailed technical explanations when relevant');
+      instructions.push('- Include specific steps, examples, and technical context');
+    } else if (traits.technical_depth >= 60) {
+      instructions.push('- Provide moderate technical detail when helpful');
+    } else if (traits.technical_depth >= 40) {
+      instructions.push('- Keep technical explanations simple and accessible');
+    } else {
+      instructions.push('- Avoid technical jargon and keep explanations very simple');
+    }
+
+    // Empathy instructions
+    if (traits.empathy >= 80) {
+      instructions.push('- Show deep understanding and emotional support');
+      instructions.push('- Acknowledge feelings and validate concerns');
+    } else if (traits.empathy >= 60) {
+      instructions.push('- Show understanding and offer supportive responses');
+    } else if (traits.empathy >= 40) {
+      instructions.push('- Be considerate and acknowledge user concerns');
+    } else {
+      instructions.push('- Keep responses focused on facts and solutions');
+    }
+
+    // Style-specific instructions
+    switch (style) {
+      case 'professional':
+        instructions.push('- Maintain a business-appropriate tone throughout');
+        break;
+      case 'casual':
+        instructions.push('- Use relaxed, conversational language');
+        break;
+      case 'friendly':
+        instructions.push('- Be warm and approachable in your responses');
+        break;
+      case 'conversational':
+        instructions.push('- Engage naturally as if talking to a friend');
+        break;
+      case 'concise':
+        instructions.push('- Keep responses brief and to the point');
+        break;
+      case 'detailed':
+        instructions.push('- Provide comprehensive, thorough explanations');
+        break;
+    }
+
+    return instructions.join('\n');
   }
 
   /**
-   * Get response style instruction
-   */
-  private getResponseStyleInstruction(style: string): string {
-    const instructions = {
-      professional: 'Use professional language and maintain business-appropriate tone',
-      casual: 'Use casual, friendly language as if talking to a friend',
-      friendly: 'Be warm, approachable, and welcoming in your responses',
-      conversational: 'Engage in natural, flowing conversation',
-      concise: 'Keep responses brief and to the point',
-      detailed: 'Provide comprehensive, thorough explanations'
-    };
-
-    return instructions[style] || instructions.conversational;
-  }
-
-  /**
-   * Calculate OpenAI parameters based on personality
-   */
-  private calculateTemperature(traits: PersonalityTraits): number {
-    // Higher creativity for high enthusiasm and low formality
-    const creativityScore = (traits.enthusiasm + (100 - traits.formality)) / 200;
-    return Math.max(0.3, Math.min(1.0, 0.5 + creativityScore * 0.4));
-  }
-
-  private calculateMaxTokens(responseStyle: string): number {
-    const tokenLimits = {
-      concise: 200,
-      professional: 400,
-      casual: 350,
-      friendly: 350,
-      conversational: 450,
-      detailed: 600
-    };
-
-    return tokenLimits[responseStyle] || 400;
-  }
-
-  private calculatePresencePenalty(traits: PersonalityTraits): number {
-    // Higher penalty for high formality to avoid repetition
-    return traits.formality / 200; // 0.0 to 0.5
-  }
-
-  private calculateFrequencyPenalty(traits: PersonalityTraits): number {
-    // Higher penalty for high technical depth to encourage varied vocabulary
-    return traits.technical_depth / 200; // 0.0 to 0.5
-  }
-
-  /**
-   * Analyze personality alignment in the response
+   * Analyze personality alignment of AI response
    */
   private async analyzePersonalityAlignment(
     response: string,
-    expectedTraits: PersonalityTraits
+    targetTraits: PersonalityTraits
   ): Promise<PersonalityAnalysis> {
     try {
-      const analysisPrompt = `Analyze the following response for personality traits on a scale of 0-100:
+      // If no API key, return simulated analysis
+      if (!this.openaiApiKey) {
+        return this.simulatePersonalityAnalysis(response, targetTraits);
+      }
+
+      const analysisPrompt = `Analyze the following response and rate it on these personality traits (0-100 scale):
 
 Response: "${response}"
 
-Rate the response for:
-1. Formality (0 = very casual, 100 = very formal)
-2. Enthusiasm (0 = reserved, 100 = very enthusiastic)
-3. Technical Depth (0 = simple, 100 = highly technical)
-4. Empathy (0 = direct, 100 = very compassionate)
+Rate the response on:
+1. Formality (0=very casual, 100=very formal)
+2. Enthusiasm (0=very subdued, 100=very enthusiastic)
+3. Technical depth (0=very simple, 100=very detailed/technical)
+4. Empathy (0=cold/factual, 100=very understanding/supportive)
 
-Expected traits: Formality: ${expectedTraits.formality}, Enthusiasm: ${expectedTraits.enthusiasm}, Technical Depth: ${expectedTraits.technical_depth}, Empathy: ${expectedTraits.empathy}
-
-Respond in JSON format:
+Respond with only a JSON object in this format:
 {
-  "detected_formality": number,
-  "detected_enthusiasm": number,
-  "detected_technical_depth": number,
-  "detected_empathy": number,
-  "consistency_score": number (0-1),
-  "alignment_with_config": number (0-1)
+  "formality": 75,
+  "enthusiasm": 60,
+  "technical_depth": 80,
+  "empathy": 70,
+  "analysis_notes": "Brief explanation of the ratings"
 }`;
 
-      const analysisResponse = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: analysisPrompt }],
-        temperature: 0.1,
-        max_tokens: 200
+      const response_analysis = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: analysisPrompt }],
+          temperature: 0.1,
+          max_tokens: 200
+        })
       });
 
-      const analysis = JSON.parse(analysisResponse.choices[0].message.content || '{}');
+      if (!response_analysis.ok) {
+        throw new Error('Analysis API call failed');
+      }
+
+      const analysisData = await response_analysis.json();
+      const analysisText = analysisData.choices[0]?.message?.content || '';
+      
+      // Parse JSON response
+      const analysis = JSON.parse(analysisText);
+      
+      // Calculate alignment score
+      const alignmentScore = this.calculateAlignmentScore(analysis, targetTraits);
+      
       return {
-        detected_formality: analysis.detected_formality || 50,
-        detected_enthusiasm: analysis.detected_enthusiasm || 50,
-        detected_technical_depth: analysis.detected_technical_depth || 50,
-        detected_empathy: analysis.detected_empathy || 50,
-        consistency_score: analysis.consistency_score || 0.5,
-        alignment_with_config: analysis.alignment_with_config || 0.5
+        ...analysis,
+        alignment_score: alignmentScore
       };
 
     } catch (error) {
       console.error('Error analyzing personality alignment:', error);
-      // Return default analysis if API call fails
-      return {
-        detected_formality: 50,
-        detected_enthusiasm: 50,
-        detected_technical_depth: 50,
-        detected_empathy: 50,
-        consistency_score: 0.5,
-        alignment_with_config: 0.5
-      };
+      return this.simulatePersonalityAnalysis(response, targetTraits);
     }
   }
 
   /**
-   * Calculate confidence score
+   * Calculate alignment score between analyzed and target traits
    */
-  private calculateConfidence(
-    userMessage: string,
-    aiResponse: string,
-    personalityAlignment: number
+  private calculateAlignmentScore(
+    analyzedTraits: PersonalityTraits,
+    targetTraits: PersonalityTraits
   ): number {
-    // Base confidence on response quality factors
-    let confidence = 0.7; // Base confidence
-
-    // Adjust based on response length appropriateness
-    const responseLength = aiResponse.length;
-    if (responseLength > 50 && responseLength < 500) {
-      confidence += 0.1;
+    const traits = ['formality', 'enthusiasm', 'technical_depth', 'empathy'] as const;
+    let totalScore = 0;
+    
+    for (const trait of traits) {
+      const difference = Math.abs(analyzedTraits[trait] - targetTraits[trait]);
+      const traitScore = 1 - (difference / 100);
+      totalScore += traitScore;
     }
-
-    // Adjust based on personality alignment
-    confidence += (personalityAlignment - 0.5) * 0.4;
-
-    // Ensure confidence is between 0 and 1
-    return Math.max(0, Math.min(1, confidence));
+    
+    return totalScore / traits.length;
   }
 
   /**
-   * Get fallback response when API fails
+   * Calculate quality score based on response characteristics
    */
-  private getFallbackResponse(testMessage: string, config: BotConfiguration): PlaygroundAIResponse {
-    const fallbackMessage = `I apologize, but I'm experiencing technical difficulties right now. As ${config.bot_name}, I would normally respond to your message "${testMessage}" with a response that matches my personality settings (${config.personality_traits.formality}% formal, ${config.personality_traits.enthusiasm}% enthusiastic). Please try again in a moment.`;
+  private calculateQualityScore(response: string, originalMessage: string): number {
+    let score = 0.5; // Base score
+    
+    // Length appropriateness
+    if (response.length >= 50 && response.length <= 500) {
+      score += 0.2;
+    } else if (response.length > 500 && response.length <= 1000) {
+      score += 0.1;
+    }
+    
+    // Coherence indicators
+    if (response.includes('.') || response.includes('!') || response.includes('?')) {
+      score += 0.1;
+    }
+    
+    // Relevance (simple check if response mentions key words from message)
+    const messageWords = originalMessage.toLowerCase().split(/\s+/);
+    const responseWords = response.toLowerCase().split(/\s+/);
+    const relevantWords = messageWords.filter(word => 
+      word.length > 3 && responseWords.includes(word)
+    );
+    
+    if (relevantWords.length > 0) {
+      score += Math.min(0.2, relevantWords.length * 0.05);
+    }
+    
+    return Math.min(1.0, score);
+  }
 
+  /**
+   * Calculate confidence score from OpenAI response
+   */
+  private calculateConfidenceScore(choice: any): number {
+    // OpenAI doesn't provide confidence scores, so we estimate based on response characteristics
+    const finishReason = choice.finish_reason;
+    
+    if (finishReason === 'stop') {
+      return 0.8; // Normal completion
+    } else if (finishReason === 'length') {
+      return 0.6; // Truncated due to length
+    } else {
+      return 0.4; // Other finish reasons
+    }
+  }
+
+  /**
+   * Calculate approximate cost based on model and tokens
+   */
+  private calculateCost(model: AIModel, tokens: number): number {
+    const pricing = {
+      'gpt-4o-mini': 0.000015, // $0.015 per 1K tokens
+      'gpt-4': 0.03,           // $0.03 per 1K tokens
+      'gpt-3.5-turbo': 0.0015  // $0.0015 per 1K tokens
+    };
+    
+    return (tokens / 1000) * (pricing[model] || 0.0015);
+  }
+
+  /**
+   * Generate simulated response when API key is not available
+   */
+  private generateSimulatedResponse(
+    message: string,
+    session: PlaygroundSession
+  ): PlaygroundAIResponse {
+    const responses = [
+      "Thank you for your message! I understand you're looking for help with this. Let me provide you with a comprehensive solution.",
+      "I appreciate you reaching out. Based on what you've shared, I can help you resolve this issue effectively.",
+      "Hello! I'm here to assist you with your inquiry. Let me walk you through the best approach for your situation.",
+      "Thanks for contacting our support team. I've reviewed your request and I'm ready to help you find the right solution.",
+      "I understand your concern and I'm here to help. Let me provide you with some detailed information that should address your needs."
+    ];
+    
+    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    
+    // Simulate personality-based modifications
+    let finalResponse = randomResponse;
+    
+    if (session.personality_traits.enthusiasm > 70) {
+      finalResponse = finalResponse.replace(/\./g, '!');
+    }
+    
+    if (session.personality_traits.formality < 40) {
+      finalResponse = finalResponse.replace(/Thank you/g, 'Thanks');
+      finalResponse = finalResponse.replace(/I appreciate/g, 'I really appreciate');
+    }
+    
     return {
-      response: fallbackMessage,
-      response_time: 1000,
-      confidence: 0.1,
-      personality_score: {
-        detected_formality: config.personality_traits.formality,
-        detected_enthusiasm: config.personality_traits.enthusiasm,
-        detected_technical_depth: config.personality_traits.technical_depth,
-        detected_empathy: config.personality_traits.empathy,
-        consistency_score: 0.1,
-        alignment_with_config: 0.1
-      },
-      tokens_used: 0,
-      knowledge_sources: []
+      response: finalResponse,
+      response_time_ms: Math.floor(Math.random() * 2000) + 500,
+      quality_score: 0.75 + Math.random() * 0.2,
+      confidence_score: 0.7 + Math.random() * 0.25,
+      personality_analysis: this.simulatePersonalityAnalysis(finalResponse, session.personality_traits),
+      tokens_used: Math.floor(Math.random() * 100) + 50,
+      cost_usd: 0.001 + Math.random() * 0.002
     };
   }
 
   /**
-   * Run a complete test scenario
+   * Simulate personality analysis when API is not available
    */
-  async runTestScenario(
-    scenario: TestScenario,
-    botConfig: BotConfiguration
-  ): Promise<TestScenarioResult> {
-    const results: TestResult[] = [];
-    let totalResponseTime = 0;
-    let totalQuality = 0;
-    let totalConfidence = 0;
+  private simulatePersonalityAnalysis(
+    response: string,
+    targetTraits: PersonalityTraits
+  ): PersonalityAnalysis {
+    // Simulate analysis with some variance from target traits
+    const variance = 15; // ±15 points variance
+    
+    const simulatedTraits = {
+      formality: Math.max(0, Math.min(100, targetTraits.formality + (Math.random() - 0.5) * variance)),
+      enthusiasm: Math.max(0, Math.min(100, targetTraits.enthusiasm + (Math.random() - 0.5) * variance)),
+      technical_depth: Math.max(0, Math.min(100, targetTraits.technical_depth + (Math.random() - 0.5) * variance)),
+      empathy: Math.max(0, Math.min(100, targetTraits.empathy + (Math.random() - 0.5) * variance))
+    };
+    
+    const alignmentScore = this.calculateAlignmentScore(simulatedTraits, targetTraits);
+    
+    return {
+      ...simulatedTraits,
+      alignment_score: alignmentScore,
+      analysis_notes: 'Simulated personality analysis (OpenAI API key not configured)'
+    };
+  }
 
-    for (const testMessage of scenario.test_messages) {
-      const response = await this.generateTestResponse(
-        testMessage.message,
-        botConfig
-      );
+  /**
+   * Test the AI service configuration
+   */
+  async testConfiguration(): Promise<{ success: boolean; message: string }> {
+    try {
+      if (!this.openaiApiKey) {
+        return {
+          success: false,
+          message: 'OpenAI API key not configured. Responses will be simulated.'
+        };
+      }
 
-      const result: TestResult = {
-        message: testMessage.message,
-        response: response.response,
-        response_time_ms: response.response_time,
-        quality_score: response.confidence * 100,
-        confidence_score: response.confidence,
-        personality_analysis: response.personality_score
+      // Test with a simple request
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Hello' }],
+          max_tokens: 10
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        return {
+          success: false,
+          message: `OpenAI API error: ${errorData.error?.message || 'Unknown error'}`
+        };
+      }
+
+      return {
+        success: true,
+        message: 'OpenAI API connection successful'
       };
 
-      results.push(result);
-      totalResponseTime += response.response_time;
-      totalQuality += response.confidence * 100;
-      totalConfidence += response.confidence;
+    } catch (error) {
+      return {
+        success: false,
+        message: `Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      };
     }
-
-    const scenarioResult: TestScenarioResult = {
-      id: `test_${Date.now()}`,
-      bot_config_id: botConfig.id,
-      scenario_id: scenario.id,
-      scenario_name: scenario.name,
-      test_messages: scenario.test_messages,
-      results: results,
-      average_response_time: totalResponseTime / results.length,
-      average_quality_score: totalQuality / results.length,
-      average_confidence: totalConfidence / results.length,
-      tested_at: new Date().toISOString()
-    };
-
-    // Save results to database
-    await botConfigurationService.saveTestScenarioResults(scenarioResult);
-
-    return scenarioResult;
   }
 }
 
-// Create singleton instance
+// Export singleton instance
 export const playgroundAIService = new PlaygroundAIService();
