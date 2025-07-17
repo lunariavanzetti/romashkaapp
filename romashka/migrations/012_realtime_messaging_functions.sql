@@ -485,7 +485,7 @@ CREATE OR REPLACE FUNCTION create_conversation(
 )
 RETURNS UUID AS $$
 DECLARE
-    customer_id UUID;
+    found_customer_id UUID;
     conversation_id UUID;
     search_field TEXT;
     existing_conversation_id UUID;
@@ -507,12 +507,12 @@ BEGIN
         RETURNING id', search_field, search_field)
     USING customer_identifier, 
           CASE WHEN customer_identifier LIKE '%@%' THEN split_part(customer_identifier, '@', 1) ELSE customer_identifier END
-    INTO customer_id;
+    INTO found_customer_id;
     
     -- Check for existing active conversation
     SELECT c.id INTO existing_conversation_id
     FROM conversations c
-    WHERE c.customer_id = customer_id
+    WHERE c.customer_id = found_customer_id
         AND c.channel_type = $2
         AND c.status = 'active'
     ORDER BY c.created_at DESC
@@ -542,7 +542,7 @@ BEGIN
         last_message
     ) VALUES (
         gen_random_uuid(),
-        customer_id,
+        found_customer_id,
         CASE WHEN search_field = 'email' THEN split_part(customer_identifier, '@', 1) ELSE customer_identifier END,
         CASE WHEN search_field = 'email' THEN split_part(customer_identifier, '@', 1) ELSE customer_identifier END,
         CASE WHEN search_field = 'email' THEN customer_identifier ELSE NULL END,
