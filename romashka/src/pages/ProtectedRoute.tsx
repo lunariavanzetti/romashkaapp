@@ -93,7 +93,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     }
     
     // User exists but hasn't completed onboarding
-    if (!onboardingStatus.completed && location.pathname !== '/onboarding') {
+    // Allow certain paths to bypass onboarding requirement
+    const exemptPaths = ['/onboarding', '/analytics', '/security', '/dashboard/analytics'];
+    const shouldBypassOnboarding = exemptPaths.some(path => location.pathname.startsWith(path));
+    
+    if (!onboardingStatus.completed && !shouldBypassOnboarding) {
       console.log('🎯 ProtectedRoute: User needs onboarding, redirecting...');
       // Store the intended path
       sessionStorage.setItem('protectedRoutePath', location.pathname);
