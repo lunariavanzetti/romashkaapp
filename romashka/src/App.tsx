@@ -1,5 +1,6 @@
 // import React from 'react';
 import React, { useEffect } from 'react';
+import { aiResponseProcessor } from './services/ai/aiResponseProcessor';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider, Navigation } from './components/layout';
 import { useAuthStore } from './stores/authStore';
@@ -118,6 +119,26 @@ const App = () => {
     // Initialize auth to handle OAuth redirects
     initializeAuth();
   }, [initializeAuth]);
+
+  // Start AI response processor
+  useEffect(() => {
+    aiResponseProcessor.start();
+    
+    // Cleanup on unmount
+    return () => {
+      aiResponseProcessor.stop();
+    };
+  }, []);
+
+  // Monitor processor status (optional)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const status = aiResponseProcessor.getStatus();
+      console.log('🤖 AI Processor Status:', status);
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Router>

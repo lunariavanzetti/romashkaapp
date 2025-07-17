@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { realtimeMessagingService, type IncomingMessage, type AIResponse } from '../services/messaging/realTimeMessaging';
+import { enhancedRealtimeMessagingService as realtimeMessagingService, type IncomingMessage, type AIResponse } from '../services/messaging/realTimeMessaging';
 import type { UnifiedConversation, MessageContent } from '../services/channels/types';
 
 export interface RealtimeMessage {
