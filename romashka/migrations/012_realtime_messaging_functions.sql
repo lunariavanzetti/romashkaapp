@@ -510,12 +510,12 @@ BEGIN
     INTO customer_id;
     
     -- Check for existing active conversation
-    SELECT id INTO existing_conversation_id
-    FROM conversations
-    WHERE customer_id = customer_id
-        AND channel_type = $2
-        AND status = 'active'
-    ORDER BY created_at DESC
+    SELECT c.id INTO existing_conversation_id
+    FROM conversations c
+    WHERE c.customer_id = customer_id
+        AND c.channel_type = $2
+        AND c.status = 'active'
+    ORDER BY c.created_at DESC
     LIMIT 1;
     
     IF existing_conversation_id IS NOT NULL THEN
@@ -611,7 +611,7 @@ BEGIN
         ORDER BY created_at DESC
         LIMIT message_limit
     ) m ON m.conversation_id = c.id
-    WHERE c.id = conversation_id
+    WHERE c.id = $1
     GROUP BY c.id;
 END;
 $$ LANGUAGE plpgsql;
