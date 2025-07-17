@@ -54,6 +54,7 @@ export class RealtimeMessagingService {
   private subscriptions: Map<string, ConversationSubscription> = new Map();
   private performanceMetrics: MessagePerformanceMetrics[] = [];
   private aiResponseTimeouts: Map<string, NodeJS.Timeout> = new Map();
+  private responseQueue: Map<string, Promise<AIResponse>> = new Map();
 
   constructor() {
     this.setupPerformanceCleanup();
@@ -71,8 +72,8 @@ export class RealtimeMessagingService {
       // Remove existing subscription if exists
       this.unsubscribeFromConversation(conversationId);
 
-      // Create new subscription
-      const subscription = supabase
+      // Create new subscription for messages
+      const messageSubscription = supabase
         .channel(`messages:${conversationId}`)
         .on('postgres_changes', {
           event: 'INSERT',
@@ -85,10 +86,25 @@ export class RealtimeMessagingService {
         })
         .subscribe();
 
+      // Also subscribe to message updates (for delivery status)
+      const messageUpdateSubscription = supabase
+        .channel(`message_updates:${conversationId}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        }, (payload) => {
+          const message = payload.new as IncomingMessage;
+          onMessage(message);
+        })
+        .subscribe();
+
       const conversationSub: ConversationSubscription = {
         id: conversationId,
         unsubscribe: () => {
-          subscription.unsubscribe();
+          messageSubscription.unsubscribe();
+          messageUpdateSubscription.unsubscribe();
           this.subscriptions.delete(conversationId);
         }
       };
@@ -124,13 +140,14 @@ export class RealtimeMessagingService {
     const startTime = Date.now();
     
     try {
-      // Insert user message
+      // Insert user message first
       const { data: messageData, error: messageError } = await supabase
         .from('messages')
         .insert({
           conversation_id: conversationId,
           sender_type: senderType,
           content: message,
+          delivery_status: 'sent',
           created_at: new Date().toISOString()
         })
         .select()
@@ -138,104 +155,104 @@ export class RealtimeMessagingService {
 
       if (messageError) throw messageError;
 
-      // Get conversation context
-      const context = await this.getConversationContext(conversationId);
-      
-      // Generate AI response with 6-second timeout
-      const aiResponse = await this.generateAIResponse(message, context);
-      
-      // Insert AI response if confidence is high enough
-      if (aiResponse.confidence >= 0.7 && !aiResponse.requiresHuman) {
-        await this.insertAIResponse(conversationId, aiResponse);
+      // Update conversation metadata
+      await supabase
+        .from('conversations')
+        .update({
+          last_message: message,
+          last_message_at: new Date().toISOString(),
+          message_count: supabase.raw('message_count + 1'),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId);
+
+      // Generate AI response only for user messages
+      if (senderType === 'user') {
+        // Check if we already have a response in queue to avoid duplicates
+        const existingResponse = this.responseQueue.get(conversationId);
+        if (existingResponse) {
+          return existingResponse;
+        }
+
+        // Create AI response promise
+        const aiResponsePromise = this.generateAIResponseWithTimeout(message, conversationId);
+        this.responseQueue.set(conversationId, aiResponsePromise);
+
+        try {
+          const aiResponse = await aiResponsePromise;
+          
+          // Insert AI response if confidence is high enough
+          if (aiResponse.confidence >= 0.6 && !aiResponse.requiresHuman) {
+            await this.insertAIResponse(conversationId, aiResponse);
+          } else {
+            // Mark conversation as requiring human intervention
+            await supabase
+              .from('conversations')
+              .update({
+                requires_human: true,
+                ai_confidence: aiResponse.confidence,
+                escalation_reason: aiResponse.requiresHuman ? 'low_confidence' : 'human_requested'
+              })
+              .eq('id', conversationId);
+          }
+
+          const responseTime = Date.now() - startTime;
+          
+          // Track performance metrics
+          this.trackPerformanceMetrics({
+            messageId: messageData.id,
+            conversationId,
+            responseTime,
+            aiConfidence: aiResponse.confidence,
+            requiresHuman: aiResponse.requiresHuman,
+            channelType: 'website' as ChannelType,
+            timestamp: new Date().toISOString()
+          });
+
+          return {
+            ...aiResponse,
+            responseTime
+          };
+        } finally {
+          // Remove from queue when done
+          this.responseQueue.delete(conversationId);
+        }
       }
 
-      const responseTime = Date.now() - startTime;
-      
-      // Track performance metrics
-      this.trackPerformanceMetrics({
-        messageId: messageData.id,
-        conversationId,
-        responseTime,
-        aiConfidence: aiResponse.confidence,
-        requiresHuman: aiResponse.requiresHuman,
-        channelType: context.channel_type,
-        timestamp: new Date().toISOString()
-      });
-
+      // For agent messages, just return a basic response
       return {
-        ...aiResponse,
-        responseTime
+        response: message,
+        confidence: 1.0,
+        requiresHuman: false,
+        responseTime: Date.now() - startTime
       };
     } catch (error) {
+      // Remove from queue on error
+      this.responseQueue.delete(conversationId);
       const err = error instanceof Error ? error : new Error('Failed to send message');
       throw err;
     }
   }
 
   /**
-   * Handle incoming messages from all channels
+   * Generate AI response with guaranteed 6-second timeout
    */
-  public async handleIncomingMessage(message: IncomingMessage): Promise<void> {
-    try {
-      // Store message in database with correct schema
-      await supabase
-        .from('messages')
-        .insert({
-          id: message.id,
-          conversation_id: message.conversation_id,
-          sender_type: message.sender_type,
-          content: message.content,
-          channel_type: message.channel_type || 'website',
-          external_message_id: message.external_message_id,
-          message_type: 'text',
-          delivery_status: 'sent',
-          metadata: message.metadata || {},
-          created_at: message.created_at
-        });
-
-      // Update conversation last message and metadata
-      await supabase
-        .from('conversations')
-        .update({
-          last_message: message.content,
-          last_message_at: message.created_at,
-          message_count: supabase.raw('message_count + 1'),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', message.conversation_id);
-
-      // Auto-generate AI response for user messages
-      if (message.sender_type === 'user') {
-        setTimeout(async () => {
-          try {
-            await this.sendMessage(message.content, message.conversation_id, 'user');
-          } catch (error) {
-            console.error('Error generating AI response:', error);
-          }
-        }, 100); // Small delay to ensure message is stored first
-      }
-    } catch (error) {
-      console.error('Error handling incoming message:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate AI response within 6 seconds
-   */
-  public async generateAIResponse(
+  private async generateAIResponseWithTimeout(
     message: string,
-    context: ConversationContext
+    conversationId: string
   ): Promise<AIResponse> {
     const startTime = Date.now();
-    const conversationId = context.conversation_id;
+    const MAX_RESPONSE_TIME = 5500; // 5.5 seconds to ensure under 6 seconds total
 
     try {
-      // Set 6-second timeout
+      // Get conversation context
+      const context = await this.getConversationContext(conversationId);
+      
+      // Create timeout promise
       const timeoutPromise = new Promise<AIResponse>((_, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('AI response timeout - exceeds 6 seconds'));
-        }, 6000);
+        }, MAX_RESPONSE_TIME);
         
         this.aiResponseTimeouts.set(conversationId, timeout);
       });
@@ -262,12 +279,21 @@ export class RealtimeMessagingService {
     } catch (error) {
       const responseTime = Date.now() - startTime;
       
+      // Clear timeout on error
+      const timeout = this.aiResponseTimeouts.get(conversationId);
+      if (timeout) {
+        clearTimeout(timeout);
+        this.aiResponseTimeouts.delete(conversationId);
+      }
+
       // Fallback response for timeout or errors
       return {
         response: "I'm experiencing some technical difficulties. Let me connect you with a human agent who can help you better.",
         confidence: 0.1,
         requiresHuman: true,
-        responseTime
+        responseTime,
+        intent: 'escalation',
+        sentiment: 'neutral'
       };
     }
   }
@@ -280,27 +306,35 @@ export class RealtimeMessagingService {
     context: ConversationContext
   ): Promise<AIResponse> {
     try {
-      // Get conversation history
-      const messages = context.previous_messages.slice(-10); // Last 10 messages for context
+      // Get conversation history (limit to last 10 messages for performance)
+      const messages = context.previous_messages.slice(-10);
       
-      // Generate response using AI service
-      const aiResponse = await aiService.generateResponse({
-        message,
-        conversationHistory: messages,
-        context: {
-          channel: context.channel_type,
-          language: context.language,
-          customerProfile: context.customer_profile,
-          intent: context.intent,
-          sentiment: context.sentiment
-        }
-      });
+      // Generate response using AI service with timeout
+      const aiResponse = await Promise.race([
+        aiService.generateResponse({
+          message,
+          conversationHistory: messages,
+          context: {
+            channel: context.channel_type,
+            language: context.language,
+            customerProfile: context.customer_profile,
+            intent: context.intent,
+            sentiment: context.sentiment
+          }
+        }),
+        new Promise<any>((_, reject) => 
+          setTimeout(() => reject(new Error('AI service timeout')), 4000)
+        )
+      ]);
 
       // Analyze confidence and determine if human handoff needed
       const confidence = aiResponse.confidence || 0.8;
-      const requiresHuman = confidence < 0.7 || 
+      const requiresHuman = confidence < 0.6 || 
                            aiResponse.intent === 'escalation' ||
-                           aiResponse.intent === 'complaint';
+                           aiResponse.intent === 'complaint' ||
+                           message.toLowerCase().includes('human') ||
+                           message.toLowerCase().includes('agent') ||
+                           message.toLowerCase().includes('speak to someone');
 
       return {
         response: aiResponse.response,
@@ -313,7 +347,16 @@ export class RealtimeMessagingService {
       };
     } catch (error) {
       console.error('AI response generation error:', error);
-      throw error;
+      
+      // Return fallback response
+      return {
+        response: "I understand you're looking for help. Let me connect you with one of our team members who can assist you better.",
+        confidence: 0.3,
+        requiresHuman: true,
+        responseTime: 0,
+        intent: 'escalation',
+        sentiment: 'neutral'
+      };
     }
   }
 
@@ -336,7 +379,8 @@ export class RealtimeMessagingService {
             intent: aiResponse.intent,
             sentiment: aiResponse.sentiment,
             knowledge_used: aiResponse.knowledgeUsed,
-            response_time: aiResponse.responseTime
+            response_time: aiResponse.responseTime,
+            generated_at: new Date().toISOString()
           },
           confidence_score: aiResponse.confidence,
           processing_time_ms: aiResponse.responseTime,
@@ -359,12 +403,62 @@ export class RealtimeMessagingService {
           updated_at: new Date().toISOString(),
           ai_confidence: aiResponse.confidence,
           intent: aiResponse.intent,
-          sentiment: aiResponse.sentiment
+          sentiment: aiResponse.sentiment,
+          requires_human: aiResponse.requiresHuman
         })
         .eq('id', conversationId);
 
     } catch (error) {
       console.error('Error inserting AI response:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle incoming messages from all channels
+   */
+  public async handleIncomingMessage(message: IncomingMessage): Promise<void> {
+    try {
+      // Store message in database with correct schema
+      await supabase
+        .from('messages')
+        .insert({
+          id: message.id,
+          conversation_id: message.conversation_id,
+          sender_type: message.sender_type,
+          content: message.content,
+          channel_type: message.channel_type || 'website',
+          external_message_id: message.external_message_id,
+          message_type: 'text',
+          delivery_status: 'delivered',
+          metadata: message.metadata || {},
+          created_at: message.created_at
+        });
+
+      // Update conversation last message and metadata
+      await supabase
+        .from('conversations')
+        .update({
+          last_message: message.content,
+          last_message_at: message.created_at,
+          message_count: supabase.raw('message_count + 1'),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', message.conversation_id);
+
+      // Auto-generate AI response for user messages
+      if (message.sender_type === 'user') {
+        // Use setTimeout to ensure message is stored first
+        setTimeout(async () => {
+          try {
+            await this.sendMessage(message.content, message.conversation_id, 'user');
+          } catch (error) {
+            console.error('Error generating AI response:', error);
+          }
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Error handling incoming message:', error);
       throw error;
     }
   }
@@ -386,7 +480,7 @@ export class RealtimeMessagingService {
 
       if (convError) throw convError;
 
-      // Get recent messages for context
+      // Get recent messages for context (limit to 20 for performance)
       const { data: messages, error: msgError } = await supabase
         .from('messages')
         .select('*')
@@ -539,7 +633,7 @@ export class RealtimeMessagingService {
           id: existingConversation.id,
           customerIdentity: {
             id: customer.id,
-            name: existingConversation.customer_name || customer.name || 'Unknown',
+            name: existingConversation.customer_name || customer.name || 'Unknown Customer',
             email: existingConversation.user_email || customer.email,
             phone: existingConversation.customer_phone || customer.phone,
             channels: [channelType]
@@ -575,7 +669,8 @@ export class RealtimeMessagingService {
           created_at: new Date().toISOString(),
           last_message_at: new Date().toISOString(),
           last_message: initialMessage || '',
-          message_count: 0
+          message_count: 0,
+          requires_human: false
         })
         .select()
         .single();
@@ -630,13 +725,26 @@ export class RealtimeMessagingService {
   ): Promise<any> {
     try {
       // Determine search field based on channel type
-      const searchField = channelType === 'email' ? 'email' : 'phone';
+      let searchField: string;
+      let searchValue: string;
+
+      if (identifier.includes('@')) {
+        searchField = 'email';
+        searchValue = identifier;
+      } else if (identifier.startsWith('+') || /^\d+$/.test(identifier)) {
+        searchField = 'phone';
+        searchValue = identifier;
+      } else {
+        // Default to email for unknown format
+        searchField = 'email';
+        searchValue = identifier;
+      }
       
       // Try to find existing customer
       const { data: existingCustomer, error: findError } = await supabase
         .from('customer_profiles')
         .select('*')
-        .eq(searchField, identifier)
+        .eq(searchField, searchValue)
         .single();
 
       if (findError && findError.code !== 'PGRST116') throw findError;
@@ -647,10 +755,12 @@ export class RealtimeMessagingService {
 
       // Create new customer
       const customerData = {
-        [searchField]: identifier,
+        [searchField]: searchValue,
         name: identifier.includes('@') ? identifier.split('@')[0] : identifier,
         status: 'active',
         total_conversations: 0,
+        first_interaction: new Date().toISOString(),
+        last_interaction: new Date().toISOString(),
         created_at: new Date().toISOString()
       };
 
@@ -680,6 +790,9 @@ export class RealtimeMessagingService {
     // Clear all timeouts
     this.aiResponseTimeouts.forEach(timeout => clearTimeout(timeout));
     this.aiResponseTimeouts.clear();
+
+    // Clear response queue
+    this.responseQueue.clear();
 
     // Clear performance metrics
     this.performanceMetrics = [];
