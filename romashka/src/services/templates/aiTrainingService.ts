@@ -20,6 +20,68 @@ export class AITrainingService {
   private readonly CONFIDENCE_THRESHOLD = 0.7;
   private readonly PERFORMANCE_THRESHOLD = 0.8;
 
+  // Get training sessions for a user
+  async getTrainingSessions(userId: string, limit: number = 10): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('ai_training_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching training sessions:', error);
+      return [];
+    }
+  }
+
+  // Get training progress for a session
+  async getTrainingProgress(sessionId: string): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('ai_training_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching training progress:', error);
+      throw error;
+    }
+  }
+
+  // Upload training data
+  async uploadTrainingData(files: File[], dataType: 'conversations' | 'faq' | 'knowledge'): Promise<any> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Create dataset record
+      const dataset = {
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        name: `${dataType}_dataset_${Date.now()}`,
+        file_paths: files.map(f => f.name),
+        conversation_count: files.length,
+        quality_score: 0.85,
+        processing_status: 'completed',
+        created_at: new Date().toISOString()
+      };
+
+      // In a real implementation, you would upload files to storage
+      // For now, we'll just return the dataset info
+      return dataset;
+    } catch (error) {
+      console.error('Error uploading training data:', error);
+      throw error;
+    }
+  }
+
   // Main training session management
   async startTrainingSession(
     type: 'conversation_analysis' | 'template_optimization' | 'performance_tracking' | 'knowledge_update',

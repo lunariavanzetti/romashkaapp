@@ -68,6 +68,29 @@ export class AITrainingService {
     });
   }
 
+  /**
+   * Get training statistics
+   */
+  async getTrainingStats(): Promise<any> {
+    try {
+      // In a real implementation, this would fetch from database
+      // For now, return mock data
+      return {
+        totalConversations: 2450,
+        processedConversations: 1890,
+        accuracyScore: 91.2,
+        knowledgeGaps: 23,
+        optimizationOpportunities: 8,
+        averageResponseTime: 1.8,
+        customerSatisfaction: 4.6,
+        successRate: 87.3
+      };
+    } catch (error) {
+      console.error('Error fetching training stats:', error);
+      throw error;
+    }
+  }
+
   static getInstance(): AITrainingService {
     if (!AITrainingService.instance) {
       AITrainingService.instance = new AITrainingService();
