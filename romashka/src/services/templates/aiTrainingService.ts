@@ -1097,7 +1097,7 @@ export class AITrainingService {
     }
   }
 
-  async getTrainingSessions(limit: number = 10): Promise<AITrainingSession[]> {
+  async getTrainingSessionsWithAuth(limit: number = 10): Promise<AITrainingSession[]> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');

@@ -18,4 +18,6 @@ export class AIService {
     return response.choices[0].message.content;
   }
   // TODO: Add sentiment analysis, categorization, fallback, etc.
-} 
+}
+
+export const aiService = new AIService(); 

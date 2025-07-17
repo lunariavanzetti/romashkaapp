@@ -1,7 +1,3 @@
--- COMPLETE DATABASE SCHEMA ANALYSIS
--- Run this entire query in your Supabase SQL Editor
--- Copy and paste the ENTIRE output to share with me
-
 -- 1. ALL TABLES WITH BASIC INFO
 SELECT 
     '=== ALL TABLES ===' as section,
@@ -14,6 +10,8 @@ FROM information_schema.tables
 WHERE table_schema = 'public' 
 ORDER BY table_name;
 
+
+
 -- 2. COMPLETE COLUMN DETAILS FOR ALL TABLES
 SELECT 
     '=== COLUMN DETAILS ===' as section,
@@ -21,13 +19,13 @@ SELECT
     column_name,
     ordinal_position,
     column_default,
-    is_nullable,
+    is_nullable = 'YES' as is_nullable,
     data_type,
     character_maximum_length,
     numeric_precision,
     numeric_scale,
     datetime_precision,
-    is_identity,
+    is_identity = 'YES' as is_identity,
     identity_generation
 FROM information_schema.columns 
 WHERE table_schema = 'public' 
@@ -145,7 +143,7 @@ ORDER BY tablename, policyname;
 SELECT 
     '=== TABLE STATS ===' as section,
     schemaname,
-    tablename,
+    relname as tablename,
     n_tup_ins as inserts,
     n_tup_upd as updates,
     n_tup_del as deletes,
@@ -157,7 +155,7 @@ SELECT
     last_autoanalyze
 FROM pg_stat_user_tables 
 WHERE schemaname = 'public'
-ORDER BY tablename;
+ORDER BY relname;
 
 -- 12. EXTENSIONS
 SELECT 
@@ -194,16 +192,6 @@ SELECT
 FROM storage.buckets
 ORDER BY name;
 
--- 15. SCHEMA MIGRATIONS (IF EXISTS)
-SELECT 
-    '=== MIGRATIONS ===' as section,
-    version,
-    description,
-    applied_at
-FROM schema_migrations 
-ORDER BY applied_at DESC
-LIMIT 20;
-
 -- 16. SEQUENCES
 SELECT 
     '=== SEQUENCES ===' as section,
@@ -224,8 +212,7 @@ SELECT
     domain_name,
     data_type,
     character_maximum_length,
-    domain_default,
-    is_nullable
+    domain_default
 FROM information_schema.domains 
 WHERE domain_schema = 'public'
 ORDER BY domain_name;
@@ -246,7 +233,7 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 SELECT '=== ANALYSIS COMPLETE ===' as section, NOW() as timestamp;
 
 
-ANSWERS 
+answers 
 1. "[
   {
     "section": "=== ALL TABLES ===",
@@ -498,6 +485,14 @@ ANSWERS
   },
   {
     "section": "=== ALL TABLES ===",
+    "table_name": "knowledge_gaps",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
     "table_name": "knowledge_items",
     "table_type": "BASE TABLE",
     "is_insertable_into": "YES",
@@ -507,6 +502,14 @@ ANSWERS
   {
     "section": "=== ALL TABLES ===",
     "table_name": "knowledge_versions",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "learning_insights",
     "table_type": "BASE TABLE",
     "is_insertable_into": "YES",
     "is_typed": "NO",
@@ -539,6 +542,14 @@ ANSWERS
   {
     "section": "=== ALL TABLES ===",
     "table_name": "onboarding_responses",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "pattern_recognition",
     "table_type": "BASE TABLE",
     "is_insertable_into": "YES",
     "is_typed": "NO",
@@ -610,6 +621,134 @@ ANSWERS
   },
   {
     "section": "=== ALL TABLES ===",
+    "table_name": "template_ab_tests",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_analytics",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_categories",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_optimization",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_performance_metrics",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_suggestions",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_triggers",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_usage_history",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "template_variables",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "templates",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "training_datasets",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "training_jobs",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "training_metrics_history",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "training_results",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "training_scenarios",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
+    "table_name": "training_sessions",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
     "table_name": "user_agents",
     "table_type": "BASE TABLE",
     "is_insertable_into": "YES",
@@ -672,7 +811,8 @@ ANSWERS
     "is_typed": "NO",
     "commit_action": null
   }
-]" 
+]"
+ 
 2. "[
   {
     "section": "=== COLUMN DETAILS ===",
@@ -680,13 +820,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -695,13 +835,13 @@ ANSWERS
     "column_name": "agent_id",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -710,13 +850,13 @@ ANSWERS
     "column_name": "is_online",
     "ordinal_position": 3,
     "column_default": "false",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "boolean",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -725,13 +865,13 @@ ANSWERS
     "column_name": "status",
     "ordinal_position": 4,
     "column_default": "'available'::character varying",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 50,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -740,13 +880,13 @@ ANSWERS
     "column_name": "max_concurrent_chats",
     "ordinal_position": 5,
     "column_default": "5",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -755,13 +895,13 @@ ANSWERS
     "column_name": "current_chat_count",
     "ordinal_position": 6,
     "column_default": "0",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -770,13 +910,13 @@ ANSWERS
     "column_name": "last_activity",
     "ordinal_position": 7,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -785,13 +925,13 @@ ANSWERS
     "column_name": "auto_away_time",
     "ordinal_position": 8,
     "column_default": "300",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -800,13 +940,13 @@ ANSWERS
     "column_name": "created_at",
     "ordinal_position": 9,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -815,13 +955,13 @@ ANSWERS
     "column_name": "updated_at",
     "ordinal_position": 10,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -830,13 +970,13 @@ ANSWERS
     "column_name": "working_hours",
     "ordinal_position": 11,
     "column_default": "'{\"friday\": {\"end\": \"17:00\", \"start\": \"09:00\"}, \"monday\": {\"end\": \"17:00\", \"start\": \"09:00\"}, \"tuesday\": {\"end\": \"17:00\", \"start\": \"09:00\"}, \"thursday\": {\"end\": \"17:00\", \"start\": \"09:00\"}, \"wednesday\": {\"end\": \"17:00\", \"start\": \"09:00\"}}'::jsonb",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "jsonb",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -845,13 +985,13 @@ ANSWERS
     "column_name": "user_id",
     "ordinal_position": 1,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -860,13 +1000,13 @@ ANSWERS
     "column_name": "agent_id",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -875,13 +1015,13 @@ ANSWERS
     "column_name": "agent_name",
     "ordinal_position": 3,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -890,13 +1030,13 @@ ANSWERS
     "column_name": "total_tasks",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "bigint",
     "character_maximum_length": null,
     "numeric_precision": 64,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -905,13 +1045,13 @@ ANSWERS
     "column_name": "completed_tasks",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "bigint",
     "character_maximum_length": null,
     "numeric_precision": 64,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -920,13 +1060,13 @@ ANSWERS
     "column_name": "failed_tasks",
     "ordinal_position": 6,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "bigint",
     "character_maximum_length": null,
     "numeric_precision": 64,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -935,13 +1075,13 @@ ANSWERS
     "column_name": "in_progress_tasks",
     "ordinal_position": 7,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "bigint",
     "character_maximum_length": null,
     "numeric_precision": 64,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -950,13 +1090,13 @@ ANSWERS
     "column_name": "avg_execution_time_ms",
     "ordinal_position": 8,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "numeric",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -965,13 +1105,13 @@ ANSWERS
     "column_name": "min_execution_time_ms",
     "ordinal_position": 9,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -980,13 +1120,13 @@ ANSWERS
     "column_name": "max_execution_time_ms",
     "ordinal_position": 10,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -995,13 +1135,13 @@ ANSWERS
     "column_name": "success_rate",
     "ordinal_position": 11,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "double precision",
     "character_maximum_length": null,
     "numeric_precision": 53,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1010,13 +1150,13 @@ ANSWERS
     "column_name": "failure_rate",
     "ordinal_position": 12,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "double precision",
     "character_maximum_length": null,
     "numeric_precision": 53,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1025,13 +1165,13 @@ ANSWERS
     "column_name": "last_activity",
     "ordinal_position": 13,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1040,13 +1180,13 @@ ANSWERS
     "column_name": "task_types_handled",
     "ordinal_position": 14,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "bigint",
     "character_maximum_length": null,
     "numeric_precision": 64,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1055,13 +1195,13 @@ ANSWERS
     "column_name": "last_task_date",
     "ordinal_position": 15,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1070,13 +1210,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1085,13 +1225,13 @@ ANSWERS
     "column_name": "agent_id",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1100,13 +1240,13 @@ ANSWERS
     "column_name": "agent_name",
     "ordinal_position": 3,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1115,13 +1255,13 @@ ANSWERS
     "column_name": "user_id",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1130,13 +1270,13 @@ ANSWERS
     "column_name": "task_type",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 50,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1145,13 +1285,13 @@ ANSWERS
     "column_name": "task_description",
     "ordinal_position": 6,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "text",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1160,13 +1300,13 @@ ANSWERS
     "column_name": "input_data",
     "ordinal_position": 7,
     "column_default": "'{}'::jsonb",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "jsonb",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1175,13 +1315,13 @@ ANSWERS
     "column_name": "output_data",
     "ordinal_position": 8,
     "column_default": "'{}'::jsonb",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "jsonb",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1190,13 +1330,13 @@ ANSWERS
     "column_name": "status",
     "ordinal_position": 9,
     "column_default": "'pending'::character varying",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 20,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1205,13 +1345,13 @@ ANSWERS
     "column_name": "started_at",
     "ordinal_position": 10,
     "column_default": "now()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1220,13 +1360,13 @@ ANSWERS
     "column_name": "completed_at",
     "ordinal_position": 11,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1235,13 +1375,13 @@ ANSWERS
     "column_name": "execution_time_ms",
     "ordinal_position": 12,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1250,13 +1390,13 @@ ANSWERS
     "column_name": "error_message",
     "ordinal_position": 13,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "text",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1265,13 +1405,13 @@ ANSWERS
     "column_name": "metadata",
     "ordinal_position": 14,
     "column_default": "'{}'::jsonb",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "jsonb",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1280,13 +1420,13 @@ ANSWERS
     "column_name": "created_at",
     "ordinal_position": 15,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1295,13 +1435,13 @@ ANSWERS
     "column_name": "updated_at",
     "ordinal_position": 16,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1310,13 +1450,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1325,13 +1465,13 @@ ANSWERS
     "column_name": "rule_id",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1340,13 +1480,13 @@ ANSWERS
     "column_name": "triggered_at",
     "ordinal_position": 3,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp without time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1355,13 +1495,13 @@ ANSWERS
     "column_name": "metric_value",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "numeric",
     "character_maximum_length": null,
     "numeric_precision": 15,
     "numeric_scale": 4,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1370,13 +1510,13 @@ ANSWERS
     "column_name": "threshold_value",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "numeric",
     "character_maximum_length": null,
     "numeric_precision": 15,
     "numeric_scale": 4,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1385,13 +1525,13 @@ ANSWERS
     "column_name": "sent_channels",
     "ordinal_position": 6,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "ARRAY",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1400,13 +1540,13 @@ ANSWERS
     "column_name": "sent_recipients",
     "ordinal_position": 7,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "ARRAY",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1415,13 +1555,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1430,13 +1570,13 @@ ANSWERS
     "column_name": "name",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1445,13 +1585,13 @@ ANSWERS
     "column_name": "metric",
     "ordinal_position": 3,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 100,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1460,13 +1600,13 @@ ANSWERS
     "column_name": "condition",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 20,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1475,13 +1615,13 @@ ANSWERS
     "column_name": "threshold",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "numeric",
     "character_maximum_length": null,
     "numeric_precision": 15,
     "numeric_scale": 4,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1490,13 +1630,13 @@ ANSWERS
     "column_name": "time_window_minutes",
     "ordinal_position": 6,
     "column_default": "60",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1505,13 +1645,13 @@ ANSWERS
     "column_name": "channels",
     "ordinal_position": 7,
     "column_default": "'{email}'::text[]",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "ARRAY",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1520,13 +1660,13 @@ ANSWERS
     "column_name": "recipients",
     "ordinal_position": 8,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "ARRAY",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1535,13 +1675,13 @@ ANSWERS
     "column_name": "is_active",
     "ordinal_position": 9,
     "column_default": "true",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "boolean",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1550,13 +1690,13 @@ ANSWERS
     "column_name": "created_by",
     "ordinal_position": 10,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1565,13 +1705,13 @@ ANSWERS
     "column_name": "created_at",
     "ordinal_position": 11,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp without time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1580,13 +1720,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1595,13 +1735,13 @@ ANSWERS
     "column_name": "user_id",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1610,13 +1750,13 @@ ANSWERS
     "column_name": "action",
     "ordinal_position": 3,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 100,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1625,13 +1765,13 @@ ANSWERS
     "column_name": "entity_type",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 100,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1640,13 +1780,13 @@ ANSWERS
     "column_name": "entity_id",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1655,13 +1795,13 @@ ANSWERS
     "column_name": "changes",
     "ordinal_position": 6,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "jsonb",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1670,13 +1810,13 @@ ANSWERS
     "column_name": "ip_address",
     "ordinal_position": 7,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "inet",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1685,13 +1825,13 @@ ANSWERS
     "column_name": "user_agent",
     "ordinal_position": 8,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "text",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1700,13 +1840,13 @@ ANSWERS
     "column_name": "created_at",
     "ordinal_position": 9,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1715,13 +1855,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1730,13 +1870,13 @@ ANSWERS
     "column_name": "scan_job_id",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1745,13 +1885,13 @@ ANSWERS
     "column_name": "extracted_content_id",
     "ordinal_position": 3,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1760,13 +1900,13 @@ ANSWERS
     "column_name": "knowledge_item_id",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1775,13 +1915,13 @@ ANSWERS
     "column_name": "auto_category",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1790,13 +1930,13 @@ ANSWERS
     "column_name": "confidence_score",
     "ordinal_position": 6,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "numeric",
     "character_maximum_length": null,
     "numeric_precision": 3,
     "numeric_scale": 2,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1805,13 +1945,13 @@ ANSWERS
     "column_name": "needs_review",
     "ordinal_position": 7,
     "column_default": "true",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "boolean",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1820,13 +1960,13 @@ ANSWERS
     "column_name": "approved",
     "ordinal_position": 8,
     "column_default": "false",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "boolean",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1835,13 +1975,13 @@ ANSWERS
     "column_name": "created_at",
     "ordinal_position": 9,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp without time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1850,13 +1990,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1865,13 +2005,13 @@ ANSWERS
     "column_name": "title",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1880,13 +2020,13 @@ ANSWERS
     "column_name": "content",
     "ordinal_position": 3,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "text",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1895,13 +2035,13 @@ ANSWERS
     "column_name": "shortcut",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 50,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1910,13 +2050,13 @@ ANSWERS
     "column_name": "category",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 100,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1925,13 +2065,13 @@ ANSWERS
     "column_name": "language",
     "ordinal_position": 6,
     "column_default": "'en'::character varying",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 10,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1940,13 +2080,13 @@ ANSWERS
     "column_name": "usage_count",
     "ordinal_position": 7,
     "column_default": "0",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1955,13 +2095,13 @@ ANSWERS
     "column_name": "created_by",
     "ordinal_position": 8,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1970,13 +2110,13 @@ ANSWERS
     "column_name": "is_public",
     "ordinal_position": 9,
     "column_default": "true",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "boolean",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -1985,13 +2125,13 @@ ANSWERS
     "column_name": "created_at",
     "ordinal_position": 10,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2000,13 +2140,13 @@ ANSWERS
     "column_name": "is_active",
     "ordinal_position": 11,
     "column_default": "true",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "boolean",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2015,13 +2155,13 @@ ANSWERS
     "column_name": "tags",
     "ordinal_position": 12,
     "column_default": "'{}'::text[]",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "ARRAY",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2030,13 +2170,13 @@ ANSWERS
     "column_name": "updated_at",
     "ordinal_position": 13,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2045,13 +2185,13 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2060,13 +2200,13 @@ ANSWERS
     "column_name": "name",
     "ordinal_position": 2,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 255,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2075,13 +2215,13 @@ ANSWERS
     "column_name": "priority",
     "ordinal_position": 3,
     "column_default": "0",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "integer",
     "character_maximum_length": null,
     "numeric_precision": 32,
     "numeric_scale": 0,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2090,13 +2230,13 @@ ANSWERS
     "column_name": "conditions",
     "ordinal_position": 4,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "jsonb",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2105,13 +2245,13 @@ ANSWERS
     "column_name": "target_channel_type",
     "ordinal_position": 5,
     "column_default": null,
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "character varying",
     "character_maximum_length": 50,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2120,13 +2260,13 @@ ANSWERS
     "column_name": "fallback_channel_type",
     "ordinal_position": 6,
     "column_default": null,
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "character varying",
     "character_maximum_length": 50,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2135,13 +2275,13 @@ ANSWERS
     "column_name": "is_active",
     "ordinal_position": 7,
     "column_default": "true",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "boolean",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2150,13 +2290,13 @@ ANSWERS
     "column_name": "created_at",
     "ordinal_position": 8,
     "column_default": "now()",
-    "is_nullable": "YES",
+    "is_nullable": true,
     "data_type": "timestamp without time zone",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": 6,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   },
   {
@@ -2165,16 +2305,17 @@ ANSWERS
     "column_name": "id",
     "ordinal_position": 1,
     "column_default": "gen_random_uuid()",
-    "is_nullable": "NO",
+    "is_nullable": false,
     "data_type": "uuid",
     "character_maximum_length": null,
     "numeric_precision": null,
     "numeric_scale": null,
     "datetime_precision": null,
-    "is_identity": "NO",
+    "is_identity": false,
     "identity_generation": null
   }
 ]" 
+
 3. "[
   {
     "section": "=== PRIMARY KEYS ===",
@@ -2347,14 +2488,6 @@ ANSWERS
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "customer_profiles",
-    "constraint_name": "customer_profiles_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "column_name": "id",
-    "ordinal_position": 1
-  },
-  {
-    "section": "=== PRIMARY KEYS ===",
-    "table_name": "customer_profiles",
     "constraint_name": "customer_profiles_email_key",
     "constraint_type": "UNIQUE",
     "column_name": "email",
@@ -2362,10 +2495,10 @@ ANSWERS
   },
   {
     "section": "=== PRIMARY KEYS ===",
-    "table_name": "daily_metrics",
-    "constraint_name": "daily_metrics_date_channel_type_department_agent_id_key",
-    "constraint_type": "UNIQUE",
-    "column_name": "date",
+    "table_name": "customer_profiles",
+    "constraint_name": "customer_profiles_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
     "ordinal_position": 1
   },
   {
@@ -2374,6 +2507,14 @@ ANSWERS
     "constraint_name": "daily_metrics_pkey",
     "constraint_type": "PRIMARY KEY",
     "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "daily_metrics",
+    "constraint_name": "daily_metrics_date_channel_type_department_agent_id_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "date",
     "ordinal_position": 1
   },
   {
@@ -2490,6 +2631,14 @@ ANSWERS
   },
   {
     "section": "=== PRIMARY KEYS ===",
+    "table_name": "knowledge_gaps",
+    "constraint_name": "knowledge_gaps_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
     "table_name": "knowledge_items",
     "constraint_name": "knowledge_items_pkey",
     "constraint_type": "PRIMARY KEY",
@@ -2500,6 +2649,14 @@ ANSWERS
     "section": "=== PRIMARY KEYS ===",
     "table_name": "knowledge_versions",
     "constraint_name": "knowledge_versions_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "learning_insights",
+    "constraint_name": "learning_insights_pkey",
     "constraint_type": "PRIMARY KEY",
     "column_name": "id",
     "ordinal_position": 1
@@ -2548,6 +2705,14 @@ ANSWERS
     "section": "=== PRIMARY KEYS ===",
     "table_name": "onboarding_responses",
     "constraint_name": "onboarding_responses_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "pattern_recognition",
+    "constraint_name": "pattern_recognition_pkey",
     "constraint_type": "PRIMARY KEY",
     "column_name": "id",
     "ordinal_position": 1
@@ -2611,14 +2776,6 @@ ANSWERS
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "system_settings",
-    "constraint_name": "system_settings_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "column_name": "id",
-    "ordinal_position": 1
-  },
-  {
-    "section": "=== PRIMARY KEYS ===",
-    "table_name": "system_settings",
     "constraint_name": "system_settings_setting_key_key",
     "constraint_type": "UNIQUE",
     "column_name": "setting_key",
@@ -2626,10 +2783,162 @@ ANSWERS
   },
   {
     "section": "=== PRIMARY KEYS ===",
-    "table_name": "user_agents",
-    "constraint_name": "user_agents_agent_id_key",
+    "table_name": "system_settings",
+    "constraint_name": "system_settings_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_ab_tests",
+    "constraint_name": "template_ab_tests_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_analytics",
+    "constraint_name": "template_analytics_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_categories",
+    "constraint_name": "template_categories_name_key",
     "constraint_type": "UNIQUE",
-    "column_name": "agent_id",
+    "column_name": "name",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_categories",
+    "constraint_name": "template_categories_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_optimization",
+    "constraint_name": "template_optimization_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_performance_metrics",
+    "constraint_name": "template_performance_metrics_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_suggestions",
+    "constraint_name": "template_suggestions_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_triggers",
+    "constraint_name": "template_triggers_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_usage_history",
+    "constraint_name": "template_usage_history_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_variables",
+    "constraint_name": "template_variables_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_variables",
+    "constraint_name": "template_variables_template_id_variable_name_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "template_id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "template_variables",
+    "constraint_name": "template_variables_template_id_variable_name_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "variable_name",
+    "ordinal_position": 2
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "templates",
+    "constraint_name": "templates_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "training_datasets",
+    "constraint_name": "training_datasets_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "training_jobs",
+    "constraint_name": "training_jobs_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "training_metrics_history",
+    "constraint_name": "training_metrics_history_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "training_results",
+    "constraint_name": "training_results_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "training_scenarios",
+    "constraint_name": "training_scenarios_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "training_sessions",
+    "constraint_name": "training_sessions_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
     "ordinal_position": 1
   },
   {
@@ -2638,6 +2947,14 @@ ANSWERS
     "constraint_name": "user_agents_pkey",
     "constraint_type": "PRIMARY KEY",
     "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "user_agents",
+    "constraint_name": "user_agents_agent_id_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "agent_id",
     "ordinal_position": 1
   },
   {
@@ -2697,6 +3014,7 @@ ANSWERS
     "ordinal_position": 1
   }
 ]" 
+
 4. "[
   {
     "section": "=== FOREIGN KEYS ===",
@@ -2980,6 +3298,16 @@ ANSWERS
   },
   {
     "section": "=== FOREIGN KEYS ===",
+    "source_table": "knowledge_gaps",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "knowledge_gaps_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
     "source_table": "knowledge_items",
     "source_column": "category_id",
     "target_table": "knowledge_categories",
@@ -3030,6 +3358,16 @@ ANSWERS
   },
   {
     "section": "=== FOREIGN KEYS ===",
+    "source_table": "learning_insights",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "learning_insights_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
     "source_table": "messages",
     "source_column": "conversation_id",
     "target_table": "conversations",
@@ -3055,6 +3393,16 @@ ANSWERS
     "target_table": "profiles",
     "target_column": "id",
     "constraint_name": "onboarding_responses_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "pattern_recognition",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "pattern_recognition_user_id_fkey",
     "update_rule": "NO ACTION",
     "delete_rule": "CASCADE"
   },
@@ -3107,6 +3455,346 @@ ANSWERS
     "constraint_name": "system_settings_updated_by_fkey",
     "update_rule": "NO ACTION",
     "delete_rule": "NO ACTION"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_ab_tests",
+    "source_column": "template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_ab_tests_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_ab_tests",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_ab_tests_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_analytics",
+    "source_column": "template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_analytics_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_analytics",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_analytics_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_categories",
+    "source_column": "parent_id",
+    "target_table": "template_categories",
+    "target_column": "id",
+    "constraint_name": "template_categories_parent_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_optimization",
+    "source_column": "approved_by",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_optimization_approved_by_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "NO ACTION"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_optimization",
+    "source_column": "template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_optimization_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_optimization",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_optimization_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_performance_metrics",
+    "source_column": "template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_performance_metrics_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_performance_metrics",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_performance_metrics_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_suggestions",
+    "source_column": "conversation_id",
+    "target_table": "conversations",
+    "target_column": "id",
+    "constraint_name": "template_suggestions_conversation_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_suggestions",
+    "source_column": "message_id",
+    "target_table": "messages",
+    "target_column": "id",
+    "constraint_name": "template_suggestions_message_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_suggestions",
+    "source_column": "selected_template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_suggestions_selected_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "NO ACTION"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_suggestions",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_suggestions_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_triggers",
+    "source_column": "template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_triggers_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_triggers",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_triggers_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_usage_history",
+    "source_column": "conversation_id",
+    "target_table": "conversations",
+    "target_column": "id",
+    "constraint_name": "template_usage_history_conversation_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_usage_history",
+    "source_column": "message_id",
+    "target_table": "messages",
+    "target_column": "id",
+    "constraint_name": "template_usage_history_message_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_usage_history",
+    "source_column": "template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_usage_history_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_usage_history",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_usage_history_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_variables",
+    "source_column": "template_id",
+    "target_table": "templates",
+    "target_column": "id",
+    "constraint_name": "template_variables_template_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "template_variables",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "template_variables_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "templates",
+    "source_column": "created_by",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "templates_created_by_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_datasets",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "training_datasets_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_jobs",
+    "source_column": "dataset_id",
+    "target_table": "training_datasets",
+    "target_column": "id",
+    "constraint_name": "training_jobs_dataset_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_jobs",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "training_jobs_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_metrics_history",
+    "source_column": "session_id",
+    "target_table": "training_sessions",
+    "target_column": "id",
+    "constraint_name": "training_metrics_history_session_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_metrics_history",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "training_metrics_history_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_results",
+    "source_column": "scenario_id",
+    "target_table": "training_scenarios",
+    "target_column": "id",
+    "constraint_name": "training_results_scenario_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_results",
+    "source_column": "session_id",
+    "target_table": "training_sessions",
+    "target_column": "id",
+    "constraint_name": "training_results_session_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_results",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "training_results_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_scenarios",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "training_scenarios_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_sessions",
+    "source_column": "job_id",
+    "target_table": "training_jobs",
+    "target_column": "id",
+    "constraint_name": "training_sessions_job_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "training_sessions",
+    "source_column": "user_id",
+    "target_table": "profiles",
+    "target_column": "id",
+    "constraint_name": "training_sessions_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
   },
   {
     "section": "=== FOREIGN KEYS ===",
@@ -3199,6 +3887,7 @@ ANSWERS
     "delete_rule": "CASCADE"
   }
 ]" 
+
 5. "[
   {
     "section": "=== INDEXES ===",
@@ -3798,6 +4487,41 @@ ANSWERS
   {
     "section": "=== INDEXES ===",
     "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "indexname": "idx_knowledge_gaps_priority",
+    "indexdef": "CREATE INDEX idx_knowledge_gaps_priority ON public.knowledge_gaps USING btree (priority)"
+  },
+  {
+    "section": "=== INDEXES ===",
+    "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "indexname": "idx_knowledge_gaps_status",
+    "indexdef": "CREATE INDEX idx_knowledge_gaps_status ON public.knowledge_gaps USING btree (status)"
+  },
+  {
+    "section": "=== INDEXES ===",
+    "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "indexname": "idx_knowledge_gaps_topic",
+    "indexdef": "CREATE INDEX idx_knowledge_gaps_topic ON public.knowledge_gaps USING btree (topic)"
+  },
+  {
+    "section": "=== INDEXES ===",
+    "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "indexname": "idx_knowledge_gaps_user_id",
+    "indexdef": "CREATE INDEX idx_knowledge_gaps_user_id ON public.knowledge_gaps USING btree (user_id)"
+  },
+  {
+    "section": "=== INDEXES ===",
+    "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "indexname": "knowledge_gaps_pkey",
+    "indexdef": "CREATE UNIQUE INDEX knowledge_gaps_pkey ON public.knowledge_gaps USING btree (id)"
+  },
+  {
+    "section": "=== INDEXES ===",
+    "schemaname": "public",
     "tablename": "knowledge_items",
     "indexname": "idx_knowledge_items_category_id",
     "indexdef": "CREATE INDEX idx_knowledge_items_category_id ON public.knowledge_items USING btree (category_id)"
@@ -3847,390 +4571,38 @@ ANSWERS
   {
     "section": "=== INDEXES ===",
     "schemaname": "public",
-    "tablename": "message_delivery_tracking",
-    "indexname": "idx_delivery_tracking_message_id",
-    "indexdef": "CREATE INDEX idx_delivery_tracking_message_id ON public.message_delivery_tracking USING btree (message_id)"
+    "tablename": "learning_insights",
+    "indexname": "idx_learning_insights_status",
+    "indexdef": "CREATE INDEX idx_learning_insights_status ON public.learning_insights USING btree (status)"
   },
   {
     "section": "=== INDEXES ===",
     "schemaname": "public",
-    "tablename": "message_delivery_tracking",
-    "indexname": "idx_delivery_tracking_status",
-    "indexdef": "CREATE INDEX idx_delivery_tracking_status ON public.message_delivery_tracking USING btree (delivery_status)"
+    "tablename": "learning_insights",
+    "indexname": "idx_learning_insights_type",
+    "indexdef": "CREATE INDEX idx_learning_insights_type ON public.learning_insights USING btree (insight_type)"
   },
   {
     "section": "=== INDEXES ===",
     "schemaname": "public",
-    "tablename": "message_delivery_tracking",
-    "indexname": "message_delivery_tracking_pkey",
-    "indexdef": "CREATE UNIQUE INDEX message_delivery_tracking_pkey ON public.message_delivery_tracking USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "message_templates",
-    "indexname": "idx_message_templates_channel_type",
-    "indexdef": "CREATE INDEX idx_message_templates_channel_type ON public.message_templates USING btree (channel_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "message_templates",
-    "indexname": "idx_message_templates_status",
-    "indexdef": "CREATE INDEX idx_message_templates_status ON public.message_templates USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "message_templates",
-    "indexname": "message_templates_pkey",
-    "indexdef": "CREATE UNIQUE INDEX message_templates_pkey ON public.message_templates USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "messages",
-    "indexname": "idx_messages_content_trgm",
-    "indexdef": "CREATE INDEX idx_messages_content_trgm ON public.messages USING gin (content gin_trgm_ops)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "messages",
-    "indexname": "idx_messages_conversation_created",
-    "indexdef": "CREATE INDEX idx_messages_conversation_created ON public.messages USING btree (conversation_id, created_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "messages",
-    "indexname": "idx_messages_conversation_id",
-    "indexdef": "CREATE INDEX idx_messages_conversation_id ON public.messages USING btree (conversation_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "messages",
-    "indexname": "idx_messages_created_at",
-    "indexdef": "CREATE INDEX idx_messages_created_at ON public.messages USING btree (created_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "messages",
-    "indexname": "idx_messages_sender_type",
-    "indexdef": "CREATE INDEX idx_messages_sender_type ON public.messages USING btree (sender_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "messages",
-    "indexname": "messages_pkey",
-    "indexdef": "CREATE UNIQUE INDEX messages_pkey ON public.messages USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "onboarding_responses",
-    "indexname": "onboarding_responses_pkey",
-    "indexdef": "CREATE UNIQUE INDEX onboarding_responses_pkey ON public.onboarding_responses USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "playground_sessions",
-    "indexname": "playground_sessions_pkey",
-    "indexdef": "CREATE UNIQUE INDEX playground_sessions_pkey ON public.playground_sessions USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "profiles",
-    "indexname": "profiles_pkey",
-    "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "realtime_metrics",
-    "indexname": "idx_realtime_metrics_expires",
-    "indexdef": "CREATE INDEX idx_realtime_metrics_expires ON public.realtime_metrics USING btree (expires_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "realtime_metrics",
-    "indexname": "idx_realtime_metrics_name",
-    "indexdef": "CREATE INDEX idx_realtime_metrics_name ON public.realtime_metrics USING btree (metric_name)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "realtime_metrics",
-    "indexname": "idx_realtime_metrics_timestamp",
-    "indexdef": "CREATE INDEX idx_realtime_metrics_timestamp ON public.realtime_metrics USING btree (\"timestamp\")"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "realtime_metrics",
-    "indexname": "realtime_metrics_pkey",
-    "indexdef": "CREATE UNIQUE INDEX realtime_metrics_pkey ON public.realtime_metrics USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "scan_job_logs",
-    "indexname": "idx_scan_job_logs_scan_job_id",
-    "indexdef": "CREATE INDEX idx_scan_job_logs_scan_job_id ON public.scan_job_logs USING btree (scan_job_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "scan_job_logs",
-    "indexname": "scan_job_logs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX scan_job_logs_pkey ON public.scan_job_logs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "scheduled_reports",
-    "indexname": "idx_scheduled_reports_created_by",
-    "indexdef": "CREATE INDEX idx_scheduled_reports_created_by ON public.scheduled_reports USING btree (created_by)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "scheduled_reports",
-    "indexname": "idx_scheduled_reports_next_run",
-    "indexdef": "CREATE INDEX idx_scheduled_reports_next_run ON public.scheduled_reports USING btree (next_run_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "scheduled_reports",
-    "indexname": "scheduled_reports_pkey",
-    "indexdef": "CREATE UNIQUE INDEX scheduled_reports_pkey ON public.scheduled_reports USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "sla_tracking",
-    "indexname": "idx_sla_tracking_conversation_id",
-    "indexdef": "CREATE INDEX idx_sla_tracking_conversation_id ON public.sla_tracking USING btree (conversation_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "sla_tracking",
-    "indexname": "idx_sla_tracking_status",
-    "indexdef": "CREATE INDEX idx_sla_tracking_status ON public.sla_tracking USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "sla_tracking",
-    "indexname": "sla_tracking_pkey",
-    "indexdef": "CREATE UNIQUE INDEX sla_tracking_pkey ON public.sla_tracking USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "sync_jobs",
-    "indexname": "sync_jobs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX sync_jobs_pkey ON public.sync_jobs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "system_settings",
-    "indexname": "system_settings_pkey",
-    "indexdef": "CREATE UNIQUE INDEX system_settings_pkey ON public.system_settings USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "system_settings",
-    "indexname": "system_settings_setting_key_key",
-    "indexdef": "CREATE UNIQUE INDEX system_settings_setting_key_key ON public.system_settings USING btree (setting_key)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "user_agents",
-    "indexname": "idx_user_agents_agent_id",
-    "indexdef": "CREATE INDEX idx_user_agents_agent_id ON public.user_agents USING btree (agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "user_agents",
-    "indexname": "idx_user_agents_agent_type",
-    "indexdef": "CREATE INDEX idx_user_agents_agent_type ON public.user_agents USING btree (agent_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "user_agents",
-    "indexname": "idx_user_agents_is_active",
-    "indexdef": "CREATE INDEX idx_user_agents_is_active ON public.user_agents USING btree (is_active)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "user_agents",
-    "indexname": "idx_user_agents_user_id",
-    "indexdef": "CREATE INDEX idx_user_agents_user_id ON public.user_agents USING btree (user_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "user_agents",
-    "indexname": "user_agents_agent_id_key",
-    "indexdef": "CREATE UNIQUE INDEX user_agents_agent_id_key ON public.user_agents USING btree (agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "user_agents",
-    "indexname": "user_agents_pkey",
-    "indexdef": "CREATE UNIQUE INDEX user_agents_pkey ON public.user_agents USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "webhook_events",
-    "indexname": "idx_webhook_events_channel_id",
-    "indexdef": "CREATE INDEX idx_webhook_events_channel_id ON public.webhook_events USING btree (channel_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "webhook_events",
-    "indexname": "idx_webhook_events_created_at",
-    "indexdef": "CREATE INDEX idx_webhook_events_created_at ON public.webhook_events USING btree (created_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "webhook_events",
-    "indexname": "idx_webhook_events_processed",
-    "indexdef": "CREATE INDEX idx_webhook_events_processed ON public.webhook_events USING btree (processed)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "webhook_events",
-    "indexname": "webhook_events_pkey",
-    "indexdef": "CREATE UNIQUE INDEX webhook_events_pkey ON public.webhook_events USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "webhook_logs",
-    "indexname": "webhook_logs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX webhook_logs_pkey ON public.webhook_logs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "webhook_subscriptions",
-    "indexname": "webhook_subscriptions_pkey",
-    "indexdef": "CREATE UNIQUE INDEX webhook_subscriptions_pkey ON public.webhook_subscriptions USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "website_scan_jobs",
-    "indexname": "idx_website_scan_jobs_status",
-    "indexdef": "CREATE INDEX idx_website_scan_jobs_status ON public.website_scan_jobs USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "website_scan_jobs",
-    "indexname": "idx_website_scan_jobs_user_id",
-    "indexdef": "CREATE INDEX idx_website_scan_jobs_user_id ON public.website_scan_jobs USING btree (user_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "website_scan_jobs",
-    "indexname": "website_scan_jobs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX website_scan_jobs_pkey ON public.website_scan_jobs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "widget_configurations",
-    "indexname": "idx_widget_configurations_status",
-    "indexdef": "CREATE INDEX idx_widget_configurations_status ON public.widget_configurations USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "widget_configurations",
-    "indexname": "widget_configurations_pkey",
-    "indexdef": "CREATE UNIQUE INDEX widget_configurations_pkey ON public.widget_configurations USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "workflow_executions",
-    "indexname": "idx_workflow_executions_status",
-    "indexdef": "CREATE INDEX idx_workflow_executions_status ON public.workflow_executions USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "workflow_executions",
-    "indexname": "workflow_executions_pkey",
-    "indexdef": "CREATE UNIQUE INDEX workflow_executions_pkey ON public.workflow_executions USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "workflows",
-    "indexname": "workflows_pkey",
-    "indexdef": "CREATE UNIQUE INDEX workflows_pkey ON public.workflows USING btree (id)"
+    "tablename": "learning_insights",
+    "indexname": "idx_learning_insights_user_id",
+    "indexdef": "CREATE INDEX idx_learning_insights_user_id ON public.learning_insights USING btree (user_id)"
   }
 ]" 
+
 6. "[
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_availability",
-    "constraint_name": "2200_27242_2_not_null",
-    "check_clause": "agent_id IS NOT NULL"
+    "table_name": "conversations",
+    "constraint_name": "satisfaction_rating_check",
+    "check_clause": "(((satisfaction_rating >= 1) AND (satisfaction_rating <= 5)))"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_availability",
-    "constraint_name": "2200_27242_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_work_logs",
-    "constraint_name": "2200_36933_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_work_logs",
-    "constraint_name": "agent_work_logs_status_check",
-    "check_clause": "(((status)::text = ANY ((ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'failed'::character varying])::text[])))"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_work_logs",
-    "constraint_name": "2200_36933_9_not_null",
-    "check_clause": "status IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_work_logs",
-    "constraint_name": "2200_36933_6_not_null",
-    "check_clause": "task_description IS NOT NULL"
+    "table_name": "user_agents",
+    "constraint_name": "user_agents_agent_type_check",
+    "check_clause": "(((agent_type)::text = ANY ((ARRAY['ai_assistant'::character varying, 'chatbot'::character varying, 'workflow_bot'::character varying, 'analytics_bot'::character varying, 'knowledge_bot'::character varying])::text[])))"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4241,290 +4613,8 @@ ANSWERS
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "agent_work_logs",
-    "constraint_name": "2200_36933_5_not_null",
-    "check_clause": "task_type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_work_logs",
-    "constraint_name": "2200_36933_3_not_null",
-    "check_clause": "agent_name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_work_logs",
-    "constraint_name": "2200_36933_2_not_null",
-    "check_clause": "agent_id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_work_logs",
-    "constraint_name": "2200_36933_10_not_null",
-    "check_clause": "started_at IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_history",
-    "constraint_name": "2200_27833_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_history",
-    "constraint_name": "2200_27833_5_not_null",
-    "check_clause": "threshold_value IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_history",
-    "constraint_name": "2200_27833_4_not_null",
-    "check_clause": "metric_value IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_rules",
-    "constraint_name": "2200_27816_4_not_null",
-    "check_clause": "condition IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_rules",
-    "constraint_name": "2200_27816_5_not_null",
-    "check_clause": "threshold IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_rules",
-    "constraint_name": "2200_27816_8_not_null",
-    "check_clause": "recipients IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_rules",
-    "constraint_name": "2200_27816_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_rules",
-    "constraint_name": "2200_27816_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "alert_rules",
-    "constraint_name": "2200_27816_3_not_null",
-    "check_clause": "metric IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "audit_logs",
-    "constraint_name": "2200_33397_3_not_null",
-    "check_clause": "action IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "audit_logs",
-    "constraint_name": "2200_33397_4_not_null",
-    "check_clause": "entity_type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "audit_logs",
-    "constraint_name": "2200_33397_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "auto_generated_knowledge",
-    "constraint_name": "2200_28059_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "canned_responses",
-    "constraint_name": "2200_27260_3_not_null",
-    "check_clause": "content IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "canned_responses",
-    "constraint_name": "2200_27260_2_not_null",
-    "check_clause": "title IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "canned_responses",
-    "constraint_name": "2200_27260_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "channel_routing_rules",
-    "constraint_name": "2200_27477_4_not_null",
-    "check_clause": "conditions IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "channel_routing_rules",
-    "constraint_name": "2200_27477_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "channel_routing_rules",
-    "constraint_name": "2200_27477_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "channel_routing_rules",
-    "constraint_name": "2200_27477_5_not_null",
-    "check_clause": "target_channel_type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "chat_sessions",
-    "constraint_name": "2200_17600_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_3_not_null",
-    "check_clause": "type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_5_not_null",
-    "check_clause": "configuration IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "content_processing_queue",
-    "constraint_name": "2200_28092_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_analytics",
-    "constraint_name": "2200_27758_3_not_null",
-    "check_clause": "started_at IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_analytics",
-    "constraint_name": "2200_27758_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_context",
-    "constraint_name": "2200_26958_3_not_null",
-    "check_clause": "context_data IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_context",
-    "constraint_name": "2200_26958_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_notes",
-    "constraint_name": "2200_33227_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_notes",
-    "constraint_name": "2200_33227_4_not_null",
-    "check_clause": "note IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_transfers",
-    "constraint_name": "2200_27332_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversations",
-    "constraint_name": "satisfaction_rating_check",
-    "check_clause": "(((satisfaction_rating >= 1) AND (satisfaction_rating <= 5)))"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversations",
-    "constraint_name": "2200_30885_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "customer_channel_preferences",
-    "constraint_name": "2200_30903_3_not_null",
-    "check_clause": "channel_type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "customer_channel_preferences",
-    "constraint_name": "2200_30903_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "customer_profiles",
-    "constraint_name": "2200_30866_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "daily_metrics",
-    "constraint_name": "2200_27720_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "daily_metrics",
-    "constraint_name": "2200_27720_2_not_null",
-    "check_clause": "date IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "dashboard_configs",
-    "constraint_name": "2200_27782_5_not_null",
-    "check_clause": "layout IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "dashboard_configs",
-    "constraint_name": "2200_27782_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "dashboard_configs",
-    "constraint_name": "2200_27782_3_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "embeddings",
-    "constraint_name": "2200_17586_3_not_null",
-    "check_clause": "content IS NOT NULL"
+    "constraint_name": "agent_work_logs_status_check",
+    "check_clause": "(((status)::text = ANY ((ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'failed'::character varying])::text[])))"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4534,158 +4624,14 @@ ANSWERS
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_6_not_null",
-    "check_clause": "format IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_4_not_null",
-    "check_clause": "type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_3_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "extracted_content",
-    "constraint_name": "2200_28045_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "extracted_content",
-    "constraint_name": "2200_28045_3_not_null",
-    "check_clause": "url IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "extracted_content",
-    "constraint_name": "2200_28045_5_not_null",
+    "table_name": "embeddings",
+    "constraint_name": "2200_17586_3_not_null",
     "check_clause": "content IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "file_attachments",
-    "constraint_name": "2200_33249_5_not_null",
-    "check_clause": "file_path IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "file_attachments",
-    "constraint_name": "2200_33249_4_not_null",
-    "check_clause": "filename IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "file_attachments",
-    "constraint_name": "2200_33249_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integration_field_mappings",
-    "constraint_name": "2200_33313_6_not_null",
-    "check_clause": "target_field IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integration_field_mappings",
-    "constraint_name": "2200_33313_5_not_null",
-    "check_clause": "source_field IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integration_field_mappings",
-    "constraint_name": "2200_33313_4_not_null",
-    "check_clause": "target_entity IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integration_field_mappings",
-    "constraint_name": "2200_33313_3_not_null",
-    "check_clause": "source_entity IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integration_field_mappings",
-    "constraint_name": "2200_33313_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_3_not_null",
-    "check_clause": "type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_7_not_null",
-    "check_clause": "credentials IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_6_not_null",
-    "check_clause": "configuration IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_4_not_null",
-    "check_clause": "provider IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_3_not_null",
-    "check_clause": "language IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_2_not_null",
-    "check_clause": "intent_name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_4_not_null",
-    "check_clause": "patterns IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_analytics",
-    "constraint_name": "2200_33294_1_not_null",
+    "table_name": "chat_sessions",
+    "constraint_name": "2200_17600_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
@@ -4697,80 +4643,74 @@ ANSWERS
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "knowledge_base",
-    "constraint_name": "2200_26934_3_not_null",
-    "check_clause": "content IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_base",
     "constraint_name": "2200_26934_2_not_null",
     "check_clause": "title IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_categories",
-    "constraint_name": "2200_29364_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_categories",
-    "constraint_name": "2200_29364_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_items",
-    "constraint_name": "2200_29373_3_not_null",
+    "table_name": "knowledge_base",
+    "constraint_name": "2200_26934_3_not_null",
     "check_clause": "content IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_items",
-    "constraint_name": "2200_29373_2_not_null",
+    "table_name": "training_results",
+    "constraint_name": "2200_45250_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_availability",
+    "constraint_name": "2200_27242_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_availability",
+    "constraint_name": "2200_27242_2_not_null",
+    "check_clause": "agent_id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "canned_responses",
+    "constraint_name": "2200_27260_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "canned_responses",
+    "constraint_name": "2200_27260_2_not_null",
     "check_clause": "title IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_items",
-    "constraint_name": "2200_29373_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_versions",
-    "constraint_name": "2200_33275_4_not_null",
+    "table_name": "canned_responses",
+    "constraint_name": "2200_27260_3_not_null",
     "check_clause": "content IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_versions",
-    "constraint_name": "2200_33275_1_not_null",
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_versions",
-    "constraint_name": "2200_33275_3_not_null",
-    "check_clause": "version IS NOT NULL"
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_2_not_null",
+    "check_clause": "name IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_delivery_tracking",
-    "constraint_name": "2200_27488_1_not_null",
-    "check_clause": "id IS NOT NULL"
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_3_not_null",
+    "check_clause": "type IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_delivery_tracking",
-    "constraint_name": "2200_27488_3_not_null",
-    "check_clause": "channel_type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_templates",
-    "constraint_name": "2200_27436_7_not_null",
-    "check_clause": "channel_type IS NOT NULL"
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_5_not_null",
+    "check_clause": "configuration IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4795,8 +4735,465 @@ ANSWERS
     "table_name": "message_templates",
     "constraint_name": "2200_27436_4_not_null",
     "check_clause": "category IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_5_not_null",
+    "check_clause": "template_content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_7_not_null",
+    "check_clause": "channel_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "channel_routing_rules",
+    "constraint_name": "2200_27477_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "channel_routing_rules",
+    "constraint_name": "2200_27477_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "channel_routing_rules",
+    "constraint_name": "2200_27477_4_not_null",
+    "check_clause": "conditions IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "channel_routing_rules",
+    "constraint_name": "2200_27477_5_not_null",
+    "check_clause": "target_channel_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_notes",
+    "constraint_name": "2200_33227_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_notes",
+    "constraint_name": "2200_33227_4_not_null",
+    "check_clause": "note IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "file_attachments",
+    "constraint_name": "2200_33249_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "file_attachments",
+    "constraint_name": "2200_33249_4_not_null",
+    "check_clause": "filename IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "file_attachments",
+    "constraint_name": "2200_33249_5_not_null",
+    "check_clause": "file_path IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_transfers",
+    "constraint_name": "2200_27332_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_delivery_tracking",
+    "constraint_name": "2200_27488_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_delivery_tracking",
+    "constraint_name": "2200_27488_3_not_null",
+    "check_clause": "channel_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_versions",
+    "constraint_name": "2200_33275_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_versions",
+    "constraint_name": "2200_33275_3_not_null",
+    "check_clause": "version IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_versions",
+    "constraint_name": "2200_33275_4_not_null",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_analytics",
+    "constraint_name": "2200_33294_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integration_field_mappings",
+    "constraint_name": "2200_33313_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integration_field_mappings",
+    "constraint_name": "2200_33313_3_not_null",
+    "check_clause": "source_entity IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integration_field_mappings",
+    "constraint_name": "2200_33313_4_not_null",
+    "check_clause": "target_entity IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integration_field_mappings",
+    "constraint_name": "2200_33313_5_not_null",
+    "check_clause": "source_field IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integration_field_mappings",
+    "constraint_name": "2200_33313_6_not_null",
+    "check_clause": "target_field IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "sync_jobs",
+    "constraint_name": "2200_33330_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "sync_jobs",
+    "constraint_name": "2200_33330_3_not_null",
+    "check_clause": "job_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "sync_jobs",
+    "constraint_name": "2200_33330_4_not_null",
+    "check_clause": "direction IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_events",
+    "constraint_name": "2200_27446_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_events",
+    "constraint_name": "2200_27446_3_not_null",
+    "check_clause": "event_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_events",
+    "constraint_name": "2200_27446_4_not_null",
+    "check_clause": "payload IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_subscriptions",
+    "constraint_name": "2200_33347_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_subscriptions",
+    "constraint_name": "2200_33347_3_not_null",
+    "check_clause": "event_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_subscriptions",
+    "constraint_name": "2200_33347_4_not_null",
+    "check_clause": "webhook_url IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_logs",
+    "constraint_name": "2200_33366_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_logs",
+    "constraint_name": "2200_33366_3_not_null",
+    "check_clause": "event_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scheduled_reports",
+    "constraint_name": "2200_27800_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scheduled_reports",
+    "constraint_name": "2200_27800_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scheduled_reports",
+    "constraint_name": "2200_27800_4_not_null",
+    "check_clause": "report_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scheduled_reports",
+    "constraint_name": "2200_27800_5_not_null",
+    "check_clause": "schedule_cron IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scheduled_reports",
+    "constraint_name": "2200_27800_6_not_null",
+    "check_clause": "recipients IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "widget_configurations",
+    "constraint_name": "2200_29447_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "widget_configurations",
+    "constraint_name": "2200_29447_5_not_null",
+    "check_clause": "configuration IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "workflows",
+    "constraint_name": "2200_26916_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "workflows",
+    "constraint_name": "2200_26916_3_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "workflows",
+    "constraint_name": "2200_26916_5_not_null",
+    "check_clause": "nodes IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "workflows",
+    "constraint_name": "2200_26916_6_not_null",
+    "check_clause": "connections IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "workflow_executions",
+    "constraint_name": "2200_31654_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_2_not_null",
+    "check_clause": "intent_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_3_not_null",
+    "check_clause": "language IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_4_not_null",
+    "check_clause": "patterns IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_context",
+    "constraint_name": "2200_26958_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_context",
+    "constraint_name": "2200_26958_3_not_null",
+    "check_clause": "context_data IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "audit_logs",
+    "constraint_name": "2200_33397_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "audit_logs",
+    "constraint_name": "2200_33397_3_not_null",
+    "check_clause": "action IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "audit_logs",
+    "constraint_name": "2200_33397_4_not_null",
+    "check_clause": "entity_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_3_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_4_not_null",
+    "check_clause": "type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_6_not_null",
+    "check_clause": "format IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "sla_tracking",
+    "constraint_name": "2200_27356_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_3_not_null",
+    "check_clause": "type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_4_not_null",
+    "check_clause": "provider IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_6_not_null",
+    "check_clause": "configuration IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_7_not_null",
+    "check_clause": "credentials IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "daily_metrics",
+    "constraint_name": "2200_27720_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "daily_metrics",
+    "constraint_name": "2200_27720_2_not_null",
+    "check_clause": "date IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "realtime_metrics",
+    "constraint_name": "2200_27748_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "realtime_metrics",
+    "constraint_name": "2200_27748_2_not_null",
+    "check_clause": "metric_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "realtime_metrics",
+    "constraint_name": "2200_27748_3_not_null",
+    "check_clause": "metric_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_analytics",
+    "constraint_name": "2200_27758_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_analytics",
+    "constraint_name": "2200_27758_3_not_null",
+    "check_clause": "started_at IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "dashboard_configs",
+    "constraint_name": "2200_27782_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "dashboard_configs",
+    "constraint_name": "2200_27782_3_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "dashboard_configs",
+    "constraint_name": "2200_27782_5_not_null",
+    "check_clause": "layout IS NOT NULL"
   }
-]"
+]" 
+
 7. "[
   {
     "section": "=== VIEWS ===",
@@ -4804,6 +5201,7 @@ ANSWERS
     "view_definition": " SELECT agent_work_logs.user_id,\n    agent_work_logs.agent_id,\n    agent_work_logs.agent_name,\n    count(*) AS total_tasks,\n    count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS completed_tasks,\n    count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'failed'::text)) AS failed_tasks,\n    count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'in_progress'::text)) AS in_progress_tasks,\n    avg(agent_work_logs.execution_time_ms) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS avg_execution_time_ms,\n    min(agent_work_logs.execution_time_ms) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS min_execution_time_ms,\n    max(agent_work_logs.execution_time_ms) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS max_execution_time_ms,\n    (((count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)))::double precision / (NULLIF(count(*), 0))::double precision) * (100)::double precision) AS success_rate,\n    (((count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'failed'::text)))::double precision / (NULLIF(count(*), 0))::double precision) * (100)::double precision) AS failure_rate,\n    max(agent_work_logs.updated_at) AS last_activity,\n    count(DISTINCT agent_work_logs.task_type) AS task_types_handled,\n    date_trunc('day'::text, max(agent_work_logs.created_at)) AS last_task_date\n   FROM agent_work_logs\n  GROUP BY agent_work_logs.user_id, agent_work_logs.agent_id, agent_work_logs.agent_name;"
   }
 ]" 
+
 8. "[
   {
     "section": "=== FUNCTIONS ===",
@@ -4825,6 +5223,13 @@ ANSWERS
     "routine_type": "FUNCTION",
     "return_type": "trigger",
     "routine_definition": "\nDECLARE\n    total_usage INTEGER;\n    helpful_usage INTEGER;\n    effectiveness DECIMAL(3,2);\nBEGIN\n    -- Get usage statistics for the knowledge item\n    SELECT \n        COUNT(*) as total,\n        COUNT(CASE WHEN was_helpful = true THEN 1 END) as helpful\n    INTO total_usage, helpful_usage\n    FROM knowledge_analytics\n    WHERE knowledge_item_id = NEW.knowledge_item_id;\n    \n    -- Calculate effectiveness score\n    IF total_usage > 0 THEN\n        effectiveness = (helpful_usage::DECIMAL / total_usage::DECIMAL);\n    ELSE\n        effectiveness = 0.5;\n    END IF;\n    \n    -- Update knowledge item\n    UPDATE knowledge_items\n    SET effectiveness_score = effectiveness\n    WHERE id = NEW.knowledge_item_id;\n    \n    RETURN NEW;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "calculate_template_effectiveness",
+    "routine_type": "FUNCTION",
+    "return_type": "numeric",
+    "routine_definition": "\nDECLARE\n    effectiveness_score DECIMAL(3,2);\nBEGIN\n    SELECT \n        (\n            (AVG(CASE WHEN tuh.effectiveness_rating >= 4 THEN 1 ELSE 0 END) * 0.4) +\n            (AVG(CASE WHEN tuh.customer_reaction = 'positive' THEN 1 ELSE 0 END) * 0.3) +\n            (AVG(tuh.context_match_score) * 0.3)\n        ) INTO effectiveness_score\n    FROM template_usage_history tuh\n    WHERE tuh.template_id = template_uuid\n    AND tuh.used_at >= NOW() - INTERVAL '1 day' * days_back;\n    \n    RETURN COALESCE(effectiveness_score, 0.0);\nEND;\n"
   },
   {
     "section": "=== FUNCTIONS ===",
@@ -4874,6 +5279,20 @@ ANSWERS
     "routine_type": "FUNCTION",
     "return_type": "uuid",
     "routine_definition": "\nBEGIN\n    RETURN gen_random_uuid();\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "get_template_suggestions",
+    "routine_type": "FUNCTION",
+    "return_type": "record",
+    "routine_definition": "\nBEGIN\n    RETURN QUERY\n    SELECT \n        t.id,\n        t.name,\n        t.content,\n        CASE \n            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 1) || '%' THEN 0.8\n            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 2) || '%' THEN 0.6\n            ELSE 0.1 + (t.usage_count::DECIMAL / 1000)\n        END as confidence,\n        CASE \n            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 1) || '%' THEN 'Content match'\n            WHEN customer_message_text ILIKE '%' || SPLIT_PART(t.content, ' ', 2) || '%' THEN 'Partial match'\n            ELSE 'Usage frequency'\n        END as match_reason\n    FROM templates t\n    WHERE t.created_by = user_uuid\n    AND t.is_active = true\n    ORDER BY confidence DESC\n    LIMIT limit_count;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "get_training_metrics_summary",
+    "routine_type": "FUNCTION",
+    "return_type": "record",
+    "routine_definition": "\nBEGIN\n    RETURN QUERY\n    WITH current_metrics AS (\n        SELECT \n            tmh.metric_type,\n            AVG(tmh.metric_value) as avg_value\n        FROM training_metrics_history tmh\n        WHERE tmh.user_id = user_uuid\n        AND tmh.date_recorded >= NOW() - INTERVAL '1 day' * days_back\n        GROUP BY tmh.metric_type\n    ),\n    previous_metrics AS (\n        SELECT \n            tmh.metric_type,\n            AVG(tmh.metric_value) as avg_value\n        FROM training_metrics_history tmh\n        WHERE tmh.user_id = user_uuid\n        AND tmh.date_recorded >= NOW() - INTERVAL '1 day' * (days_back * 2)\n        AND tmh.date_recorded < NOW() - INTERVAL '1 day' * days_back\n        GROUP BY tmh.metric_type\n    )\n    SELECT \n        c.metric_type,\n        c.avg_value,\n        COALESCE(p.avg_value, 0),\n        CASE \n            WHEN p.avg_value > 0 THEN ((c.avg_value - p.avg_value) / p.avg_value * 100)\n            ELSE 0 \n        END,\n        CASE \n            WHEN p.avg_value IS NULL THEN 'new'::VARCHAR(20)\n            WHEN c.avg_value > p.avg_value THEN 'improving'::VARCHAR(20)\n            WHEN c.avg_value < p.avg_value THEN 'declining'::VARCHAR(20)\n            ELSE 'stable'::VARCHAR(20)\n        END\n    FROM current_metrics c\n    LEFT JOIN previous_metrics p ON c.metric_type = p.metric_type;\nEND;\n"
   },
   {
     "section": "=== FUNCTIONS ===",
@@ -5143,6 +5562,13 @@ ANSWERS
   },
   {
     "section": "=== FUNCTIONS ===",
+    "routine_name": "update_template_analytics_daily",
+    "routine_type": "FUNCTION",
+    "return_type": "void",
+    "routine_definition": "\nBEGIN\n    INSERT INTO template_analytics (\n        template_id,\n        user_id,\n        usage_count,\n        success_rate,\n        average_response_time,\n        customer_satisfaction,\n        effectiveness_score,\n        last_used_at,\n        date_period\n    )\n    SELECT \n        tuh.template_id,\n        tuh.user_id,\n        COUNT(*) as usage_count,\n        AVG(CASE WHEN tuh.effectiveness_rating >= 4 THEN 100 ELSE 0 END) as success_rate,\n        AVG(tuh.response_time_ms) as average_response_time,\n        AVG(CASE WHEN tuh.customer_reaction = 'positive' THEN 5 \n                 WHEN tuh.customer_reaction = 'neutral' THEN 3\n                 ELSE 1 END) as customer_satisfaction,\n        calculate_template_effectiveness(tuh.template_id, 1) as effectiveness_score,\n        MAX(tuh.used_at) as last_used_at,\n        CURRENT_DATE as date_period\n    FROM template_usage_history tuh\n    WHERE tuh.used_at >= CURRENT_DATE - INTERVAL '1 day'\n    AND tuh.used_at < CURRENT_DATE\n    GROUP BY tuh.template_id, tuh.user_id\n    ON CONFLICT (template_id, user_id, date_period)\n    DO UPDATE SET\n        usage_count = EXCLUDED.usage_count,\n        success_rate = EXCLUDED.success_rate,\n        average_response_time = EXCLUDED.average_response_time,\n        customer_satisfaction = EXCLUDED.customer_satisfaction,\n        effectiveness_score = EXCLUDED.effectiveness_score,\n        last_used_at = EXCLUDED.last_used_at,\n        updated_at = NOW();\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
     "routine_name": "update_updated_at_column",
     "routine_type": "FUNCTION",
     "return_type": "trigger",
@@ -5184,6 +5610,7 @@ ANSWERS
     "routine_definition": null
   }
 ]" 
+
 9. "[
   {
     "section": "=== TRIGGERS ===",
@@ -5305,7 +5732,7 @@ ANSWERS
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "set_word_count_trigger",
-    "event_manipulation": "UPDATE",
+    "event_manipulation": "INSERT",
     "event_object_table": "extracted_content",
     "action_statement": "EXECUTE FUNCTION set_word_count()",
     "action_timing": "BEFORE",
@@ -5314,7 +5741,7 @@ ANSWERS
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "set_word_count_trigger",
-    "event_manipulation": "INSERT",
+    "event_manipulation": "UPDATE",
     "event_object_table": "extracted_content",
     "action_statement": "EXECUTE FUNCTION set_word_count()",
     "action_timing": "BEFORE",
@@ -5323,7 +5750,7 @@ ANSWERS
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "trigger_calculate_knowledge_effectiveness",
-    "event_manipulation": "INSERT",
+    "event_manipulation": "UPDATE",
     "event_object_table": "knowledge_analytics",
     "action_statement": "EXECUTE FUNCTION calculate_knowledge_effectiveness()",
     "action_timing": "AFTER",
@@ -5332,7 +5759,7 @@ ANSWERS
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "trigger_calculate_knowledge_effectiveness",
-    "event_manipulation": "UPDATE",
+    "event_manipulation": "INSERT",
     "event_object_table": "knowledge_analytics",
     "action_statement": "EXECUTE FUNCTION calculate_knowledge_effectiveness()",
     "action_timing": "AFTER",
@@ -5352,6 +5779,15 @@ ANSWERS
     "trigger_name": "trigger_update_knowledge_categories_updated_at",
     "event_manipulation": "UPDATE",
     "event_object_table": "knowledge_categories",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_knowledge_gaps_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "knowledge_gaps",
     "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
     "action_timing": "BEFORE",
     "action_orientation": "ROW"
@@ -5385,11 +5821,11 @@ ANSWERS
   },
   {
     "section": "=== TRIGGERS ===",
-    "trigger_name": "trigger_update_conversation_analytics",
-    "event_manipulation": "DELETE",
-    "event_object_table": "messages",
-    "action_statement": "EXECUTE FUNCTION update_conversation_analytics()",
-    "action_timing": "AFTER",
+    "trigger_name": "update_learning_insights_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "learning_insights",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
     "action_orientation": "ROW"
   },
   {
@@ -5403,8 +5839,17 @@ ANSWERS
   },
   {
     "section": "=== TRIGGERS ===",
-    "trigger_name": "trigger_update_conversation_message_count",
+    "trigger_name": "trigger_update_conversation_analytics",
     "event_manipulation": "DELETE",
+    "event_object_table": "messages",
+    "action_statement": "EXECUTE FUNCTION update_conversation_analytics()",
+    "action_timing": "AFTER",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "trigger_update_conversation_message_count",
+    "event_manipulation": "INSERT",
     "event_object_table": "messages",
     "action_statement": "EXECUTE FUNCTION update_conversation_message_count()",
     "action_timing": "AFTER",
@@ -5413,7 +5858,7 @@ ANSWERS
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "trigger_update_conversation_message_count",
-    "event_manipulation": "INSERT",
+    "event_manipulation": "DELETE",
     "event_object_table": "messages",
     "action_statement": "EXECUTE FUNCTION update_conversation_message_count()",
     "action_timing": "AFTER",
@@ -5439,6 +5884,15 @@ ANSWERS
   },
   {
     "section": "=== TRIGGERS ===",
+    "trigger_name": "update_pattern_recognition_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "pattern_recognition",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
     "trigger_name": "trigger_update_profiles_updated_at",
     "event_manipulation": "UPDATE",
     "event_object_table": "profiles",
@@ -5451,6 +5905,114 @@ ANSWERS
     "trigger_name": "update_profiles_updated_at",
     "event_manipulation": "UPDATE",
     "event_object_table": "profiles",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_template_ab_tests_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "template_ab_tests",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_template_analytics_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "template_analytics",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_template_categories_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "template_categories",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_template_optimization_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "template_optimization",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_template_suggestions_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "template_suggestions",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_template_triggers_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "template_triggers",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_template_variables_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "template_variables",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_templates_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "templates",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_training_datasets_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "training_datasets",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_training_jobs_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "training_jobs",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_training_scenarios_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "training_scenarios",
+    "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
+    "action_timing": "BEFORE",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
+    "trigger_name": "update_training_sessions_updated_at",
+    "event_manipulation": "UPDATE",
+    "event_object_table": "training_sessions",
     "action_statement": "EXECUTE FUNCTION update_updated_at_column()",
     "action_timing": "BEFORE",
     "action_orientation": "ROW"
@@ -5474,7 +6036,8 @@ ANSWERS
     "action_orientation": "ROW"
   }
 ]" 
-10.  "[
+
+10. "[
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
@@ -5775,6 +6338,39 @@ ANSWERS
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "policyname": "Users can create knowledge gaps",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "policyname": "Users can update own knowledge gaps",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "policyname": "Users can view own knowledge gaps",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
     "tablename": "knowledge_items",
     "policyname": "Allow authenticated access",
     "permissive": "PERMISSIVE",
@@ -5792,6 +6388,39 @@ ANSWERS
     "roles": "{public}",
     "cmd": "ALL",
     "qual": "(auth.role() = 'authenticated'::text)",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "learning_insights",
+    "policyname": "Users can create learning insights",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "learning_insights",
+    "policyname": "Users can update own learning insights",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "learning_insights",
+    "policyname": "Users can view own learning insights",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
     "with_check": null
   },
   {
@@ -5869,6 +6498,39 @@ ANSWERS
     "roles": "{public}",
     "cmd": "SELECT",
     "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "pattern_recognition",
+    "policyname": "Users can create pattern recognition",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "pattern_recognition",
+    "policyname": "Users can update own pattern recognition",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "pattern_recognition",
+    "policyname": "Users can view own pattern recognition",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
     "with_check": null
   },
   {
@@ -5995,104 +6657,490 @@ ANSWERS
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "user_agents",
-    "policyname": "Users can delete their own agents",
-    "permissive": "PERMISSIVE",
-    "roles": "{public}",
-    "cmd": "DELETE",
-    "qual": "(auth.uid() = user_id)",
-    "with_check": null
-  },
-  {
-    "section": "=== RLS POLICIES ===",
-    "schemaname": "public",
-    "tablename": "user_agents",
-    "policyname": "Users can insert their own agents",
+    "tablename": "template_ab_tests",
+    "policyname": "Users can create template ab tests",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
     "cmd": "INSERT",
     "qual": null,
-    "with_check": "(auth.uid() = user_id)"
+    "with_check": "(user_id = auth.uid())"
   },
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "user_agents",
-    "policyname": "Users can update their own agents",
+    "tablename": "template_ab_tests",
+    "policyname": "Users can update own template ab tests",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
     "cmd": "UPDATE",
-    "qual": "(auth.uid() = user_id)",
+    "qual": "(user_id = auth.uid())",
     "with_check": null
   },
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "user_agents",
-    "policyname": "Users can view their own agents",
+    "tablename": "template_ab_tests",
+    "policyname": "Users can view own template ab tests",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
     "cmd": "SELECT",
-    "qual": "(auth.uid() = user_id)",
+    "qual": "(user_id = auth.uid())",
     "with_check": null
   },
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "webhook_events",
-    "policyname": "Allow authenticated access",
+    "tablename": "template_analytics",
+    "policyname": "Users can create template analytics",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
-    "cmd": "ALL",
-    "qual": "(auth.role() = 'authenticated'::text)",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_analytics",
+    "policyname": "Users can update own template analytics",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
     "with_check": null
   },
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "website_scan_jobs",
-    "policyname": "Allow authenticated access",
+    "tablename": "template_analytics",
+    "policyname": "Users can view own template analytics",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
-    "cmd": "ALL",
-    "qual": "(auth.role() = 'authenticated'::text)",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
     "with_check": null
   },
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "widget_configurations",
-    "policyname": "Allow managing own widgets",
+    "tablename": "template_categories",
+    "policyname": "Admins can manage template categories",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
     "cmd": "ALL",
-    "qual": "(auth.uid() = user_id)",
+    "qual": "(EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND ((profiles.role)::text = 'admin'::text))))",
     "with_check": null
   },
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "workflow_executions",
-    "policyname": "Allow authenticated access",
+    "tablename": "template_categories",
+    "policyname": "Users can view template categories",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
-    "cmd": "ALL",
-    "qual": "(auth.role() = 'authenticated'::text)",
+    "cmd": "SELECT",
+    "qual": "true",
     "with_check": null
   },
   {
     "section": "=== RLS POLICIES ===",
     "schemaname": "public",
-    "tablename": "workflows",
-    "policyname": "Allow managing own workflows",
+    "tablename": "template_optimization",
+    "policyname": "Users can create template optimization",
     "permissive": "PERMISSIVE",
     "roles": "{public}",
-    "cmd": "ALL",
-    "qual": "(auth.uid() = user_id)",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_optimization",
+    "policyname": "Users can update own template optimization",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
     "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_optimization",
+    "policyname": "Users can view own template optimization",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_performance_metrics",
+    "policyname": "Users can create template performance metrics",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_performance_metrics",
+    "policyname": "Users can view own template performance metrics",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_suggestions",
+    "policyname": "Users can create template suggestions",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_suggestions",
+    "policyname": "Users can update own template suggestions",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_suggestions",
+    "policyname": "Users can view own template suggestions",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_triggers",
+    "policyname": "Users can create template triggers",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_triggers",
+    "policyname": "Users can delete own template triggers",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_triggers",
+    "policyname": "Users can update own template triggers",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_triggers",
+    "policyname": "Users can view own template triggers",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_usage_history",
+    "policyname": "Users can create template usage history",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_usage_history",
+    "policyname": "Users can view own template usage history",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_variables",
+    "policyname": "Users can create template variables",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_variables",
+    "policyname": "Users can delete own template variables",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_variables",
+    "policyname": "Users can update own template variables",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "template_variables",
+    "policyname": "Users can view own template variables",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "templates",
+    "policyname": "Users can create templates",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(created_by = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "templates",
+    "policyname": "Users can delete own templates",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "DELETE",
+    "qual": "(created_by = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "templates",
+    "policyname": "Users can update own templates",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(created_by = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "templates",
+    "policyname": "Users can view own templates",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((created_by = auth.uid()) OR (EXISTS ( SELECT 1\n   FROM profiles\n  WHERE ((profiles.id = auth.uid()) AND ((profiles.role)::text = ANY ((ARRAY['admin'::character varying, 'agent'::character varying])::text[]))))))",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_datasets",
+    "policyname": "Users can create training datasets",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_datasets",
+    "policyname": "Users can update own training datasets",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_datasets",
+    "policyname": "Users can view own training datasets",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_jobs",
+    "policyname": "Users can create training jobs",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_jobs",
+    "policyname": "Users can update own training jobs",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_jobs",
+    "policyname": "Users can view own training jobs",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_metrics_history",
+    "policyname": "Users can create training metrics",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_metrics_history",
+    "policyname": "Users can view own training metrics",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_results",
+    "policyname": "Users can create training results",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_results",
+    "policyname": "Users can view own training results",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_scenarios",
+    "policyname": "Users can create training scenarios",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_scenarios",
+    "policyname": "Users can update own training scenarios",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "UPDATE",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_scenarios",
+    "policyname": "Users can view own training scenarios",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(user_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "training_sessions",
+    "policyname": "Users can create training sessions",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(user_id = auth.uid())"
   }
 ]" 
-11.  "[
+
+11. "[
   {
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
@@ -6516,6 +7564,20 @@ ANSWERS
   {
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
     "tablename": "knowledge_items",
     "inserts": 12,
     "updates": 7,
@@ -6531,6 +7593,20 @@ ANSWERS
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
     "tablename": "knowledge_versions",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "learning_insights",
     "inserts": 0,
     "updates": 0,
     "deletes": 0,
@@ -6587,6 +7663,20 @@ ANSWERS
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
     "tablename": "onboarding_responses",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "pattern_recognition",
     "inserts": 0,
     "updates": 0,
     "deletes": 0,
@@ -6712,6 +7802,230 @@ ANSWERS
   {
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
+    "tablename": "template_ab_tests",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_analytics",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_categories",
+    "inserts": 8,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 8,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_optimization",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_performance_metrics",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_suggestions",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_triggers",
+    "inserts": 1,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 1,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_usage_history",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "template_variables",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "templates",
+    "inserts": 5,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 5,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "training_datasets",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "training_jobs",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "training_metrics_history",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "training_results",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "training_scenarios",
+    "inserts": 2,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 2,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "training_sessions",
+    "inserts": 0,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 0,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
     "tablename": "user_agents",
     "inserts": 24,
     "updates": 0,
@@ -6822,7 +8136,8 @@ ANSWERS
     "last_autoanalyze": null
   }
 ]" 
-12.  "[
+
+12. "[
   {
     "section": "=== EXTENSIONS ===",
     "extname": "pg_graphql",
@@ -6880,7 +8195,9 @@ ANSWERS
     "schema": "extensions"
   }
 ]" 
-13. "[
+
+13. 
+"[
   {
     "section": "=== ENUM TYPES ===",
     "enum_name": "aal_level",
@@ -7049,7 +8366,7 @@ ANSWERS
     "enum_value": "phone_change_token",
     "enumsortorder": 6
   }
-]"
+]" 
 
 14. "[
   {
@@ -7197,9 +8514,8 @@ ANSWERS
   }
 ]" 
 
-
-16. Success. No rows returned 
-17. Success. No rows returned 
+16.  "Success. No rows returned" 
+17. Success. No rows returned
 18. "[
   {
     "section": "=== TABLE SIZES ===",
@@ -7252,6 +8568,14 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
+    "tablename": "templates",
+    "total_size": "112 kB",
+    "table_size": "8192 bytes",
+    "index_size": "104 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
     "tablename": "user_agents",
     "total_size": "112 kB",
     "table_size": "8192 bytes",
@@ -7276,10 +8600,10 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "canned_responses",
-    "total_size": "80 kB",
+    "tablename": "template_triggers",
+    "total_size": "96 kB",
     "table_size": "8192 bytes",
-    "index_size": "72 kB"
+    "index_size": "88 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
@@ -7292,18 +8616,18 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "website_scan_jobs",
-    "total_size": "64 kB",
+    "tablename": "canned_responses",
+    "total_size": "80 kB",
     "table_size": "8192 bytes",
-    "index_size": "56 kB"
+    "index_size": "72 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "message_templates",
-    "total_size": "64 kB",
+    "tablename": "training_scenarios",
+    "total_size": "80 kB",
     "table_size": "8192 bytes",
-    "index_size": "56 kB"
+    "index_size": "72 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
@@ -7316,9 +8640,97 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
+    "tablename": "website_scan_jobs",
+    "total_size": "64 kB",
+    "table_size": "8192 bytes",
+    "index_size": "56 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_optimization",
+    "total_size": "64 kB",
+    "table_size": "0 bytes",
+    "index_size": "64 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_suggestions",
+    "total_size": "64 kB",
+    "table_size": "0 bytes",
+    "index_size": "64 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "message_templates",
+    "total_size": "64 kB",
+    "table_size": "8192 bytes",
+    "index_size": "56 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
     "tablename": "customer_channel_preferences",
     "total_size": "56 kB",
     "table_size": "8192 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_sessions",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_jobs",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "scan_job_logs",
+    "total_size": "48 kB",
+    "table_size": "8192 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_usage_history",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_categories",
+    "total_size": "48 kB",
+    "table_size": "8192 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_analytics",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_variables",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
     "index_size": "48 kB"
   },
   {
@@ -7340,10 +8752,18 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "scan_job_logs",
+    "tablename": "knowledge_gaps",
     "total_size": "48 kB",
-    "table_size": "8192 bytes",
-    "index_size": "40 kB"
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_metrics_history",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
@@ -7351,6 +8771,38 @@ ANSWERS
     "tablename": "communication_channels",
     "total_size": "48 kB",
     "table_size": "8192 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_datasets",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_results",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_ab_tests",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_performance_metrics",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
     "index_size": "40 kB"
   },
   {
@@ -7365,6 +8817,22 @@ ANSWERS
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
     "tablename": "agent_availability",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "pattern_recognition",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "learning_insights",
     "total_size": "40 kB",
     "table_size": "0 bytes",
     "index_size": "40 kB"
@@ -7428,6 +8896,14 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
+    "tablename": "workflow_executions",
+    "total_size": "24 kB",
+    "table_size": "0 bytes",
+    "index_size": "24 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
     "tablename": "auto_generated_knowledge",
     "total_size": "24 kB",
     "table_size": "0 bytes",
@@ -7436,7 +8912,7 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "integrations",
+    "tablename": "widget_configurations",
     "total_size": "24 kB",
     "table_size": "0 bytes",
     "index_size": "24 kB"
@@ -7444,7 +8920,7 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "workflow_executions",
+    "tablename": "content_processing_queue",
     "total_size": "24 kB",
     "table_size": "0 bytes",
     "index_size": "24 kB"
@@ -7468,7 +8944,7 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "content_processing_queue",
+    "tablename": "integrations",
     "total_size": "24 kB",
     "table_size": "0 bytes",
     "index_size": "24 kB"
@@ -7476,10 +8952,18 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "widget_configurations",
-    "total_size": "24 kB",
+    "tablename": "webhook_subscriptions",
+    "total_size": "16 kB",
     "table_size": "0 bytes",
-    "index_size": "24 kB"
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "onboarding_responses",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
@@ -7493,14 +8977,6 @@ ANSWERS
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
     "tablename": "integration_field_mappings",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "onboarding_responses",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
@@ -7540,23 +9016,23 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "audit_logs",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "embeddings",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
     "tablename": "knowledge_base",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "chat_sessions",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "playground_sessions",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
@@ -7572,7 +9048,15 @@ ANSWERS
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "chat_sessions",
+    "tablename": "embeddings",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "audit_logs",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
@@ -7600,27 +9084,5 @@ ANSWERS
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "playground_sessions",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "webhook_subscriptions",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
   }
 ]" 
-19. "[
-  {
-    "section": "=== ANALYSIS COMPLETE ===",
-    "timestamp": "2025-07-17 13:19:55.581858+00"
-  }
-]"
