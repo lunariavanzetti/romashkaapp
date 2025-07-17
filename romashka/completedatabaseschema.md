@@ -261,6 +261,14 @@ answers
   },
   {
     "section": "=== ALL TABLES ===",
+    "table_name": "ai_response_queue",
+    "table_type": "BASE TABLE",
+    "is_insertable_into": "YES",
+    "is_typed": "NO",
+    "commit_action": null
+  },
+  {
+    "section": "=== ALL TABLES ===",
     "table_name": "alert_history",
     "table_type": "BASE TABLE",
     "is_insertable_into": "YES",
@@ -811,8 +819,8 @@ answers
     "is_typed": "NO",
     "commit_action": null
   }
-]"
- 
+]" 
+
 2. "[
   {
     "section": "=== COLUMN DETAILS ===",
@@ -1435,6 +1443,246 @@ answers
     "column_name": "updated_at",
     "ordinal_position": 16,
     "column_default": "now()",
+    "is_nullable": true,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": 6,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": false,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "conversation_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": false,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "message_id",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": false,
+    "data_type": "uuid",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "user_message",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": false,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "status",
+    "ordinal_position": 5,
+    "column_default": "'pending'::character varying",
+    "is_nullable": true,
+    "data_type": "character varying",
+    "character_maximum_length": 20,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "priority",
+    "ordinal_position": 6,
+    "column_default": "3",
+    "is_nullable": true,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "retry_count",
+    "ordinal_position": 7,
+    "column_default": "0",
+    "is_nullable": true,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "max_retries",
+    "ordinal_position": 8,
+    "column_default": "3",
+    "is_nullable": true,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "ai_response",
+    "ordinal_position": 9,
+    "column_default": null,
+    "is_nullable": true,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "ai_confidence",
+    "ordinal_position": 10,
+    "column_default": null,
+    "is_nullable": true,
+    "data_type": "numeric",
+    "character_maximum_length": null,
+    "numeric_precision": 3,
+    "numeric_scale": 2,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "response_time_ms",
+    "ordinal_position": 11,
+    "column_default": null,
+    "is_nullable": true,
+    "data_type": "integer",
+    "character_maximum_length": null,
+    "numeric_precision": 32,
+    "numeric_scale": 0,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "error_message",
+    "ordinal_position": 12,
+    "column_default": null,
+    "is_nullable": true,
+    "data_type": "text",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": null,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "created_at",
+    "ordinal_position": 13,
+    "column_default": "now()",
+    "is_nullable": true,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": 6,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "process_after",
+    "ordinal_position": 14,
+    "column_default": "now()",
+    "is_nullable": true,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": 6,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "processed_at",
+    "ordinal_position": 15,
+    "column_default": null,
+    "is_nullable": true,
+    "data_type": "timestamp with time zone",
+    "character_maximum_length": null,
+    "numeric_precision": null,
+    "numeric_scale": null,
+    "datetime_precision": 6,
+    "is_identity": false,
+    "identity_generation": null
+  },
+  {
+    "section": "=== COLUMN DETAILS ===",
+    "table_name": "ai_response_queue",
+    "column_name": "completed_at",
+    "ordinal_position": 16,
+    "column_default": null,
     "is_nullable": true,
     "data_type": "timestamp with time zone",
     "character_maximum_length": null,
@@ -2073,246 +2321,6 @@ answers
     "datetime_precision": null,
     "is_identity": false,
     "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "canned_responses",
-    "column_name": "usage_count",
-    "ordinal_position": 7,
-    "column_default": "0",
-    "is_nullable": true,
-    "data_type": "integer",
-    "character_maximum_length": null,
-    "numeric_precision": 32,
-    "numeric_scale": 0,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "canned_responses",
-    "column_name": "created_by",
-    "ordinal_position": 8,
-    "column_default": null,
-    "is_nullable": true,
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "canned_responses",
-    "column_name": "is_public",
-    "ordinal_position": 9,
-    "column_default": "true",
-    "is_nullable": true,
-    "data_type": "boolean",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "canned_responses",
-    "column_name": "created_at",
-    "ordinal_position": 10,
-    "column_default": "now()",
-    "is_nullable": true,
-    "data_type": "timestamp with time zone",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": 6,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "canned_responses",
-    "column_name": "is_active",
-    "ordinal_position": 11,
-    "column_default": "true",
-    "is_nullable": true,
-    "data_type": "boolean",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "canned_responses",
-    "column_name": "tags",
-    "ordinal_position": 12,
-    "column_default": "'{}'::text[]",
-    "is_nullable": true,
-    "data_type": "ARRAY",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "canned_responses",
-    "column_name": "updated_at",
-    "ordinal_position": 13,
-    "column_default": "now()",
-    "is_nullable": true,
-    "data_type": "timestamp with time zone",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": 6,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "id",
-    "ordinal_position": 1,
-    "column_default": "gen_random_uuid()",
-    "is_nullable": false,
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "name",
-    "ordinal_position": 2,
-    "column_default": null,
-    "is_nullable": false,
-    "data_type": "character varying",
-    "character_maximum_length": 255,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "priority",
-    "ordinal_position": 3,
-    "column_default": "0",
-    "is_nullable": true,
-    "data_type": "integer",
-    "character_maximum_length": null,
-    "numeric_precision": 32,
-    "numeric_scale": 0,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "conditions",
-    "ordinal_position": 4,
-    "column_default": null,
-    "is_nullable": false,
-    "data_type": "jsonb",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "target_channel_type",
-    "ordinal_position": 5,
-    "column_default": null,
-    "is_nullable": false,
-    "data_type": "character varying",
-    "character_maximum_length": 50,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "fallback_channel_type",
-    "ordinal_position": 6,
-    "column_default": null,
-    "is_nullable": true,
-    "data_type": "character varying",
-    "character_maximum_length": 50,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "is_active",
-    "ordinal_position": 7,
-    "column_default": "true",
-    "is_nullable": true,
-    "data_type": "boolean",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "channel_routing_rules",
-    "column_name": "created_at",
-    "ordinal_position": 8,
-    "column_default": "now()",
-    "is_nullable": true,
-    "data_type": "timestamp without time zone",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": 6,
-    "is_identity": false,
-    "identity_generation": null
-  },
-  {
-    "section": "=== COLUMN DETAILS ===",
-    "table_name": "chat_sessions",
-    "column_name": "id",
-    "ordinal_position": 1,
-    "column_default": "gen_random_uuid()",
-    "is_nullable": false,
-    "data_type": "uuid",
-    "character_maximum_length": null,
-    "numeric_precision": null,
-    "numeric_scale": null,
-    "datetime_precision": null,
-    "is_identity": false,
-    "identity_generation": null
   }
 ]" 
 
@@ -2329,6 +2337,14 @@ answers
     "section": "=== PRIMARY KEYS ===",
     "table_name": "agent_work_logs",
     "constraint_name": "agent_work_logs_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "ai_response_queue",
+    "constraint_name": "ai_response_queue_pkey",
     "constraint_type": "PRIMARY KEY",
     "column_name": "id",
     "ordinal_position": 1
@@ -2424,17 +2440,17 @@ answers
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "conversation_context",
-    "constraint_name": "conversation_context_conversation_id_key",
-    "constraint_type": "UNIQUE",
-    "column_name": "conversation_id",
+    "constraint_name": "conversation_context_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
     "ordinal_position": 1
   },
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "conversation_context",
-    "constraint_name": "conversation_context_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "column_name": "id",
+    "constraint_name": "conversation_context_conversation_id_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "conversation_id",
     "ordinal_position": 1
   },
   {
@@ -2488,14 +2504,6 @@ answers
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "customer_profiles",
-    "constraint_name": "customer_profiles_email_key",
-    "constraint_type": "UNIQUE",
-    "column_name": "email",
-    "ordinal_position": 1
-  },
-  {
-    "section": "=== PRIMARY KEYS ===",
-    "table_name": "customer_profiles",
     "constraint_name": "customer_profiles_pkey",
     "constraint_type": "PRIMARY KEY",
     "column_name": "id",
@@ -2503,10 +2511,18 @@ answers
   },
   {
     "section": "=== PRIMARY KEYS ===",
-    "table_name": "daily_metrics",
-    "constraint_name": "daily_metrics_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "column_name": "id",
+    "table_name": "customer_profiles",
+    "constraint_name": "customer_profiles_phone_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "phone",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "customer_profiles",
+    "constraint_name": "customer_profiles_email_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "email",
     "ordinal_position": 1
   },
   {
@@ -2515,6 +2531,14 @@ answers
     "constraint_name": "daily_metrics_date_channel_type_department_agent_id_key",
     "constraint_type": "UNIQUE",
     "column_name": "date",
+    "ordinal_position": 1
+  },
+  {
+    "section": "=== PRIMARY KEYS ===",
+    "table_name": "daily_metrics",
+    "constraint_name": "daily_metrics_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
     "ordinal_position": 1
   },
   {
@@ -2776,17 +2800,17 @@ answers
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "system_settings",
-    "constraint_name": "system_settings_setting_key_key",
-    "constraint_type": "UNIQUE",
-    "column_name": "setting_key",
+    "constraint_name": "system_settings_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
     "ordinal_position": 1
   },
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "system_settings",
-    "constraint_name": "system_settings_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "column_name": "id",
+    "constraint_name": "system_settings_setting_key_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "setting_key",
     "ordinal_position": 1
   },
   {
@@ -2808,17 +2832,17 @@ answers
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "template_categories",
-    "constraint_name": "template_categories_name_key",
-    "constraint_type": "UNIQUE",
-    "column_name": "name",
+    "constraint_name": "template_categories_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
     "ordinal_position": 1
   },
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "template_categories",
-    "constraint_name": "template_categories_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "column_name": "id",
+    "constraint_name": "template_categories_name_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "name",
     "ordinal_position": 1
   },
   {
@@ -2944,17 +2968,17 @@ answers
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "user_agents",
-    "constraint_name": "user_agents_pkey",
-    "constraint_type": "PRIMARY KEY",
-    "column_name": "id",
+    "constraint_name": "user_agents_agent_id_key",
+    "constraint_type": "UNIQUE",
+    "column_name": "agent_id",
     "ordinal_position": 1
   },
   {
     "section": "=== PRIMARY KEYS ===",
     "table_name": "user_agents",
-    "constraint_name": "user_agents_agent_id_key",
-    "constraint_type": "UNIQUE",
-    "column_name": "agent_id",
+    "constraint_name": "user_agents_pkey",
+    "constraint_type": "PRIMARY KEY",
+    "column_name": "id",
     "ordinal_position": 1
   },
   {
@@ -3033,6 +3057,26 @@ answers
     "target_table": "profiles",
     "target_column": "id",
     "constraint_name": "agent_work_logs_user_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "ai_response_queue",
+    "source_column": "conversation_id",
+    "target_table": "conversations",
+    "target_column": "id",
+    "constraint_name": "ai_response_queue_conversation_id_fkey",
+    "update_rule": "NO ACTION",
+    "delete_rule": "CASCADE"
+  },
+  {
+    "section": "=== FOREIGN KEYS ===",
+    "source_table": "ai_response_queue",
+    "source_column": "message_id",
+    "target_table": "messages",
+    "target_column": "id",
+    "constraint_name": "ai_response_queue_message_id_fkey",
     "update_rule": "NO ACTION",
     "delete_rule": "CASCADE"
   },
@@ -3890,719 +3934,22 @@ answers
 
 5. "[
   {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_availability",
-    "indexname": "agent_availability_pkey",
-    "indexdef": "CREATE UNIQUE INDEX agent_availability_pkey ON public.agent_availability USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_availability",
-    "indexname": "idx_agent_availability_agent_id",
-    "indexdef": "CREATE INDEX idx_agent_availability_agent_id ON public.agent_availability USING btree (agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_availability",
-    "indexname": "idx_agent_availability_is_online",
-    "indexdef": "CREATE INDEX idx_agent_availability_is_online ON public.agent_availability USING btree (is_online)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_availability",
-    "indexname": "idx_agent_availability_status",
-    "indexdef": "CREATE INDEX idx_agent_availability_status ON public.agent_availability USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_work_logs",
-    "indexname": "agent_work_logs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX agent_work_logs_pkey ON public.agent_work_logs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_work_logs",
-    "indexname": "idx_agent_work_logs_agent_id",
-    "indexdef": "CREATE INDEX idx_agent_work_logs_agent_id ON public.agent_work_logs USING btree (agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_work_logs",
-    "indexname": "idx_agent_work_logs_created_at",
-    "indexdef": "CREATE INDEX idx_agent_work_logs_created_at ON public.agent_work_logs USING btree (created_at DESC)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_work_logs",
-    "indexname": "idx_agent_work_logs_status",
-    "indexdef": "CREATE INDEX idx_agent_work_logs_status ON public.agent_work_logs USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_work_logs",
-    "indexname": "idx_agent_work_logs_task_type",
-    "indexdef": "CREATE INDEX idx_agent_work_logs_task_type ON public.agent_work_logs USING btree (task_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "agent_work_logs",
-    "indexname": "idx_agent_work_logs_user_id",
-    "indexdef": "CREATE INDEX idx_agent_work_logs_user_id ON public.agent_work_logs USING btree (user_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "alert_history",
-    "indexname": "alert_history_pkey",
-    "indexdef": "CREATE UNIQUE INDEX alert_history_pkey ON public.alert_history USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "alert_rules",
-    "indexname": "alert_rules_pkey",
-    "indexdef": "CREATE UNIQUE INDEX alert_rules_pkey ON public.alert_rules USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "alert_rules",
-    "indexname": "idx_alert_rules_active",
-    "indexdef": "CREATE INDEX idx_alert_rules_active ON public.alert_rules USING btree (is_active)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "alert_rules",
-    "indexname": "idx_alert_rules_created_by",
-    "indexdef": "CREATE INDEX idx_alert_rules_created_by ON public.alert_rules USING btree (created_by)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "audit_logs",
-    "indexname": "audit_logs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "auto_generated_knowledge",
-    "indexname": "auto_generated_knowledge_pkey",
-    "indexdef": "CREATE UNIQUE INDEX auto_generated_knowledge_pkey ON public.auto_generated_knowledge USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "auto_generated_knowledge",
-    "indexname": "idx_auto_generated_knowledge_needs_review",
-    "indexdef": "CREATE INDEX idx_auto_generated_knowledge_needs_review ON public.auto_generated_knowledge USING btree (needs_review)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "auto_generated_knowledge",
-    "indexname": "idx_auto_generated_knowledge_scan_job_id",
-    "indexdef": "CREATE INDEX idx_auto_generated_knowledge_scan_job_id ON public.auto_generated_knowledge USING btree (scan_job_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "canned_responses",
-    "indexname": "canned_responses_pkey",
-    "indexdef": "CREATE UNIQUE INDEX canned_responses_pkey ON public.canned_responses USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "canned_responses",
-    "indexname": "idx_canned_responses_category",
-    "indexdef": "CREATE INDEX idx_canned_responses_category ON public.canned_responses USING btree (category)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "canned_responses",
-    "indexname": "idx_canned_responses_language",
-    "indexdef": "CREATE INDEX idx_canned_responses_language ON public.canned_responses USING btree (language)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "canned_responses",
-    "indexname": "idx_canned_responses_shortcut",
-    "indexdef": "CREATE INDEX idx_canned_responses_shortcut ON public.canned_responses USING btree (shortcut)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "channel_routing_rules",
-    "indexname": "channel_routing_rules_pkey",
-    "indexdef": "CREATE UNIQUE INDEX channel_routing_rules_pkey ON public.channel_routing_rules USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "channel_routing_rules",
-    "indexname": "idx_routing_rules_channel_type",
-    "indexdef": "CREATE INDEX idx_routing_rules_channel_type ON public.channel_routing_rules USING btree (target_channel_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "chat_sessions",
-    "indexname": "chat_sessions_pkey",
-    "indexdef": "CREATE UNIQUE INDEX chat_sessions_pkey ON public.chat_sessions USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "communication_channels",
-    "indexname": "communication_channels_pkey",
-    "indexdef": "CREATE UNIQUE INDEX communication_channels_pkey ON public.communication_channels USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "communication_channels",
-    "indexname": "idx_communication_channels_status",
-    "indexdef": "CREATE INDEX idx_communication_channels_status ON public.communication_channels USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "content_processing_queue",
-    "indexname": "content_processing_queue_pkey",
-    "indexdef": "CREATE UNIQUE INDEX content_processing_queue_pkey ON public.content_processing_queue USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "content_processing_queue",
-    "indexname": "idx_content_processing_queue_status",
-    "indexdef": "CREATE INDEX idx_content_processing_queue_status ON public.content_processing_queue USING btree (processing_status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_analytics",
-    "indexname": "conversation_analytics_conversation_id_key",
-    "indexdef": "CREATE UNIQUE INDEX conversation_analytics_conversation_id_key ON public.conversation_analytics USING btree (conversation_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_analytics",
-    "indexname": "conversation_analytics_pkey",
-    "indexdef": "CREATE UNIQUE INDEX conversation_analytics_pkey ON public.conversation_analytics USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_analytics",
-    "indexname": "idx_conversation_analytics_conversation",
-    "indexdef": "CREATE INDEX idx_conversation_analytics_conversation ON public.conversation_analytics USING btree (conversation_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_analytics",
-    "indexname": "idx_conversation_analytics_resolved_by",
-    "indexdef": "CREATE INDEX idx_conversation_analytics_resolved_by ON public.conversation_analytics USING btree (resolved_by)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_analytics",
-    "indexname": "idx_conversation_analytics_satisfaction",
-    "indexdef": "CREATE INDEX idx_conversation_analytics_satisfaction ON public.conversation_analytics USING btree (customer_satisfaction)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_context",
-    "indexname": "conversation_context_conversation_id_key",
-    "indexdef": "CREATE UNIQUE INDEX conversation_context_conversation_id_key ON public.conversation_context USING btree (conversation_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_context",
-    "indexname": "conversation_context_pkey",
-    "indexdef": "CREATE UNIQUE INDEX conversation_context_pkey ON public.conversation_context USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_notes",
-    "indexname": "conversation_notes_pkey",
-    "indexdef": "CREATE UNIQUE INDEX conversation_notes_pkey ON public.conversation_notes USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_transfers",
-    "indexname": "conversation_transfers_pkey",
-    "indexdef": "CREATE UNIQUE INDEX conversation_transfers_pkey ON public.conversation_transfers USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_transfers",
-    "indexname": "idx_conversation_transfers_conversation_id",
-    "indexdef": "CREATE INDEX idx_conversation_transfers_conversation_id ON public.conversation_transfers USING btree (conversation_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversation_transfers",
-    "indexname": "idx_conversation_transfers_status",
-    "indexdef": "CREATE INDEX idx_conversation_transfers_status ON public.conversation_transfers USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "conversations_pkey",
-    "indexdef": "CREATE UNIQUE INDEX conversations_pkey ON public.conversations USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_agent_id",
-    "indexdef": "CREATE INDEX idx_conversations_agent_id ON public.conversations USING btree (assigned_agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_agent_status",
-    "indexdef": "CREATE INDEX idx_conversations_agent_status ON public.conversations USING btree (assigned_agent_id, status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_assigned_agent_id",
-    "indexdef": "CREATE INDEX idx_conversations_assigned_agent_id ON public.conversations USING btree (assigned_agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_channel_type",
-    "indexdef": "CREATE INDEX idx_conversations_channel_type ON public.conversations USING btree (channel_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_created_at",
-    "indexdef": "CREATE INDEX idx_conversations_created_at ON public.conversations USING btree (created_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_customer_id",
-    "indexdef": "CREATE INDEX idx_conversations_customer_id ON public.conversations USING btree (customer_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_customer_name",
-    "indexdef": "CREATE INDEX idx_conversations_customer_name ON public.conversations USING btree (customer_name)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_last_message_at",
-    "indexdef": "CREATE INDEX idx_conversations_last_message_at ON public.conversations USING btree (last_message_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_status",
-    "indexdef": "CREATE INDEX idx_conversations_status ON public.conversations USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "conversations",
-    "indexname": "idx_conversations_status_created_at",
-    "indexdef": "CREATE INDEX idx_conversations_status_created_at ON public.conversations USING btree (status, created_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_channel_preferences",
-    "indexname": "customer_channel_preferences_customer_id_channel_type_key",
-    "indexdef": "CREATE UNIQUE INDEX customer_channel_preferences_customer_id_channel_type_key ON public.customer_channel_preferences USING btree (customer_id, channel_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_channel_preferences",
-    "indexname": "customer_channel_preferences_pkey",
-    "indexdef": "CREATE UNIQUE INDEX customer_channel_preferences_pkey ON public.customer_channel_preferences USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_channel_preferences",
-    "indexname": "idx_customer_channel_preferences_customer_id",
-    "indexdef": "CREATE INDEX idx_customer_channel_preferences_customer_id ON public.customer_channel_preferences USING btree (customer_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_profiles",
-    "indexname": "customer_profiles_email_key",
-    "indexdef": "CREATE UNIQUE INDEX customer_profiles_email_key ON public.customer_profiles USING btree (email)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_profiles",
-    "indexname": "customer_profiles_pkey",
-    "indexdef": "CREATE UNIQUE INDEX customer_profiles_pkey ON public.customer_profiles USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_profiles",
-    "indexname": "idx_customer_profiles_created_at",
-    "indexdef": "CREATE INDEX idx_customer_profiles_created_at ON public.customer_profiles USING btree (created_at)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_profiles",
-    "indexname": "idx_customer_profiles_email",
-    "indexdef": "CREATE INDEX idx_customer_profiles_email ON public.customer_profiles USING btree (email)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "customer_profiles",
-    "indexname": "idx_customer_profiles_phone",
-    "indexdef": "CREATE INDEX idx_customer_profiles_phone ON public.customer_profiles USING btree (phone)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "daily_metrics",
-    "indexname": "daily_metrics_date_channel_type_department_agent_id_key",
-    "indexdef": "CREATE UNIQUE INDEX daily_metrics_date_channel_type_department_agent_id_key ON public.daily_metrics USING btree (date, channel_type, department, agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "daily_metrics",
-    "indexname": "daily_metrics_pkey",
-    "indexdef": "CREATE UNIQUE INDEX daily_metrics_pkey ON public.daily_metrics USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "daily_metrics",
-    "indexname": "idx_daily_metrics_agent",
-    "indexdef": "CREATE INDEX idx_daily_metrics_agent ON public.daily_metrics USING btree (agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "daily_metrics",
-    "indexname": "idx_daily_metrics_agent_id",
-    "indexdef": "CREATE INDEX idx_daily_metrics_agent_id ON public.daily_metrics USING btree (agent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "daily_metrics",
-    "indexname": "idx_daily_metrics_channel",
-    "indexdef": "CREATE INDEX idx_daily_metrics_channel ON public.daily_metrics USING btree (channel_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "daily_metrics",
-    "indexname": "idx_daily_metrics_channel_type",
-    "indexdef": "CREATE INDEX idx_daily_metrics_channel_type ON public.daily_metrics USING btree (channel_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "daily_metrics",
-    "indexname": "idx_daily_metrics_date",
-    "indexdef": "CREATE INDEX idx_daily_metrics_date ON public.daily_metrics USING btree (date)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "dashboard_configs",
-    "indexname": "dashboard_configs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX dashboard_configs_pkey ON public.dashboard_configs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "dashboard_configs",
-    "indexname": "idx_dashboard_configs_user",
-    "indexdef": "CREATE INDEX idx_dashboard_configs_user ON public.dashboard_configs USING btree (user_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "embeddings",
-    "indexname": "embeddings_pkey",
-    "indexdef": "CREATE UNIQUE INDEX embeddings_pkey ON public.embeddings USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "export_jobs",
-    "indexname": "export_jobs_pkey",
-    "indexdef": "CREATE UNIQUE INDEX export_jobs_pkey ON public.export_jobs USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "export_jobs",
-    "indexname": "idx_export_jobs_status",
-    "indexdef": "CREATE INDEX idx_export_jobs_status ON public.export_jobs USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "export_jobs",
-    "indexname": "idx_export_jobs_user",
-    "indexdef": "CREATE INDEX idx_export_jobs_user ON public.export_jobs USING btree (user_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "extracted_content",
-    "indexname": "extracted_content_pkey",
-    "indexdef": "CREATE UNIQUE INDEX extracted_content_pkey ON public.extracted_content USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "extracted_content",
-    "indexname": "idx_extracted_content_content_type",
-    "indexdef": "CREATE INDEX idx_extracted_content_content_type ON public.extracted_content USING btree (content_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "extracted_content",
-    "indexname": "idx_extracted_content_scan_job_id",
-    "indexdef": "CREATE INDEX idx_extracted_content_scan_job_id ON public.extracted_content USING btree (scan_job_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "file_attachments",
-    "indexname": "file_attachments_pkey",
-    "indexdef": "CREATE UNIQUE INDEX file_attachments_pkey ON public.file_attachments USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "integration_field_mappings",
-    "indexname": "integration_field_mappings_pkey",
-    "indexdef": "CREATE UNIQUE INDEX integration_field_mappings_pkey ON public.integration_field_mappings USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "integrations",
-    "indexname": "idx_integrations_status",
-    "indexdef": "CREATE INDEX idx_integrations_status ON public.integrations USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "integrations",
-    "indexname": "integrations_pkey",
-    "indexdef": "CREATE UNIQUE INDEX integrations_pkey ON public.integrations USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "intent_patterns",
-    "indexname": "intent_patterns_pkey",
-    "indexdef": "CREATE UNIQUE INDEX intent_patterns_pkey ON public.intent_patterns USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_analytics",
-    "indexname": "knowledge_analytics_pkey",
-    "indexdef": "CREATE UNIQUE INDEX knowledge_analytics_pkey ON public.knowledge_analytics USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_base",
-    "indexname": "knowledge_base_pkey",
-    "indexdef": "CREATE UNIQUE INDEX knowledge_base_pkey ON public.knowledge_base USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_categories",
-    "indexname": "idx_knowledge_categories_is_active",
-    "indexdef": "CREATE INDEX idx_knowledge_categories_is_active ON public.knowledge_categories USING btree (is_active)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_categories",
-    "indexname": "idx_knowledge_categories_parent_id",
-    "indexdef": "CREATE INDEX idx_knowledge_categories_parent_id ON public.knowledge_categories USING btree (parent_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_categories",
-    "indexname": "knowledge_categories_pkey",
-    "indexdef": "CREATE UNIQUE INDEX knowledge_categories_pkey ON public.knowledge_categories USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_gaps",
-    "indexname": "idx_knowledge_gaps_priority",
-    "indexdef": "CREATE INDEX idx_knowledge_gaps_priority ON public.knowledge_gaps USING btree (priority)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_gaps",
-    "indexname": "idx_knowledge_gaps_status",
-    "indexdef": "CREATE INDEX idx_knowledge_gaps_status ON public.knowledge_gaps USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_gaps",
-    "indexname": "idx_knowledge_gaps_topic",
-    "indexdef": "CREATE INDEX idx_knowledge_gaps_topic ON public.knowledge_gaps USING btree (topic)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_gaps",
-    "indexname": "idx_knowledge_gaps_user_id",
-    "indexdef": "CREATE INDEX idx_knowledge_gaps_user_id ON public.knowledge_gaps USING btree (user_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_gaps",
-    "indexname": "knowledge_gaps_pkey",
-    "indexdef": "CREATE UNIQUE INDEX knowledge_gaps_pkey ON public.knowledge_gaps USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_items",
-    "indexname": "idx_knowledge_items_category_id",
-    "indexdef": "CREATE INDEX idx_knowledge_items_category_id ON public.knowledge_items USING btree (category_id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_items",
-    "indexname": "idx_knowledge_items_content_trgm",
-    "indexdef": "CREATE INDEX idx_knowledge_items_content_trgm ON public.knowledge_items USING gin (content gin_trgm_ops)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_items",
-    "indexname": "idx_knowledge_items_language",
-    "indexdef": "CREATE INDEX idx_knowledge_items_language ON public.knowledge_items USING btree (language)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_items",
-    "indexname": "idx_knowledge_items_status",
-    "indexdef": "CREATE INDEX idx_knowledge_items_status ON public.knowledge_items USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_items",
-    "indexname": "idx_knowledge_items_title_trgm",
-    "indexdef": "CREATE INDEX idx_knowledge_items_title_trgm ON public.knowledge_items USING gin (title gin_trgm_ops)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_items",
-    "indexname": "knowledge_items_pkey",
-    "indexdef": "CREATE UNIQUE INDEX knowledge_items_pkey ON public.knowledge_items USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "knowledge_versions",
-    "indexname": "knowledge_versions_pkey",
-    "indexdef": "CREATE UNIQUE INDEX knowledge_versions_pkey ON public.knowledge_versions USING btree (id)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "learning_insights",
-    "indexname": "idx_learning_insights_status",
-    "indexdef": "CREATE INDEX idx_learning_insights_status ON public.learning_insights USING btree (status)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "learning_insights",
-    "indexname": "idx_learning_insights_type",
-    "indexdef": "CREATE INDEX idx_learning_insights_type ON public.learning_insights USING btree (insight_type)"
-  },
-  {
-    "section": "=== INDEXES ===",
-    "schemaname": "public",
-    "tablename": "learning_insights",
-    "indexname": "idx_learning_insights_user_id",
-    "indexdef": "CREATE INDEX idx_learning_insights_user_id ON public.learning_insights USING btree (user_id)"
-  }
-]" 
-
-6. "[
-  {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversations",
-    "constraint_name": "satisfaction_rating_check",
-    "check_clause": "(((satisfaction_rating >= 1) AND (satisfaction_rating <= 5)))"
+    "table_name": "agent_availability",
+    "constraint_name": "2200_27242_2_not_null",
+    "check_clause": "agent_id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "user_agents",
-    "constraint_name": "user_agents_agent_type_check",
-    "check_clause": "(((agent_type)::text = ANY ((ARRAY['ai_assistant'::character varying, 'chatbot'::character varying, 'workflow_bot'::character varying, 'analytics_bot'::character varying, 'knowledge_bot'::character varying])::text[])))"
+    "table_name": "agent_availability",
+    "constraint_name": "2200_27242_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_work_logs",
+    "constraint_name": "2200_36933_10_not_null",
+    "check_clause": "started_at IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4613,68 +3960,164 @@ answers
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "agent_work_logs",
+    "constraint_name": "2200_36933_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_work_logs",
+    "constraint_name": "2200_36933_2_not_null",
+    "check_clause": "agent_id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_work_logs",
+    "constraint_name": "2200_36933_3_not_null",
+    "check_clause": "agent_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_work_logs",
+    "constraint_name": "2200_36933_5_not_null",
+    "check_clause": "task_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_work_logs",
+    "constraint_name": "2200_36933_9_not_null",
+    "check_clause": "status IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_work_logs",
+    "constraint_name": "2200_36933_6_not_null",
+    "check_clause": "task_description IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "agent_work_logs",
     "constraint_name": "agent_work_logs_status_check",
     "check_clause": "(((status)::text = ANY ((ARRAY['pending'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'failed'::character varying])::text[])))"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "embeddings",
-    "constraint_name": "2200_17586_1_not_null",
+    "table_name": "ai_response_queue",
+    "constraint_name": "2200_46263_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "embeddings",
-    "constraint_name": "2200_17586_3_not_null",
-    "check_clause": "content IS NOT NULL"
+    "table_name": "ai_response_queue",
+    "constraint_name": "ai_response_queue_status_check",
+    "check_clause": "(((status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'failed'::character varying])::text[])))"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "chat_sessions",
-    "constraint_name": "2200_17600_1_not_null",
+    "table_name": "ai_response_queue",
+    "constraint_name": "2200_46263_4_not_null",
+    "check_clause": "user_message IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "ai_response_queue",
+    "constraint_name": "ai_response_queue_priority_check",
+    "check_clause": "(((priority >= 1) AND (priority <= 5)))"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "ai_response_queue",
+    "constraint_name": "2200_46263_3_not_null",
+    "check_clause": "message_id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "ai_response_queue",
+    "constraint_name": "2200_46263_2_not_null",
+    "check_clause": "conversation_id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "alert_history",
+    "constraint_name": "2200_27833_4_not_null",
+    "check_clause": "metric_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "alert_history",
+    "constraint_name": "2200_27833_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_base",
-    "constraint_name": "2200_26934_1_not_null",
+    "table_name": "alert_history",
+    "constraint_name": "2200_27833_5_not_null",
+    "check_clause": "threshold_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "alert_rules",
+    "constraint_name": "2200_27816_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "alert_rules",
+    "constraint_name": "2200_27816_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_base",
-    "constraint_name": "2200_26934_2_not_null",
-    "check_clause": "title IS NOT NULL"
+    "table_name": "alert_rules",
+    "constraint_name": "2200_27816_8_not_null",
+    "check_clause": "recipients IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_base",
-    "constraint_name": "2200_26934_3_not_null",
-    "check_clause": "content IS NOT NULL"
+    "table_name": "alert_rules",
+    "constraint_name": "2200_27816_5_not_null",
+    "check_clause": "threshold IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "training_results",
-    "constraint_name": "2200_45250_1_not_null",
+    "table_name": "alert_rules",
+    "constraint_name": "2200_27816_4_not_null",
+    "check_clause": "condition IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "alert_rules",
+    "constraint_name": "2200_27816_3_not_null",
+    "check_clause": "metric IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "audit_logs",
+    "constraint_name": "2200_33397_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_availability",
-    "constraint_name": "2200_27242_1_not_null",
-    "check_clause": "id IS NOT NULL"
+    "table_name": "audit_logs",
+    "constraint_name": "2200_33397_3_not_null",
+    "check_clause": "action IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "agent_availability",
-    "constraint_name": "2200_27242_2_not_null",
-    "check_clause": "agent_id IS NOT NULL"
+    "table_name": "audit_logs",
+    "constraint_name": "2200_33397_4_not_null",
+    "check_clause": "entity_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "auto_generated_knowledge",
+    "constraint_name": "2200_28059_1_not_null",
+    "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "canned_responses",
-    "constraint_name": "2200_27260_1_not_null",
-    "check_clause": "id IS NOT NULL"
+    "constraint_name": "2200_27260_3_not_null",
+    "check_clause": "content IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4685,80 +4128,14 @@ answers
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "canned_responses",
-    "constraint_name": "2200_27260_3_not_null",
-    "check_clause": "content IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_1_not_null",
+    "constraint_name": "2200_27260_1_not_null",
     "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_3_not_null",
-    "check_clause": "type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "communication_channels",
-    "constraint_name": "2200_27413_5_not_null",
-    "check_clause": "configuration IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_templates",
-    "constraint_name": "2200_27436_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_templates",
-    "constraint_name": "2200_27436_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_templates",
-    "constraint_name": "2200_27436_3_not_null",
-    "check_clause": "language IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_templates",
-    "constraint_name": "2200_27436_4_not_null",
-    "check_clause": "category IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_templates",
-    "constraint_name": "2200_27436_5_not_null",
-    "check_clause": "template_content IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_templates",
-    "constraint_name": "2200_27436_7_not_null",
-    "check_clause": "channel_type IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "channel_routing_rules",
     "constraint_name": "2200_27477_1_not_null",
     "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "channel_routing_rules",
-    "constraint_name": "2200_27477_2_not_null",
-    "check_clause": "name IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4774,8 +4151,68 @@ answers
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_notes",
-    "constraint_name": "2200_33227_1_not_null",
+    "table_name": "channel_routing_rules",
+    "constraint_name": "2200_27477_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "chat_sessions",
+    "constraint_name": "2200_17600_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_3_not_null",
+    "check_clause": "type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_5_not_null",
+    "check_clause": "configuration IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "communication_channels",
+    "constraint_name": "2200_27413_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "content_processing_queue",
+    "constraint_name": "2200_28092_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_analytics",
+    "constraint_name": "2200_27758_3_not_null",
+    "check_clause": "started_at IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_analytics",
+    "constraint_name": "2200_27758_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_context",
+    "constraint_name": "2200_26958_3_not_null",
+    "check_clause": "context_data IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "conversation_context",
+    "constraint_name": "2200_26958_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
@@ -4786,21 +4223,9 @@ answers
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "file_attachments",
-    "constraint_name": "2200_33249_1_not_null",
+    "table_name": "conversation_notes",
+    "constraint_name": "2200_33227_1_not_null",
     "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "file_attachments",
-    "constraint_name": "2200_33249_4_not_null",
-    "check_clause": "filename IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "file_attachments",
-    "constraint_name": "2200_33249_5_not_null",
-    "check_clause": "file_path IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4810,39 +4235,135 @@ answers
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_delivery_tracking",
-    "constraint_name": "2200_27488_1_not_null",
+    "table_name": "conversations",
+    "constraint_name": "2200_30885_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "message_delivery_tracking",
-    "constraint_name": "2200_27488_3_not_null",
+    "table_name": "conversations",
+    "constraint_name": "satisfaction_rating_check",
+    "check_clause": "(((satisfaction_rating >= 1) AND (satisfaction_rating <= 5)))"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "customer_channel_preferences",
+    "constraint_name": "2200_30903_3_not_null",
     "check_clause": "channel_type IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_versions",
-    "constraint_name": "2200_33275_1_not_null",
+    "table_name": "customer_channel_preferences",
+    "constraint_name": "2200_30903_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_versions",
-    "constraint_name": "2200_33275_3_not_null",
-    "check_clause": "version IS NOT NULL"
+    "table_name": "customer_profiles",
+    "constraint_name": "2200_30866_1_not_null",
+    "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_versions",
-    "constraint_name": "2200_33275_4_not_null",
+    "table_name": "daily_metrics",
+    "constraint_name": "2200_27720_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "daily_metrics",
+    "constraint_name": "2200_27720_2_not_null",
+    "check_clause": "date IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "dashboard_configs",
+    "constraint_name": "2200_27782_5_not_null",
+    "check_clause": "layout IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "dashboard_configs",
+    "constraint_name": "2200_27782_3_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "dashboard_configs",
+    "constraint_name": "2200_27782_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "embeddings",
+    "constraint_name": "2200_17586_3_not_null",
     "check_clause": "content IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "knowledge_analytics",
-    "constraint_name": "2200_33294_1_not_null",
+    "table_name": "embeddings",
+    "constraint_name": "2200_17586_1_not_null",
     "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_4_not_null",
+    "check_clause": "type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_3_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "export_jobs",
+    "constraint_name": "2200_27847_6_not_null",
+    "check_clause": "format IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "extracted_content",
+    "constraint_name": "2200_28045_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "extracted_content",
+    "constraint_name": "2200_28045_5_not_null",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "extracted_content",
+    "constraint_name": "2200_28045_3_not_null",
+    "check_clause": "url IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "file_attachments",
+    "constraint_name": "2200_33249_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "file_attachments",
+    "constraint_name": "2200_33249_5_not_null",
+    "check_clause": "file_path IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "file_attachments",
+    "constraint_name": "2200_33249_4_not_null",
+    "check_clause": "filename IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4859,8 +4380,8 @@ answers
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "integration_field_mappings",
-    "constraint_name": "2200_33313_4_not_null",
-    "check_clause": "target_entity IS NOT NULL"
+    "constraint_name": "2200_33313_6_not_null",
+    "check_clause": "target_field IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4871,74 +4392,338 @@ answers
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "integration_field_mappings",
-    "constraint_name": "2200_33313_6_not_null",
-    "check_clause": "target_field IS NOT NULL"
+    "constraint_name": "2200_33313_4_not_null",
+    "check_clause": "target_entity IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "sync_jobs",
-    "constraint_name": "2200_33330_1_not_null",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "sync_jobs",
-    "constraint_name": "2200_33330_3_not_null",
-    "check_clause": "job_type IS NOT NULL"
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_6_not_null",
+    "check_clause": "configuration IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "sync_jobs",
-    "constraint_name": "2200_33330_4_not_null",
-    "check_clause": "direction IS NOT NULL"
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_4_not_null",
+    "check_clause": "provider IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_events",
-    "constraint_name": "2200_27446_1_not_null",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_3_not_null",
+    "check_clause": "type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "integrations",
+    "constraint_name": "2200_31633_7_not_null",
+    "check_clause": "credentials IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_events",
-    "constraint_name": "2200_27446_3_not_null",
-    "check_clause": "event_type IS NOT NULL"
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_4_not_null",
+    "check_clause": "patterns IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_events",
-    "constraint_name": "2200_27446_4_not_null",
-    "check_clause": "payload IS NOT NULL"
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_3_not_null",
+    "check_clause": "language IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_subscriptions",
-    "constraint_name": "2200_33347_1_not_null",
+    "table_name": "intent_patterns",
+    "constraint_name": "2200_26947_2_not_null",
+    "check_clause": "intent_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_analytics",
+    "constraint_name": "2200_33294_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_subscriptions",
-    "constraint_name": "2200_33347_3_not_null",
-    "check_clause": "event_type IS NOT NULL"
+    "table_name": "knowledge_base",
+    "constraint_name": "2200_26934_2_not_null",
+    "check_clause": "title IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_subscriptions",
-    "constraint_name": "2200_33347_4_not_null",
-    "check_clause": "webhook_url IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_logs",
-    "constraint_name": "2200_33366_1_not_null",
+    "table_name": "knowledge_base",
+    "constraint_name": "2200_26934_1_not_null",
     "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "webhook_logs",
-    "constraint_name": "2200_33366_3_not_null",
-    "check_clause": "event_type IS NOT NULL"
+    "table_name": "knowledge_base",
+    "constraint_name": "2200_26934_3_not_null",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_categories",
+    "constraint_name": "2200_29364_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_categories",
+    "constraint_name": "2200_29364_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_gaps",
+    "constraint_name": "2200_45166_3_not_null",
+    "check_clause": "topic IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_gaps",
+    "constraint_name": "2200_45166_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_items",
+    "constraint_name": "2200_29373_3_not_null",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_items",
+    "constraint_name": "2200_29373_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_items",
+    "constraint_name": "2200_29373_2_not_null",
+    "check_clause": "title IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_versions",
+    "constraint_name": "2200_33275_4_not_null",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_versions",
+    "constraint_name": "2200_33275_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "knowledge_versions",
+    "constraint_name": "2200_33275_3_not_null",
+    "check_clause": "version IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "learning_insights",
+    "constraint_name": "2200_45188_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "learning_insights",
+    "constraint_name": "2200_45188_5_not_null",
+    "check_clause": "description IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "learning_insights",
+    "constraint_name": "2200_45188_4_not_null",
+    "check_clause": "title IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "learning_insights",
+    "constraint_name": "2200_45188_3_not_null",
+    "check_clause": "insight_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_delivery_tracking",
+    "constraint_name": "2200_27488_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_delivery_tracking",
+    "constraint_name": "2200_27488_3_not_null",
+    "check_clause": "channel_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_5_not_null",
+    "check_clause": "template_content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_4_not_null",
+    "check_clause": "category IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_3_not_null",
+    "check_clause": "language IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "message_templates",
+    "constraint_name": "2200_27436_7_not_null",
+    "check_clause": "channel_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "messages",
+    "constraint_name": "2200_31290_3_not_null",
+    "check_clause": "sender_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "messages",
+    "constraint_name": "2200_31290_5_not_null",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "messages",
+    "constraint_name": "2200_31290_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "onboarding_responses",
+    "constraint_name": "2200_43048_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "onboarding_responses",
+    "constraint_name": "2200_43048_2_not_null",
+    "check_clause": "user_id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "pattern_recognition",
+    "constraint_name": "2200_45209_4_not_null",
+    "check_clause": "pattern_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "pattern_recognition",
+    "constraint_name": "2200_45209_9_not_null",
+    "check_clause": "context IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "pattern_recognition",
+    "constraint_name": "2200_45209_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "pattern_recognition",
+    "constraint_name": "2200_45209_3_not_null",
+    "check_clause": "pattern_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "playground_sessions",
+    "constraint_name": "2200_29430_4_not_null",
+    "check_clause": "bot_configuration IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "playground_sessions",
+    "constraint_name": "2200_29430_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "profiles",
+    "constraint_name": "2200_17572_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "realtime_metrics",
+    "constraint_name": "2200_27748_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "realtime_metrics",
+    "constraint_name": "2200_27748_3_not_null",
+    "check_clause": "metric_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "realtime_metrics",
+    "constraint_name": "2200_27748_2_not_null",
+    "check_clause": "metric_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scan_job_logs",
+    "constraint_name": "2200_28078_4_not_null",
+    "check_clause": "message IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scan_job_logs",
+    "constraint_name": "2200_28078_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scan_job_logs",
+    "constraint_name": "2200_28078_3_not_null",
+    "check_clause": "log_level IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "scheduled_reports",
+    "constraint_name": "2200_27800_6_not_null",
+    "check_clause": "recipients IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4966,9 +4751,411 @@ answers
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "scheduled_reports",
-    "constraint_name": "2200_27800_6_not_null",
-    "check_clause": "recipients IS NOT NULL"
+    "table_name": "sla_tracking",
+    "constraint_name": "2200_27356_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "sync_jobs",
+    "constraint_name": "2200_33330_4_not_null",
+    "check_clause": "direction IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "sync_jobs",
+    "constraint_name": "2200_33330_3_not_null",
+    "check_clause": "job_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "sync_jobs",
+    "constraint_name": "2200_33330_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "system_settings",
+    "constraint_name": "2200_33380_3_not_null",
+    "check_clause": "setting_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "system_settings",
+    "constraint_name": "2200_33380_2_not_null",
+    "check_clause": "setting_key IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "system_settings",
+    "constraint_name": "2200_33380_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_ab_tests",
+    "constraint_name": "2200_45680_5_not_null",
+    "check_clause": "variant_a_content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_ab_tests",
+    "constraint_name": "2200_45680_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_ab_tests",
+    "constraint_name": "2200_45680_4_not_null",
+    "check_clause": "test_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_ab_tests",
+    "constraint_name": "2200_45680_6_not_null",
+    "check_clause": "variant_b_content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_analytics",
+    "constraint_name": "2200_45558_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_categories",
+    "constraint_name": "2200_45397_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_categories",
+    "constraint_name": "2200_45397_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_optimization",
+    "constraint_name": "2200_45621_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_optimization",
+    "constraint_name": "2200_45621_4_not_null",
+    "check_clause": "optimization_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_optimization",
+    "constraint_name": "2200_45621_5_not_null",
+    "check_clause": "original_content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_optimization",
+    "constraint_name": "2200_45621_6_not_null",
+    "check_clause": "optimized_content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_performance_metrics",
+    "constraint_name": "2200_45707_5_not_null",
+    "check_clause": "metric_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_performance_metrics",
+    "constraint_name": "2200_45707_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_performance_metrics",
+    "constraint_name": "2200_45707_4_not_null",
+    "check_clause": "metric_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_suggestions",
+    "constraint_name": "2200_45588_6_not_null",
+    "check_clause": "suggested_templates IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_suggestions",
+    "constraint_name": "2200_45588_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_suggestions",
+    "constraint_name": "2200_45588_5_not_null",
+    "check_clause": "customer_message IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_triggers",
+    "constraint_name": "2200_45726_4_not_null",
+    "check_clause": "trigger_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_triggers",
+    "constraint_name": "2200_45726_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_triggers",
+    "constraint_name": "2200_45726_5_not_null",
+    "check_clause": "trigger_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_usage_history",
+    "constraint_name": "2200_45648_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_variables",
+    "constraint_name": "2200_45532_4_not_null",
+    "check_clause": "variable_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_variables",
+    "constraint_name": "2200_45532_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "template_variables",
+    "constraint_name": "2200_45532_5_not_null",
+    "check_clause": "variable_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "templates",
+    "constraint_name": "2200_45376_2_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "templates",
+    "constraint_name": "2200_45376_5_not_null",
+    "check_clause": "content IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "templates",
+    "constraint_name": "2200_45376_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_datasets",
+    "constraint_name": "2200_45076_3_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_datasets",
+    "constraint_name": "2200_45076_6_not_null",
+    "check_clause": "data_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_datasets",
+    "constraint_name": "2200_45076_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_jobs",
+    "constraint_name": "2200_45094_4_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_jobs",
+    "constraint_name": "2200_45094_5_not_null",
+    "check_clause": "job_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_jobs",
+    "constraint_name": "2200_45094_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_metrics_history",
+    "constraint_name": "2200_45145_4_not_null",
+    "check_clause": "metric_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_metrics_history",
+    "constraint_name": "2200_45145_5_not_null",
+    "check_clause": "metric_value IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_metrics_history",
+    "constraint_name": "2200_45145_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_results",
+    "constraint_name": "2200_45250_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_scenarios",
+    "constraint_name": "2200_45229_5_not_null",
+    "check_clause": "scenario_text IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_scenarios",
+    "constraint_name": "2200_45229_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_scenarios",
+    "constraint_name": "2200_45229_3_not_null",
+    "check_clause": "name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_scenarios",
+    "constraint_name": "2200_45229_6_not_null",
+    "check_clause": "ideal_response IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_sessions",
+    "constraint_name": "2200_45118_4_not_null",
+    "check_clause": "session_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_sessions",
+    "constraint_name": "2200_45118_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "training_sessions",
+    "constraint_name": "2200_45118_5_not_null",
+    "check_clause": "session_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "user_agents",
+    "constraint_name": "2200_36910_5_not_null",
+    "check_clause": "agent_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "user_agents",
+    "constraint_name": "2200_36910_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "user_agents",
+    "constraint_name": "2200_36910_4_not_null",
+    "check_clause": "agent_name IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "user_agents",
+    "constraint_name": "2200_36910_3_not_null",
+    "check_clause": "agent_id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "user_agents",
+    "constraint_name": "2200_36910_2_not_null",
+    "check_clause": "user_id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "user_agents",
+    "constraint_name": "user_agents_agent_type_check",
+    "check_clause": "(((agent_type)::text = ANY ((ARRAY['ai_assistant'::character varying, 'chatbot'::character varying, 'workflow_bot'::character varying, 'analytics_bot'::character varying, 'knowledge_bot'::character varying])::text[])))"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_events",
+    "constraint_name": "2200_27446_4_not_null",
+    "check_clause": "payload IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_events",
+    "constraint_name": "2200_27446_3_not_null",
+    "check_clause": "event_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_events",
+    "constraint_name": "2200_27446_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_logs",
+    "constraint_name": "2200_33366_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_logs",
+    "constraint_name": "2200_33366_3_not_null",
+    "check_clause": "event_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_subscriptions",
+    "constraint_name": "2200_33347_3_not_null",
+    "check_clause": "event_type IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_subscriptions",
+    "constraint_name": "2200_33347_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "webhook_subscriptions",
+    "constraint_name": "2200_33347_4_not_null",
+    "check_clause": "webhook_url IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "website_scan_jobs",
+    "constraint_name": "2200_28026_1_not_null",
+    "check_clause": "id IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "website_scan_jobs",
+    "constraint_name": "2200_28026_4_not_null",
+    "check_clause": "urls IS NOT NULL"
+  },
+  {
+    "section": "=== CHECK CONSTRAINTS ===",
+    "table_name": "widget_configurations",
+    "constraint_name": "2200_29447_5_not_null",
+    "check_clause": "configuration IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4978,9 +5165,9 @@ answers
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "widget_configurations",
-    "constraint_name": "2200_29447_5_not_null",
-    "check_clause": "configuration IS NOT NULL"
+    "table_name": "workflow_executions",
+    "constraint_name": "2200_31654_1_not_null",
+    "check_clause": "id IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -4991,8 +5178,8 @@ answers
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "workflows",
-    "constraint_name": "2200_26916_3_not_null",
-    "check_clause": "name IS NOT NULL"
+    "constraint_name": "2200_26916_6_not_null",
+    "check_clause": "connections IS NOT NULL"
   },
   {
     "section": "=== CHECK CONSTRAINTS ===",
@@ -5003,206 +5190,12 @@ answers
   {
     "section": "=== CHECK CONSTRAINTS ===",
     "table_name": "workflows",
-    "constraint_name": "2200_26916_6_not_null",
-    "check_clause": "connections IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "workflow_executions",
-    "constraint_name": "2200_31654_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_2_not_null",
-    "check_clause": "intent_name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_3_not_null",
-    "check_clause": "language IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "intent_patterns",
-    "constraint_name": "2200_26947_4_not_null",
-    "check_clause": "patterns IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_context",
-    "constraint_name": "2200_26958_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_context",
-    "constraint_name": "2200_26958_3_not_null",
-    "check_clause": "context_data IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "audit_logs",
-    "constraint_name": "2200_33397_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "audit_logs",
-    "constraint_name": "2200_33397_3_not_null",
-    "check_clause": "action IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "audit_logs",
-    "constraint_name": "2200_33397_4_not_null",
-    "check_clause": "entity_type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_3_not_null",
+    "constraint_name": "2200_26916_3_not_null",
     "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_4_not_null",
-    "check_clause": "type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "export_jobs",
-    "constraint_name": "2200_27847_6_not_null",
-    "check_clause": "format IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "sla_tracking",
-    "constraint_name": "2200_27356_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_2_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_3_not_null",
-    "check_clause": "type IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_4_not_null",
-    "check_clause": "provider IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_6_not_null",
-    "check_clause": "configuration IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "integrations",
-    "constraint_name": "2200_31633_7_not_null",
-    "check_clause": "credentials IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "daily_metrics",
-    "constraint_name": "2200_27720_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "daily_metrics",
-    "constraint_name": "2200_27720_2_not_null",
-    "check_clause": "date IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "realtime_metrics",
-    "constraint_name": "2200_27748_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "realtime_metrics",
-    "constraint_name": "2200_27748_2_not_null",
-    "check_clause": "metric_name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "realtime_metrics",
-    "constraint_name": "2200_27748_3_not_null",
-    "check_clause": "metric_value IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_analytics",
-    "constraint_name": "2200_27758_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "conversation_analytics",
-    "constraint_name": "2200_27758_3_not_null",
-    "check_clause": "started_at IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "dashboard_configs",
-    "constraint_name": "2200_27782_1_not_null",
-    "check_clause": "id IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "dashboard_configs",
-    "constraint_name": "2200_27782_3_not_null",
-    "check_clause": "name IS NOT NULL"
-  },
-  {
-    "section": "=== CHECK CONSTRAINTS ===",
-    "table_name": "dashboard_configs",
-    "constraint_name": "2200_27782_5_not_null",
-    "check_clause": "layout IS NOT NULL"
   }
 ]" 
 
 7. "[
-  {
-    "section": "=== VIEWS ===",
-    "view_name": "agent_performance_metrics",
-    "view_definition": " SELECT agent_work_logs.user_id,\n    agent_work_logs.agent_id,\n    agent_work_logs.agent_name,\n    count(*) AS total_tasks,\n    count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS completed_tasks,\n    count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'failed'::text)) AS failed_tasks,\n    count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'in_progress'::text)) AS in_progress_tasks,\n    avg(agent_work_logs.execution_time_ms) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS avg_execution_time_ms,\n    min(agent_work_logs.execution_time_ms) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS min_execution_time_ms,\n    max(agent_work_logs.execution_time_ms) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)) AS max_execution_time_ms,\n    (((count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'completed'::text)))::double precision / (NULLIF(count(*), 0))::double precision) * (100)::double precision) AS success_rate,\n    (((count(*) FILTER (WHERE ((agent_work_logs.status)::text = 'failed'::text)))::double precision / (NULLIF(count(*), 0))::double precision) * (100)::double precision) AS failure_rate,\n    max(agent_work_logs.updated_at) AS last_activity,\n    count(DISTINCT agent_work_logs.task_type) AS task_types_handled,\n    date_trunc('day'::text, max(agent_work_logs.created_at)) AS last_task_date\n   FROM agent_work_logs\n  GROUP BY agent_work_logs.user_id, agent_work_logs.agent_id, agent_work_logs.agent_name;"
-  }
-]" 
-
-8. "[
   {
     "section": "=== FUNCTIONS ===",
     "routine_name": "aggregate_daily_metrics",
@@ -5247,10 +5240,38 @@ answers
   },
   {
     "section": "=== FUNCTIONS ===",
+    "routine_name": "cleanup_ai_response_queue",
+    "routine_type": "FUNCTION",
+    "return_type": "integer",
+    "routine_definition": "\nDECLARE\n    deleted_count INTEGER;\nBEGIN\n    DELETE FROM ai_response_queue\n    WHERE completed_at IS NOT NULL\n        AND completed_at < NOW() - INTERVAL '1 day' * older_than_days;\n    \n    GET DIAGNOSTICS deleted_count = ROW_COUNT;\n    \n    RETURN deleted_count;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
     "routine_name": "cleanup_expired_metrics",
     "routine_type": "FUNCTION",
     "return_type": "void",
     "routine_definition": "\nBEGIN\n    DELETE FROM realtime_metrics WHERE expires_at < NOW();\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "cleanup_realtime_metrics",
+    "routine_type": "FUNCTION",
+    "return_type": "integer",
+    "routine_definition": "\nDECLARE\n    deleted_count INTEGER;\nBEGIN\n    DELETE FROM realtime_metrics\n    WHERE timestamp < NOW() - INTERVAL '1 day' * older_than_days;\n    \n    GET DIAGNOSTICS deleted_count = ROW_COUNT;\n    \n    RETURN deleted_count;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "complete_ai_response_job",
+    "routine_type": "FUNCTION",
+    "return_type": "boolean",
+    "routine_definition": "\nDECLARE\n    job_record RECORD;\n    conversation_record RECORD;\n    new_message_id UUID;\nBEGIN\n    -- Get job details\n    SELECT * INTO job_record\n    FROM ai_response_queue\n    WHERE id = job_id AND status = 'processing';\n    \n    IF NOT FOUND THEN\n        RETURN FALSE;\n    END IF;\n    \n    -- Get conversation details\n    SELECT * INTO conversation_record\n    FROM conversations\n    WHERE id = job_record.conversation_id;\n    \n    -- Insert AI response message if confidence is high enough\n    IF confidence >= 0.6 AND NOT requires_human THEN\n        INSERT INTO messages (\n            id,\n            conversation_id,\n            sender_type,\n            content,\n            channel_type,\n            message_type,\n            delivery_status,\n            confidence_score,\n            processing_time_ms,\n            metadata,\n            created_at\n        ) VALUES (\n            gen_random_uuid(),\n            job_record.conversation_id,\n            'ai',\n            ai_response,\n            conversation_record.channel_type,\n            'text',\n            'sent',\n            confidence,\n            response_time_ms,\n            jsonb_build_object(\n                'confidence', confidence,\n                'response_time', response_time_ms,\n                'generated_at', NOW(),\n                'requires_human', requires_human\n            ),\n            NOW()\n        ) RETURNING id INTO new_message_id;\n        \n        -- Update conversation with AI response\n        UPDATE conversations SET\n            last_message = ai_response,\n            last_message_at = NOW(),\n            message_count = COALESCE(message_count, 0) + 1,\n            ai_confidence = confidence,\n            requires_human = requires_human,\n            updated_at = NOW()\n        WHERE id = job_record.conversation_id;\n        \n    ELSE\n        -- Mark conversation as requiring human intervention\n        UPDATE conversations SET\n            requires_human = TRUE,\n            ai_confidence = confidence,\n            escalation_reason = CASE \n                WHEN confidence < 0.6 THEN 'low_confidence'\n                ELSE 'human_requested'\n            END,\n            updated_at = NOW()\n        WHERE id = job_record.conversation_id;\n    END IF;\n    \n    -- Mark job as completed\n    UPDATE ai_response_queue SET\n        status = 'completed',\n        ai_response = ai_response,\n        ai_confidence = confidence,\n        response_time_ms = response_time_ms,\n        completed_at = NOW()\n    WHERE id = job_id;\n    \n    -- Track performance metrics\n    INSERT INTO realtime_metrics (\n        metric_name,\n        metric_value,\n        dimensions,\n        timestamp\n    ) VALUES (\n        'ai_response_generated',\n        response_time_ms,\n        jsonb_build_object(\n            'conversation_id', job_record.conversation_id,\n            'confidence', confidence,\n            'requires_human', requires_human,\n            'channel_type', conversation_record.channel_type\n        ),\n        NOW()\n    );\n    \n    RETURN TRUE;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "create_conversation",
+    "routine_type": "FUNCTION",
+    "return_type": "uuid",
+    "routine_definition": "\nDECLARE\n    found_customer_id UUID;\n    conversation_id UUID;\n    search_field TEXT;\n    existing_conversation_id UUID;\nBEGIN\n    -- Determine search field based on identifier format\n    IF customer_identifier LIKE '%@%' THEN\n        search_field := 'email';\n    ELSE\n        search_field := 'phone';\n    END IF;\n    \n    -- Find or create customer\n    EXECUTE format('\n        INSERT INTO customer_profiles (id, %I, name, status, created_at, first_interaction, last_interaction)\n        VALUES (gen_random_uuid(), $1, $2, ''active'', NOW(), NOW(), NOW())\n        ON CONFLICT (%I) DO UPDATE SET\n            last_interaction = NOW(),\n            total_conversations = customer_profiles.total_conversations + 1\n        RETURNING id', search_field, search_field)\n    USING customer_identifier, \n          CASE WHEN customer_identifier LIKE '%@%' THEN split_part(customer_identifier, '@', 1) ELSE customer_identifier END\n    INTO found_customer_id;\n    \n    -- Check for existing active conversation\n    SELECT c.id INTO existing_conversation_id\n    FROM conversations c\n    WHERE c.customer_id = found_customer_id\n        AND c.channel_type = $2\n        AND c.status = 'active'\n    ORDER BY c.created_at DESC\n    LIMIT 1;\n    \n    IF existing_conversation_id IS NOT NULL THEN\n        RETURN existing_conversation_id;\n    END IF;\n    \n    -- Create new conversation\n    INSERT INTO conversations (\n        id,\n        customer_id,\n        customer_name,\n        user_name,\n        user_email,\n        customer_phone,\n        channel_type,\n        status,\n        priority,\n        language,\n        department,\n        message_count,\n        requires_human,\n        created_at,\n        last_message_at,\n        last_message\n    ) VALUES (\n        gen_random_uuid(),\n        found_customer_id,\n        CASE WHEN search_field = 'email' THEN split_part(customer_identifier, '@', 1) ELSE customer_identifier END,\n        CASE WHEN search_field = 'email' THEN split_part(customer_identifier, '@', 1) ELSE customer_identifier END,\n        CASE WHEN search_field = 'email' THEN customer_identifier ELSE NULL END,\n        CASE WHEN search_field = 'phone' THEN customer_identifier ELSE NULL END,\n        $2,\n        'active',\n        'normal',\n        'en',\n        'general',\n        0,\n        FALSE,\n        NOW(),\n        NOW(),\n        COALESCE(initial_message, '')\n    ) RETURNING id INTO conversation_id;\n    \n    -- Insert initial message if provided\n    IF initial_message IS NOT NULL THEN\n        INSERT INTO messages (\n            conversation_id,\n            sender_type,\n            content,\n            channel_type,\n            message_type,\n            delivery_status,\n            created_at\n        ) VALUES (\n            conversation_id,\n            'user',\n            initial_message,\n            $2,\n            'text',\n            'delivered',\n            NOW()\n        );\n    END IF;\n    \n    RETURN conversation_id;\nEND;\n"
   },
   {
     "section": "=== FUNCTIONS ===",
@@ -5268,6 +5289,13 @@ answers
   },
   {
     "section": "=== FUNCTIONS ===",
+    "routine_name": "fail_ai_response_job",
+    "routine_type": "FUNCTION",
+    "return_type": "boolean",
+    "routine_definition": "\nDECLARE\n    job_record RECORD;\n    should_retry BOOLEAN := FALSE;\nBEGIN\n    -- Get job details\n    SELECT * INTO job_record\n    FROM ai_response_queue\n    WHERE id = job_id AND status = 'processing';\n    \n    IF NOT FOUND THEN\n        RETURN FALSE;\n    END IF;\n    \n    -- Check if we should retry\n    IF job_record.retry_count < job_record.max_retries THEN\n        should_retry := TRUE;\n    END IF;\n    \n    IF should_retry THEN\n        -- Increment retry count and reset to pending\n        UPDATE ai_response_queue SET\n            status = 'pending',\n            retry_count = retry_count + 1,\n            process_after = NOW() + INTERVAL '30 seconds', -- Wait 30 seconds before retry\n            error_message = error_message\n        WHERE id = job_id;\n    ELSE\n        -- Mark as failed\n        UPDATE ai_response_queue SET\n            status = 'failed',\n            error_message = error_message,\n            completed_at = NOW()\n        WHERE id = job_id;\n        \n        -- Mark conversation as requiring human intervention\n        UPDATE conversations SET\n            requires_human = TRUE,\n            escalation_reason = 'ai_failure',\n            updated_at = NOW()\n        WHERE id = job_record.conversation_id;\n    END IF;\n    \n    RETURN TRUE;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
     "routine_name": "finalize_conversation_analytics",
     "routine_type": "FUNCTION",
     "return_type": "trigger",
@@ -5279,6 +5307,34 @@ answers
     "routine_type": "FUNCTION",
     "return_type": "uuid",
     "routine_definition": "\nBEGIN\n    RETURN gen_random_uuid();\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "get_conversation_performance_metrics",
+    "routine_type": "FUNCTION",
+    "return_type": "record",
+    "routine_definition": "\nBEGIN\n    RETURN QUERY\n    SELECT \n        COUNT(*)::INTEGER as total_messages,\n        COUNT(*) FILTER (WHERE sender_type = 'ai')::INTEGER as ai_messages,\n        COUNT(*) FILTER (WHERE sender_type IN ('agent', 'user'))::INTEGER as human_messages,\n        AVG(processing_time_ms) as avg_response_time_ms,\n        AVG(confidence_score) as ai_confidence_avg,\n        COUNT(*) FILTER (WHERE (metadata->>'requires_human')::boolean = true)::INTEGER as escalation_count,\n        (SELECT satisfaction_rating FROM conversations WHERE id = conversation_id) as satisfaction_rating,\n        EXTRACT(EPOCH FROM (MAX(created_at) - MIN(created_at)))/60 as conversation_duration_minutes\n    FROM messages\n    WHERE conversation_id = $1;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "get_conversation_with_messages",
+    "routine_type": "FUNCTION",
+    "return_type": "record",
+    "routine_definition": "\nBEGIN\n    RETURN QUERY\n    SELECT \n        to_jsonb(c.*) as conversation_data,\n        COALESCE(\n            jsonb_agg(\n                to_jsonb(m.*) ORDER BY m.created_at ASC\n            ) FILTER (WHERE m.id IS NOT NULL),\n            '[]'::jsonb\n        ) as messages_data\n    FROM conversations c\n    LEFT JOIN (\n        SELECT *\n        FROM messages\n        WHERE conversation_id = $1\n        ORDER BY created_at DESC\n        LIMIT message_limit\n    ) m ON m.conversation_id = c.id\n    WHERE c.id = $1\n    GROUP BY c.id;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "get_next_ai_response_job",
+    "routine_type": "FUNCTION",
+    "return_type": "record",
+    "routine_definition": "\nDECLARE\n    selected_job_id UUID;\nBEGIN\n    -- First, get and lock the next job\n    SELECT arq.id INTO selected_job_id\n    FROM ai_response_queue arq\n    WHERE arq.status = 'pending'\n        AND arq.process_after <= NOW()\n        AND arq.retry_count < arq.max_retries\n    ORDER BY arq.priority ASC, arq.created_at ASC\n    LIMIT 1\n    FOR UPDATE SKIP LOCKED;\n    \n    -- If no job found, return empty\n    IF selected_job_id IS NULL THEN\n        RETURN;\n    END IF;\n    \n    -- Update the job status to 'processing'\n    UPDATE ai_response_queue \n    SET status = 'processing',\n        started_at = NOW(),\n        updated_at = NOW()\n    WHERE id = selected_job_id;\n    \n    -- Return the job details\n    RETURN QUERY\n    SELECT \n        arq.id,\n        arq.conversation_id,\n        arq.message_id,\n        arq.user_message,\n        -- Get conversation context\n        jsonb_build_object(\n            'channel_type', c.channel_type,\n            'language', c.language,\n            'priority', c.priority,\n            'department', c.department,\n            'intent', c.intent,\n            'sentiment', c.sentiment,\n            'message_count', c.message_count,\n            'recent_messages', (\n                SELECT jsonb_agg(\n                    jsonb_build_object(\n                        'id', m.id,\n                        'content', m.content,\n                        'sender_type', m.sender_type,\n                        'created_at', m.created_at\n                    ) ORDER BY m.created_at DESC\n                )\n                FROM (\n                    SELECT m.id, m.content, m.sender_type, m.created_at\n                    FROM messages m\n                    WHERE m.conversation_id = arq.conversation_id\n                    ORDER BY m.created_at DESC\n                    LIMIT 10\n                ) m\n            )\n        ),\n        -- Get customer profile\n        jsonb_build_object(\n            'id', cp.id,\n            'name', cp.name,\n            'email', cp.email,\n            'phone', cp.phone,\n            'total_conversations', cp.total_conversations,\n            'satisfaction_rating', cp.satisfaction_rating,\n            'preferences', cp.preferences\n        ),\n        arq.priority\n    FROM ai_response_queue arq\n    JOIN conversations c ON c.id = arq.conversation_id\n    LEFT JOIN customer_profiles cp ON cp.id = c.customer_id\n    WHERE arq.id = selected_job_id;\nEND;\n"
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "get_realtime_messaging_metrics",
+    "routine_type": "FUNCTION",
+    "return_type": "record",
+    "routine_definition": "\nBEGIN\n    RETURN QUERY\n    SELECT \n        rm.metric_name::TEXT,\n        SUM(rm.metric_value) as metric_value,\n        COUNT(*)::INTEGER as count,\n        AVG(rm.metric_value) as avg_value,\n        MIN(rm.metric_value) as min_value,\n        MAX(rm.metric_value) as max_value,\n        tstzrange(NOW() - INTERVAL '1 minute' * time_window_minutes, NOW()) as timestamp_range\n    FROM realtime_metrics rm\n    WHERE rm.timestamp >= NOW() - INTERVAL '1 minute' * time_window_minutes\n    GROUP BY rm.metric_name\n    ORDER BY rm.metric_name;\nEND;\n"
   },
   {
     "section": "=== FUNCTIONS ===",
@@ -5398,6 +5454,13 @@ answers
     "routine_type": "FUNCTION",
     "return_type": "USER-DEFINED",
     "routine_definition": null
+  },
+  {
+    "section": "=== FUNCTIONS ===",
+    "routine_name": "handle_new_message",
+    "routine_type": "FUNCTION",
+    "return_type": "trigger",
+    "routine_definition": "\nDECLARE\n    conversation_record RECORD;\n    should_generate_ai_response BOOLEAN := FALSE;\n    customer_profile RECORD;\n    response_delay_ms INTEGER := 1000; -- 1 second delay for AI response\nBEGIN\n    -- Update conversation metadata\n    UPDATE conversations SET\n        last_message = NEW.content,\n        last_message_at = NEW.created_at,\n        message_count = COALESCE(message_count, 0) + 1,\n        updated_at = NOW()\n    WHERE id = NEW.conversation_id;\n\n    -- Get conversation details\n    SELECT * INTO conversation_record\n    FROM conversations\n    WHERE id = NEW.conversation_id;\n\n    -- Only generate AI response for user messages in active conversations\n    IF NEW.sender_type = 'user' AND conversation_record.status = 'active' THEN\n        -- Check if AI should respond (not if human agent is active)\n        IF conversation_record.requires_human = FALSE OR conversation_record.requires_human IS NULL THEN\n            should_generate_ai_response := TRUE;\n        END IF;\n    END IF;\n\n    -- Insert AI response generation job (processed by background service)\n    IF should_generate_ai_response THEN\n        INSERT INTO ai_response_queue (\n            conversation_id,\n            message_id,\n            user_message,\n            status,\n            priority,\n            created_at,\n            process_after\n        ) VALUES (\n            NEW.conversation_id,\n            NEW.id,\n            NEW.content,\n            'pending',\n            CASE \n                WHEN conversation_record.priority = 'urgent' THEN 1\n                WHEN conversation_record.priority = 'high' THEN 2\n                WHEN conversation_record.priority = 'normal' THEN 3\n                ELSE 4\n            END,\n            NOW(),\n            NOW() + INTERVAL '1 second'\n        );\n    END IF;\n\n    -- Update customer profile last interaction\n    UPDATE customer_profiles SET\n        last_interaction = NEW.created_at,\n        total_conversations = (\n            SELECT COUNT(DISTINCT conversation_id)\n            FROM messages\n            WHERE conversation_id IN (\n                SELECT id FROM conversations WHERE customer_id = conversation_record.customer_id\n            )\n        )\n    WHERE id = conversation_record.customer_id;\n\n    -- Track real-time metrics\n    INSERT INTO realtime_metrics (\n        metric_name,\n        metric_value,\n        dimensions,\n        timestamp\n    ) VALUES (\n        'message_received',\n        1,\n        jsonb_build_object(\n            'conversation_id', NEW.conversation_id,\n            'channel_type', NEW.channel_type,\n            'sender_type', NEW.sender_type,\n            'message_length', LENGTH(NEW.content)\n        ),\n        NOW()\n    );\n\n    RETURN NEW;\nEND;\n"
   },
   {
     "section": "=== FUNCTIONS ===",
@@ -5732,7 +5795,7 @@ answers
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "set_word_count_trigger",
-    "event_manipulation": "INSERT",
+    "event_manipulation": "UPDATE",
     "event_object_table": "extracted_content",
     "action_statement": "EXECUTE FUNCTION set_word_count()",
     "action_timing": "BEFORE",
@@ -5741,7 +5804,7 @@ answers
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "set_word_count_trigger",
-    "event_manipulation": "UPDATE",
+    "event_manipulation": "INSERT",
     "event_object_table": "extracted_content",
     "action_statement": "EXECUTE FUNCTION set_word_count()",
     "action_timing": "BEFORE",
@@ -5830,6 +5893,15 @@ answers
   },
   {
     "section": "=== TRIGGERS ===",
+    "trigger_name": "trigger_handle_new_message",
+    "event_manipulation": "INSERT",
+    "event_object_table": "messages",
+    "action_statement": "EXECUTE FUNCTION handle_new_message()",
+    "action_timing": "AFTER",
+    "action_orientation": "ROW"
+  },
+  {
+    "section": "=== TRIGGERS ===",
     "trigger_name": "trigger_update_conversation_analytics",
     "event_manipulation": "INSERT",
     "event_object_table": "messages",
@@ -5849,7 +5921,7 @@ answers
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "trigger_update_conversation_message_count",
-    "event_manipulation": "INSERT",
+    "event_manipulation": "DELETE",
     "event_object_table": "messages",
     "action_statement": "EXECUTE FUNCTION update_conversation_message_count()",
     "action_timing": "AFTER",
@@ -5858,7 +5930,7 @@ answers
   {
     "section": "=== TRIGGERS ===",
     "trigger_name": "trigger_update_conversation_message_count",
-    "event_manipulation": "DELETE",
+    "event_manipulation": "INSERT",
     "event_object_table": "messages",
     "action_statement": "EXECUTE FUNCTION update_conversation_message_count()",
     "action_timing": "AFTER",
@@ -6102,6 +6174,17 @@ answers
     "roles": "{public}",
     "cmd": "SELECT",
     "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "section": "=== RLS POLICIES ===",
+    "schemaname": "public",
+    "tablename": "ai_response_queue",
+    "policyname": "AI response queue access",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "true",
     "with_check": null
   },
   {
@@ -7126,17 +7209,6 @@ answers
     "cmd": "SELECT",
     "qual": "(user_id = auth.uid())",
     "with_check": null
-  },
-  {
-    "section": "=== RLS POLICIES ===",
-    "schemaname": "public",
-    "tablename": "training_sessions",
-    "policyname": "Users can create training sessions",
-    "permissive": "PERMISSIVE",
-    "roles": "{public}",
-    "cmd": "INSERT",
-    "qual": null,
-    "with_check": "(user_id = auth.uid())"
   }
 ]" 
 
@@ -7164,6 +7236,20 @@ answers
     "deletes": 0,
     "live_rows": 3,
     "dead_rows": 7,
+    "last_vacuum": null,
+    "last_autovacuum": null,
+    "last_analyze": null,
+    "last_autoanalyze": null
+  },
+  {
+    "section": "=== TABLE STATS ===",
+    "schemaname": "public",
+    "tablename": "ai_response_queue",
+    "inserts": 8,
+    "updates": 0,
+    "deletes": 0,
+    "live_rows": 0,
+    "dead_rows": 8,
     "last_vacuum": null,
     "last_autovacuum": null,
     "last_analyze": null,
@@ -7299,11 +7385,11 @@ answers
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
     "tablename": "conversation_analytics",
-    "inserts": 24,
-    "updates": 48,
+    "inserts": 32,
+    "updates": 62,
     "deletes": 0,
     "live_rows": 3,
-    "dead_rows": 15,
+    "dead_rows": 37,
     "last_vacuum": null,
     "last_autovacuum": "2025-07-12 13:50:50.169144+00",
     "last_analyze": null,
@@ -7355,11 +7441,11 @@ answers
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
     "tablename": "conversations",
-    "inserts": 25,
-    "updates": 51,
-    "deletes": 1,
-    "live_rows": 3,
-    "dead_rows": 37,
+    "inserts": 33,
+    "updates": 67,
+    "deletes": 4,
+    "live_rows": 0,
+    "dead_rows": 49,
     "last_vacuum": null,
     "last_autovacuum": null,
     "last_analyze": null,
@@ -7383,13 +7469,13 @@ answers
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
     "tablename": "customer_profiles",
-    "inserts": 34,
-    "updates": 30,
-    "deletes": 1,
-    "live_rows": 6,
-    "dead_rows": 46,
+    "inserts": 40,
+    "updates": 52,
+    "deletes": 4,
+    "live_rows": 3,
+    "dead_rows": 0,
     "last_vacuum": null,
-    "last_autovacuum": null,
+    "last_autovacuum": "2025-07-17 16:48:54.764816+00",
     "last_analyze": null,
     "last_autoanalyze": null
   },
@@ -7649,13 +7735,13 @@ answers
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
     "tablename": "messages",
-    "inserts": 48,
+    "inserts": 56,
     "updates": 0,
-    "deletes": 0,
-    "live_rows": 6,
-    "dead_rows": 42,
+    "deletes": 6,
+    "live_rows": 0,
+    "dead_rows": 0,
     "last_vacuum": null,
-    "last_autovacuum": null,
+    "last_autovacuum": "2025-07-17 16:48:54.762697+00",
     "last_analyze": null,
     "last_autoanalyze": null
   },
@@ -7719,11 +7805,11 @@ answers
     "section": "=== TABLE STATS ===",
     "schemaname": "public",
     "tablename": "realtime_metrics",
-    "inserts": 5,
+    "inserts": 13,
     "updates": 0,
     "deletes": 0,
     "live_rows": 5,
-    "dead_rows": 0,
+    "dead_rows": 8,
     "last_vacuum": null,
     "last_autovacuum": null,
     "last_analyze": null,
@@ -8139,66 +8225,6 @@ answers
 
 12. "[
   {
-    "section": "=== EXTENSIONS ===",
-    "extname": "pg_graphql",
-    "extversion": "1.5.11",
-    "extrelocatable": false,
-    "schema": "graphql"
-  },
-  {
-    "section": "=== EXTENSIONS ===",
-    "extname": "pg_stat_statements",
-    "extversion": "1.10",
-    "extrelocatable": true,
-    "schema": "extensions"
-  },
-  {
-    "section": "=== EXTENSIONS ===",
-    "extname": "pg_trgm",
-    "extversion": "1.6",
-    "extrelocatable": true,
-    "schema": "public"
-  },
-  {
-    "section": "=== EXTENSIONS ===",
-    "extname": "pgcrypto",
-    "extversion": "1.3",
-    "extrelocatable": true,
-    "schema": "extensions"
-  },
-  {
-    "section": "=== EXTENSIONS ===",
-    "extname": "plpgsql",
-    "extversion": "1.0",
-    "extrelocatable": false,
-    "schema": "pg_catalog"
-  },
-  {
-    "section": "=== EXTENSIONS ===",
-    "extname": "supabase_vault",
-    "extversion": "0.3.1",
-    "extrelocatable": false,
-    "schema": "vault"
-  },
-  {
-    "section": "=== EXTENSIONS ===",
-    "extname": "uuid-ossp",
-    "extversion": "1.1",
-    "extrelocatable": true,
-    "schema": "extensions"
-  },
-  {
-    "section": "=== EXTENSIONS ===",
-    "extname": "vector",
-    "extversion": "0.8.0",
-    "extrelocatable": true,
-    "schema": "extensions"
-  }
-]" 
-
-13. 
-"[
-  {
     "section": "=== ENUM TYPES ===",
     "enum_name": "aal_level",
     "enum_value": "aal1",
@@ -8514,8 +8540,10 @@ answers
   }
 ]" 
 
-16.  "Success. No rows returned" 
-17. Success. No rows returned
+16. "Success. No rows returned" 
+
+17. "Success. No rows returned" 
+
 18. "[
   {
     "section": "=== TABLE SIZES ===",
@@ -8529,17 +8557,25 @@ answers
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
     "tablename": "messages",
-    "total_size": "208 kB",
-    "table_size": "16 kB",
-    "index_size": "192 kB"
+    "total_size": "280 kB",
+    "table_size": "0 bytes",
+    "index_size": "280 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
     "tablename": "conversations",
-    "total_size": "192 kB",
+    "total_size": "216 kB",
     "table_size": "8192 bytes",
-    "index_size": "184 kB"
+    "index_size": "208 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "customer_profiles",
+    "total_size": "160 kB",
+    "table_size": "8192 bytes",
+    "index_size": "152 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
@@ -8560,7 +8596,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "agent_work_logs",
+    "tablename": "templates",
     "total_size": "112 kB",
     "table_size": "8192 bytes",
     "index_size": "104 kB"
@@ -8568,7 +8604,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "templates",
+    "tablename": "agent_work_logs",
     "total_size": "112 kB",
     "table_size": "8192 bytes",
     "index_size": "104 kB"
@@ -8592,7 +8628,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "customer_profiles",
+    "tablename": "ai_response_queue",
     "total_size": "96 kB",
     "table_size": "8192 bytes",
     "index_size": "88 kB"
@@ -8608,7 +8644,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "realtime_metrics",
+    "tablename": "training_scenarios",
     "total_size": "80 kB",
     "table_size": "8192 bytes",
     "index_size": "72 kB"
@@ -8624,7 +8660,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "training_scenarios",
+    "tablename": "realtime_metrics",
     "total_size": "80 kB",
     "table_size": "8192 bytes",
     "index_size": "72 kB"
@@ -8640,7 +8676,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "website_scan_jobs",
+    "tablename": "message_templates",
     "total_size": "64 kB",
     "table_size": "8192 bytes",
     "index_size": "56 kB"
@@ -8648,10 +8684,10 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "template_optimization",
+    "tablename": "website_scan_jobs",
     "total_size": "64 kB",
-    "table_size": "0 bytes",
-    "index_size": "64 kB"
+    "table_size": "8192 bytes",
+    "index_size": "56 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
@@ -8664,10 +8700,10 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "message_templates",
+    "tablename": "template_optimization",
     "total_size": "64 kB",
-    "table_size": "8192 bytes",
-    "index_size": "56 kB"
+    "table_size": "0 bytes",
+    "index_size": "64 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
@@ -8675,62 +8711,6 @@ answers
     "tablename": "customer_channel_preferences",
     "total_size": "56 kB",
     "table_size": "8192 bytes",
-    "index_size": "48 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "training_sessions",
-    "total_size": "48 kB",
-    "table_size": "0 bytes",
-    "index_size": "48 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "training_jobs",
-    "total_size": "48 kB",
-    "table_size": "0 bytes",
-    "index_size": "48 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "scan_job_logs",
-    "total_size": "48 kB",
-    "table_size": "8192 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "template_usage_history",
-    "total_size": "48 kB",
-    "table_size": "0 bytes",
-    "index_size": "48 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "template_categories",
-    "total_size": "48 kB",
-    "table_size": "8192 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "template_analytics",
-    "total_size": "48 kB",
-    "table_size": "0 bytes",
-    "index_size": "48 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "template_variables",
-    "total_size": "48 kB",
-    "table_size": "0 bytes",
     "index_size": "48 kB"
   },
   {
@@ -8744,7 +8724,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "channel_routing_rules",
+    "tablename": "scan_job_logs",
     "total_size": "48 kB",
     "table_size": "8192 bytes",
     "index_size": "40 kB"
@@ -8752,7 +8732,23 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "knowledge_gaps",
+    "tablename": "template_categories",
+    "total_size": "48 kB",
+    "table_size": "8192 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_jobs",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_sessions",
     "total_size": "48 kB",
     "table_size": "0 bytes",
     "index_size": "48 kB"
@@ -8768,6 +8764,46 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
+    "tablename": "knowledge_gaps",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "channel_routing_rules",
+    "total_size": "48 kB",
+    "table_size": "8192 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_variables",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_analytics",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "template_usage_history",
+    "total_size": "48 kB",
+    "table_size": "0 bytes",
+    "index_size": "48 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
     "tablename": "communication_channels",
     "total_size": "48 kB",
     "table_size": "8192 bytes",
@@ -8776,55 +8812,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "training_datasets",
-    "total_size": "40 kB",
-    "table_size": "0 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "training_results",
-    "total_size": "40 kB",
-    "table_size": "0 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
     "tablename": "template_ab_tests",
-    "total_size": "40 kB",
-    "table_size": "0 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "template_performance_metrics",
-    "total_size": "40 kB",
-    "table_size": "0 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "webhook_events",
-    "total_size": "40 kB",
-    "table_size": "0 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "agent_availability",
-    "total_size": "40 kB",
-    "table_size": "0 bytes",
-    "index_size": "40 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "pattern_recognition",
     "total_size": "40 kB",
     "table_size": "0 bytes",
     "index_size": "40 kB"
@@ -8840,15 +8828,63 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "alert_rules",
-    "total_size": "32 kB",
+    "tablename": "pattern_recognition",
+    "total_size": "40 kB",
     "table_size": "0 bytes",
-    "index_size": "32 kB"
+    "index_size": "40 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "conversation_transfers",
+    "tablename": "template_performance_metrics",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_datasets",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "agent_availability",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "webhook_events",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "training_results",
+    "total_size": "40 kB",
+    "table_size": "0 bytes",
+    "index_size": "40 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "profiles",
+    "total_size": "32 kB",
+    "table_size": "8192 bytes",
+    "index_size": "24 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "alert_rules",
     "total_size": "32 kB",
     "table_size": "0 bytes",
     "index_size": "32 kB"
@@ -8872,6 +8908,14 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
+    "tablename": "conversation_transfers",
+    "total_size": "32 kB",
+    "table_size": "0 bytes",
+    "index_size": "32 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
     "tablename": "export_jobs",
     "total_size": "32 kB",
     "table_size": "0 bytes",
@@ -8888,14 +8932,6 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "profiles",
-    "total_size": "32 kB",
-    "table_size": "8192 bytes",
-    "index_size": "24 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
     "tablename": "workflow_executions",
     "total_size": "24 kB",
     "table_size": "0 bytes",
@@ -8904,7 +8940,15 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "auto_generated_knowledge",
+    "tablename": "conversation_context",
+    "total_size": "24 kB",
+    "table_size": "0 bytes",
+    "index_size": "24 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "integrations",
     "total_size": "24 kB",
     "table_size": "0 bytes",
     "index_size": "24 kB"
@@ -8936,47 +8980,15 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "conversation_context",
+    "tablename": "auto_generated_knowledge",
     "total_size": "24 kB",
     "table_size": "0 bytes",
     "index_size": "24 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "integrations",
-    "total_size": "24 kB",
-    "table_size": "0 bytes",
-    "index_size": "24 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "webhook_subscriptions",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "onboarding_responses",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
   },
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
     "tablename": "sync_jobs",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "integration_field_mappings",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
@@ -8993,6 +9005,22 @@ answers
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
     "tablename": "knowledge_versions",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "webhook_logs",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "playground_sessions",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
@@ -9032,15 +9060,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "playground_sessions",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "alert_history",
+    "tablename": "webhook_subscriptions",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
@@ -9056,15 +9076,7 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "audit_logs",
-    "total_size": "16 kB",
-    "table_size": "0 bytes",
-    "index_size": "16 kB"
-  },
-  {
-    "section": "=== TABLE SIZES ===",
-    "schemaname": "public",
-    "tablename": "intent_patterns",
+    "tablename": "onboarding_responses",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
@@ -9080,9 +9092,33 @@ answers
   {
     "section": "=== TABLE SIZES ===",
     "schemaname": "public",
-    "tablename": "webhook_logs",
+    "tablename": "intent_patterns",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "alert_history",
+    "total_size": "16 kB",
+    "table_size": "0 bytes",
+    "index_size": "16 kB"
+  },
+  {
+    "section": "=== TABLE SIZES ===",
+    "schemaname": "public",
+    "tablename": "integration_field_mappings",
     "total_size": "16 kB",
     "table_size": "0 bytes",
     "index_size": "16 kB"
   }
-]" 
+]"
