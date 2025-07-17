@@ -236,10 +236,13 @@ BEGIN
                         'created_at', m.created_at
                     ) ORDER BY m.created_at DESC
                 )
-                FROM messages m
-                WHERE m.conversation_id = nj.conversation_id
-                ORDER BY m.created_at DESC
-                LIMIT 10
+                FROM (
+                    SELECT m.id, m.content, m.sender_type, m.created_at
+                    FROM messages m
+                    WHERE m.conversation_id = nj.conversation_id
+                    ORDER BY m.created_at DESC
+                    LIMIT 10
+                ) m
             )
         ),
         -- Get customer profile
