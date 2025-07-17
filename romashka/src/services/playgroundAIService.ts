@@ -1,5 +1,6 @@
 // ROMASHKA Playground AI Service
 // Real OpenAI integration with personality-based system prompts
+// Updated to work with BotConfiguration interface from the database schema
 
 import { 
   PlaygroundAIResponse, 
@@ -7,7 +8,8 @@ import {
   ResponseStyle, 
   AIModel, 
   PersonalityAnalysis,
-  PlaygroundSession
+  BotConfiguration,
+  AI_MODELS
 } from '../types/playground';
 
 export class PlaygroundAIService {
@@ -26,35 +28,35 @@ export class PlaygroundAIService {
    */
   async generateResponse(
     message: string,
-    session: PlaygroundSession
+    botConfig: BotConfiguration
   ): Promise<PlaygroundAIResponse> {
     const startTime = Date.now();
 
     try {
       // If no API key, return simulated response
       if (!this.openaiApiKey) {
-        return this.generateSimulatedResponse(message, session);
+        return this.generateSimulatedResponse(message, botConfig);
       }
 
       // Generate personality-based system prompt
       const systemPrompt = this.generatePersonalitySystemPrompt(
-        session.personality_traits,
-        session.response_style,
-        session.system_prompt
+        botConfig.personality_traits,
+        botConfig.response_style,
+        botConfig.system_prompt
       );
 
       // Prepare OpenAI request
       const requestBody = {
-        model: session.ai_model,
+        model: botConfig.ai_model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        temperature: session.bot_configuration.temperature,
-        max_tokens: session.bot_configuration.max_tokens,
-        top_p: session.bot_configuration.top_p || 1.0,
-        frequency_penalty: session.bot_configuration.frequency_penalty || 0.0,
-        presence_penalty: session.bot_configuration.presence_penalty || 0.0
+        temperature: botConfig.model_parameters.temperature,
+        max_tokens: botConfig.model_parameters.max_tokens,
+        top_p: botConfig.model_parameters.top_p,
+        frequency_penalty: botConfig.model_parameters.frequency_penalty,
+        presence_penalty: botConfig.model_parameters.presence_penalty
       };
 
       // Make API call to OpenAI
@@ -76,19 +78,23 @@ export class PlaygroundAIService {
       const responseText = data.choices[0]?.message?.content || '';
       const responseTime = Date.now() - startTime;
 
+      // Extract token usage
+      const promptTokens = data.usage?.prompt_tokens || 0;
+      const completionTokens = data.usage?.completion_tokens || 0;
+      const totalTokens = data.usage?.total_tokens || promptTokens + completionTokens;
+
       // Analyze personality alignment
       const personalityAnalysis = await this.analyzePersonalityAlignment(
         responseText,
-        session.personality_traits
+        botConfig.personality_traits
       );
 
       // Calculate scores
       const qualityScore = this.calculateQualityScore(responseText, message);
       const confidenceScore = this.calculateConfidenceScore(data.choices[0]);
 
-      // Calculate cost (approximate)
-      const tokensUsed = data.usage?.total_tokens || 0;
-      const costUsd = this.calculateCost(session.ai_model, tokensUsed);
+      // Calculate cost
+      const costUsd = this.calculateCost(botConfig.ai_model, totalTokens);
 
       return {
         response: responseText,
@@ -96,8 +102,11 @@ export class PlaygroundAIService {
         quality_score: qualityScore,
         confidence_score: confidenceScore,
         personality_analysis: personalityAnalysis,
-        tokens_used: tokensUsed,
-        cost_usd: costUsd
+        tokens_used: totalTokens,
+        cost_usd: costUsd,
+        model_used: botConfig.ai_model,
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens
       };
 
     } catch (error) {
@@ -119,6 +128,9 @@ export class PlaygroundAIService {
         },
         tokens_used: 0,
         cost_usd: 0,
+        model_used: botConfig.ai_model,
+        prompt_tokens: 0,
+        completion_tokens: 0,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
@@ -130,10 +142,8 @@ export class PlaygroundAIService {
   private generatePersonalitySystemPrompt(
     traits: PersonalityTraits,
     style: ResponseStyle,
-    customPrompt?: string
+    basePrompt: string
   ): string {
-    const basePrompt = customPrompt || 'You are ROMASHKA Assistant, a customer support AI.';
-    
     const personalityInstructions = this.generatePersonalityInstructions(traits, style);
     
     return `${basePrompt}
@@ -284,8 +294,12 @@ Respond with only a JSON object in this format:
       const alignmentScore = this.calculateAlignmentScore(analysis, targetTraits);
       
       return {
-        ...analysis,
-        alignment_score: alignmentScore
+        formality: analysis.formality,
+        enthusiasm: analysis.enthusiasm,
+        technical_depth: analysis.technical_depth,
+        empathy: analysis.empathy,
+        alignment_score: alignmentScore,
+        analysis_notes: analysis.analysis_notes
       };
 
     } catch (error) {
@@ -365,13 +379,10 @@ Respond with only a JSON object in this format:
    * Calculate approximate cost based on model and tokens
    */
   private calculateCost(model: AIModel, tokens: number): number {
-    const pricing = {
-      'gpt-4o-mini': 0.000015, // $0.015 per 1K tokens
-      'gpt-4': 0.03,           // $0.03 per 1K tokens
-      'gpt-3.5-turbo': 0.0015  // $0.0015 per 1K tokens
-    };
+    const modelInfo = AI_MODELS.find(m => m.value === model);
+    const costPer1KTokens = modelInfo?.cost_per_1k_tokens || 0.0015;
     
-    return (tokens / 1000) * (pricing[model] || 0.0015);
+    return (tokens / 1000) * costPer1KTokens;
   }
 
   /**
@@ -379,7 +390,7 @@ Respond with only a JSON object in this format:
    */
   private generateSimulatedResponse(
     message: string,
-    session: PlaygroundSession
+    botConfig: BotConfiguration
   ): PlaygroundAIResponse {
     const responses = [
       "Thank you for your message! I understand you're looking for help with this. Let me provide you with a comprehensive solution.",
@@ -394,23 +405,31 @@ Respond with only a JSON object in this format:
     // Simulate personality-based modifications
     let finalResponse = randomResponse;
     
-    if (session.personality_traits.enthusiasm > 70) {
+    if (botConfig.personality_traits.enthusiasm > 70) {
       finalResponse = finalResponse.replace(/\./g, '!');
     }
     
-    if (session.personality_traits.formality < 40) {
+    if (botConfig.personality_traits.formality < 40) {
       finalResponse = finalResponse.replace(/Thank you/g, 'Thanks');
       finalResponse = finalResponse.replace(/I appreciate/g, 'I really appreciate');
     }
+    
+    // Simulate realistic metrics
+    const tokensUsed = Math.floor(Math.random() * 100) + 50;
+    const promptTokens = Math.floor(tokensUsed * 0.3);
+    const completionTokens = tokensUsed - promptTokens;
     
     return {
       response: finalResponse,
       response_time_ms: Math.floor(Math.random() * 2000) + 500,
       quality_score: 0.75 + Math.random() * 0.2,
       confidence_score: 0.7 + Math.random() * 0.25,
-      personality_analysis: this.simulatePersonalityAnalysis(finalResponse, session.personality_traits),
-      tokens_used: Math.floor(Math.random() * 100) + 50,
-      cost_usd: 0.001 + Math.random() * 0.002
+      personality_analysis: this.simulatePersonalityAnalysis(finalResponse, botConfig.personality_traits),
+      tokens_used: tokensUsed,
+      cost_usd: this.calculateCost(botConfig.ai_model, tokensUsed),
+      model_used: botConfig.ai_model,
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens
     };
   }
 
@@ -485,6 +504,51 @@ Respond with only a JSON object in this format:
         message: `Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
+  }
+
+  /**
+   * Get cost estimate for a configuration
+   */
+  getCostEstimate(model: AIModel, estimatedTokens: number): number {
+    return this.calculateCost(model, estimatedTokens);
+  }
+
+  /**
+   * Get optimal model parameters for a personality configuration
+   */
+  getOptimalModelParameters(traits: PersonalityTraits, style: ResponseStyle): any {
+    const baseParams = {
+      temperature: 0.7,
+      max_tokens: 500,
+      top_p: 1.0,
+      frequency_penalty: 0.0,
+      presence_penalty: 0.0
+    };
+
+    // Adjust temperature based on creativity needs
+    if (traits.enthusiasm > 70 || style === 'conversational') {
+      baseParams.temperature = 0.8;
+    } else if (traits.formality > 80 || style === 'professional') {
+      baseParams.temperature = 0.5;
+    }
+
+    // Adjust max_tokens based on response style
+    if (style === 'concise') {
+      baseParams.max_tokens = 300;
+    } else if (style === 'detailed') {
+      baseParams.max_tokens = 800;
+    }
+
+    // Adjust penalties based on personality
+    if (traits.technical_depth > 70) {
+      baseParams.frequency_penalty = 0.1; // Allow technical repetition
+    }
+
+    if (traits.empathy > 70) {
+      baseParams.presence_penalty = 0.1; // Encourage topic expansion
+    }
+
+    return baseParams;
   }
 }
 

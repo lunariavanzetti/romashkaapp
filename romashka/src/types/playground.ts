@@ -1,5 +1,5 @@
 // ROMASHKA AI Playground Types
-// Updated to work with existing database schema
+// Updated to match the exact database schema from migration 009_ai_playground_implementation.sql
 
 export interface PersonalityTraits {
   formality: number;      // 0-100
@@ -12,33 +12,34 @@ export type ResponseStyle = 'professional' | 'casual' | 'friendly' | 'conversati
 
 export type AIModel = 'gpt-4o-mini' | 'gpt-4' | 'gpt-3.5-turbo';
 
-// Extended playground_sessions table (matches database schema)
-export interface PlaygroundSession {
+export interface ModelParameters {
+  temperature: number;
+  max_tokens: number;
+  top_p: number;
+  frequency_penalty: number;
+  presence_penalty: number;
+}
+
+// Bot configurations table (matches database schema)
+export interface BotConfiguration {
   id: string;
   user_id: string;
-  session_name: string;
   bot_name: string;
-  bot_avatar_url?: string;
-  bot_configuration: {
-    model: AIModel;
-    temperature: number;
-    max_tokens: number;
-    top_p?: number;
-    frequency_penalty?: number;
-    presence_penalty?: number;
-  };
+  avatar_emoji: string;
+  avatar_url?: string;
   personality_traits: PersonalityTraits;
   response_style: ResponseStyle;
   ai_model: AIModel;
-  system_prompt?: string;
+  model_parameters: ModelParameters;
+  system_prompt: string;
+  custom_instructions?: string;
   is_active: boolean;
-  last_tested_at?: string;
   test_count: number;
-  test_conversations: PlaygroundConversation[];
-  performance_metrics: {
+  last_tested_at?: string;
+  performance_summary: {
     avg_response_time?: number;
     avg_quality_score?: number;
-    total_tests?: number;
+    avg_confidence_score?: number;
     total_tokens?: number;
     total_cost?: number;
   };
@@ -46,21 +47,12 @@ export interface PlaygroundSession {
   updated_at: string;
 }
 
-export interface PlaygroundConversation {
-  id: string;
-  message: string;
-  response: string;
-  timestamp: string;
-  response_time_ms: number;
-  quality_score?: number;
-  confidence_score?: number;
-  personality_analysis?: PersonalityAnalysis;
-}
-
+// Bot performance metrics table (matches database schema)
 export interface BotPerformanceMetrics {
   id: string;
-  session_id: string;
+  bot_config_id: string;
   user_id: string;
+  test_scenario: string;
   test_message: string;
   ai_response: string;
   response_time_ms: number;
@@ -69,10 +61,95 @@ export interface BotPerformanceMetrics {
   personality_alignment: PersonalityAnalysis;
   tokens_used: number;
   cost_usd: number;
+  model_used: string;
+  prompt_tokens: number;
+  completion_tokens: number;
   error_details?: any;
   created_at: string;
 }
 
+// Playground A/B tests table (matches database schema)
+export interface PlaygroundABTest {
+  id: string;
+  user_id: string;
+  test_name: string;
+  description?: string;
+  control_config_id: string;
+  variant_config_id: string;
+  test_messages: string[];
+  sample_size: number;
+  status: 'running' | 'completed' | 'paused' | 'cancelled';
+  current_responses: number;
+  control_metrics: TestMetrics;
+  variant_metrics: TestMetrics;
+  statistical_significance: number;
+  winner?: 'control' | 'variant' | 'inconclusive';
+  confidence_interval: {
+    lower: number;
+    upper: number;
+  };
+  results_summary: any;
+  started_at: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Test scenarios table (matches database schema)
+export interface TestScenario {
+  id: string;
+  name: string;
+  description?: string;
+  category: 'customer_service' | 'technical_support' | 'sales' | 'general';
+  difficulty: 'basic' | 'intermediate' | 'advanced';
+  test_message: string;
+  expected_outcome?: string;
+  success_criteria: string[];
+  evaluation_rubric: any;
+  tags: string[];
+  is_active: boolean;
+  usage_count: number;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Test scenario results table (matches database schema)
+export interface TestScenarioResult {
+  id: string;
+  bot_config_id: string;
+  scenario_id: string;
+  user_id: string;
+  test_message: string;
+  ai_response: string;
+  response_time_ms: number;
+  passed: boolean;
+  quality_score: number;
+  confidence_score: number;
+  personality_analysis: PersonalityAnalysis;
+  evaluation_notes?: string;
+  tokens_used: number;
+  cost_usd: number;
+  created_at: string;
+}
+
+// Playground sessions table (matches database schema)
+export interface PlaygroundSession {
+  id: string;
+  user_id: string;
+  bot_config_id: string;
+  session_name: string;
+  session_type: 'testing' | 'ab_test' | 'scenario_run';
+  test_conversations: PlaygroundConversation[];
+  session_metrics: any;
+  duration_seconds: number;
+  started_at: string;
+  ended_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Supporting interfaces
 export interface PersonalityAnalysis {
   formality: number;
   enthusiasm: number;
@@ -90,59 +167,21 @@ export interface PlaygroundAIResponse {
   personality_analysis: PersonalityAnalysis;
   tokens_used: number;
   cost_usd: number;
+  model_used: string;
+  prompt_tokens: number;
+  completion_tokens: number;
   error?: string;
 }
 
-export interface TestScenario {
+export interface PlaygroundConversation {
   id: string;
-  name: string;
-  category: 'customer_service' | 'technical_support' | 'sales' | 'general';
-  difficulty: 'basic' | 'intermediate' | 'advanced';
   message: string;
-  expected_outcome: string;
-  success_criteria: string[];
-  tags: string[];
-}
-
-export interface TestScenarioResult {
-  id: string;
-  session_id: string;
-  user_id: string;
-  scenario_name: string;
-  scenario_category: string;
-  test_message: string;
-  expected_outcome: string;
-  ai_response: string;
+  response: string;
+  timestamp: string;
   response_time_ms: number;
-  passed: boolean;
-  quality_score: number;
-  personality_analysis: PersonalityAnalysis;
-  notes?: string;
-  created_at: string;
-}
-
-export interface PlaygroundABTest {
-  id: string;
-  user_id: string;
-  test_name: string;
-  control_session_id: string;
-  variant_session_id: string;
-  test_messages: string[];
-  status: 'running' | 'completed' | 'paused' | 'cancelled';
-  sample_size: number;
-  current_responses: number;
-  control_metrics: TestMetrics;
-  variant_metrics: TestMetrics;
-  statistical_significance: number;
-  winner?: 'control' | 'variant' | 'inconclusive';
-  confidence_interval: {
-    lower: number;
-    upper: number;
-  };
-  started_at: string;
-  completed_at?: string;
-  created_at: string;
-  updated_at: string;
+  quality_score?: number;
+  confidence_score?: number;
+  personality_analysis?: PersonalityAnalysis;
 }
 
 export interface TestMetrics {
@@ -158,8 +197,8 @@ export interface TestMetrics {
 
 export interface ABTestResults {
   test_id: string;
-  control_config: PlaygroundSession;
-  variant_config: PlaygroundSession;
+  control_config: BotConfiguration;
+  variant_config: BotConfiguration;
   results: {
     control: TestMetrics;
     variant: TestMetrics;
@@ -176,20 +215,16 @@ export interface ABTestResults {
 }
 
 // Form interfaces for UI
-export interface PlaygroundConfigForm {
+export interface BotConfigurationForm {
   bot_name: string;
-  bot_avatar_url?: string;
+  avatar_emoji: string;
+  avatar_url?: string;
   personality_traits: PersonalityTraits;
   response_style: ResponseStyle;
   ai_model: AIModel;
-  system_prompt?: string;
-  bot_configuration: {
-    temperature: number;
-    max_tokens: number;
-    top_p?: number;
-    frequency_penalty?: number;
-    presence_penalty?: number;
-  };
+  model_parameters: ModelParameters;
+  system_prompt: string;
+  custom_instructions?: string;
 }
 
 export interface TestMessageForm {
@@ -200,10 +235,17 @@ export interface TestMessageForm {
 
 export interface ABTestForm {
   test_name: string;
-  control_session_id: string;
-  variant_session_id: string;
+  description?: string;
+  control_config_id: string;
+  variant_config_id: string;
   test_messages: string[];
   sample_size: number;
+}
+
+export interface PlaygroundSessionForm {
+  session_name: string;
+  bot_config_id: string;
+  session_type: 'testing' | 'ab_test' | 'scenario_run';
 }
 
 // API Response interfaces
@@ -215,14 +257,15 @@ export interface PlaygroundAPIResponse<T> {
 }
 
 export interface PlaygroundStats {
-  total_sessions: number;
+  total_configurations: number;
   total_tests: number;
+  total_sessions: number;
   avg_response_time: number;
   avg_quality_score: number;
   active_ab_tests: number;
   total_tokens_used: number;
   total_cost: number;
-  top_performing_configs: PlaygroundSession[];
+  top_performing_configs: BotConfiguration[];
   recent_test_results: TestScenarioResult[];
 }
 
@@ -234,14 +277,15 @@ export const DEFAULT_PERSONALITY_TRAITS: PersonalityTraits = {
   empathy: 75,
 };
 
-export const DEFAULT_BOT_CONFIG = {
-  model: 'gpt-4o-mini' as AIModel,
+export const DEFAULT_MODEL_PARAMETERS: ModelParameters = {
   temperature: 0.7,
   max_tokens: 500,
   top_p: 1.0,
   frequency_penalty: 0.0,
   presence_penalty: 0.0,
 };
+
+export const DEFAULT_SYSTEM_PROMPT = 'You are ROMASHKA Assistant, a professional customer support AI. Be helpful, accurate, and maintain a professional tone while being empathetic to customer needs.';
 
 export const RESPONSE_STYLES: { value: ResponseStyle; label: string; description: string }[] = [
   { value: 'professional', label: 'Professional', description: 'Formal, business-appropriate tone' },
@@ -252,10 +296,10 @@ export const RESPONSE_STYLES: { value: ResponseStyle; label: string; description
   { value: 'detailed', label: 'Detailed', description: 'Comprehensive, thorough explanations' },
 ];
 
-export const AI_MODELS: { value: AIModel; label: string; description: string }[] = [
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast, cost-effective for most tasks' },
-  { value: 'gpt-4', label: 'GPT-4', description: 'Most capable model for complex tasks' },
-  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Good balance of speed and capability' },
+export const AI_MODELS: { value: AIModel; label: string; description: string; cost_per_1k_tokens: number }[] = [
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini', description: 'Fast, cost-effective for most tasks', cost_per_1k_tokens: 0.015 },
+  { value: 'gpt-4', label: 'GPT-4', description: 'Most capable model for complex tasks', cost_per_1k_tokens: 0.03 },
+  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'Good balance of speed and capability', cost_per_1k_tokens: 0.0015 },
 ];
 
 export const PERSONALITY_TRAIT_DESCRIPTIONS = {
@@ -276,4 +320,31 @@ export const DIFFICULTY_LEVELS = {
   basic: 'Basic',
   intermediate: 'Intermediate',
   advanced: 'Advanced',
+};
+
+export const SESSION_TYPES = {
+  testing: 'Testing',
+  ab_test: 'A/B Test',
+  scenario_run: 'Scenario Run',
+};
+
+// Quality score thresholds
+export const QUALITY_THRESHOLDS = {
+  basic: 0.6,
+  intermediate: 0.7,
+  advanced: 0.8,
+};
+
+// Response time thresholds (in milliseconds)
+export const RESPONSE_TIME_THRESHOLDS = {
+  basic: 5000,
+  intermediate: 4000,
+  advanced: 3000,
+};
+
+// Personality alignment thresholds
+export const PERSONALITY_ALIGNMENT_THRESHOLDS = {
+  basic: 0.6,
+  intermediate: 0.7,
+  advanced: 0.8,
 }; 
