@@ -28,6 +28,18 @@ ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS last_interaction TIMESTAM
 ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS satisfaction_rating DECIMAL(3,2);
 ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
 
+-- Add unique constraint on phone column if it doesn't exist
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'customer_profiles_phone_key' 
+        AND table_name = 'customer_profiles'
+    ) THEN
+        ALTER TABLE customer_profiles ADD CONSTRAINT customer_profiles_phone_key UNIQUE (phone);
+    END IF;
+END $$;
+
 -- ================================
 -- MESSAGE HANDLING FUNCTIONS
 -- ================================
