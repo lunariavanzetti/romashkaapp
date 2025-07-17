@@ -8,6 +8,27 @@ CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 
 -- ================================
+-- ADD MISSING COLUMNS TO EXISTING TABLES
+-- ================================
+
+-- Add missing columns to conversations table
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS requires_human BOOLEAN DEFAULT FALSE;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS escalation_reason TEXT;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_confidence DECIMAL(3,2);
+
+-- Add missing columns to messages table
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS confidence_score DECIMAL(3,2);
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS processing_time_ms INTEGER;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS intent_detected TEXT;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS knowledge_sources JSONB DEFAULT '{}';
+
+-- Add missing columns to customer_profiles table
+ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS first_interaction TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS last_interaction TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS satisfaction_rating DECIMAL(3,2);
+ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
+
+-- ================================
 -- MESSAGE HANDLING FUNCTIONS
 -- ================================
 

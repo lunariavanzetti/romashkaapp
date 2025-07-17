@@ -25,37 +25,17 @@ Your real-time messaging system is now fully implemented with the following feat
 
 Execute this SQL in your Supabase SQL editor:
 
-```sql
--- Run the complete real-time messaging migration
--- This includes all tables, functions, triggers, and indexes
-```
+**Copy and paste the entire contents of `romashka/migrations/012_realtime_messaging_functions.sql` into your Supabase SQL editor and run it.**
 
-Copy and paste the contents of `romashka/migrations/012_realtime_messaging_functions.sql` into your Supabase SQL editor and run it.
+This migration includes:
+- All missing columns added to existing tables
+- New `ai_response_queue` table
+- Database functions for AI response processing
+- Triggers for real-time message handling
+- Indexes for optimal performance
+- RLS policies for security
 
-### Step 2: Add Missing Columns to Existing Tables
-
-Run these SQL queries to add necessary columns:
-
-```sql
--- Add missing columns to conversations table
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS requires_human BOOLEAN DEFAULT FALSE;
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS escalation_reason TEXT;
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_confidence DECIMAL(3,2);
-
--- Add missing columns to messages table
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS confidence_score DECIMAL(3,2);
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS processing_time_ms INTEGER;
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS intent_detected TEXT;
-ALTER TABLE messages ADD COLUMN IF NOT EXISTS knowledge_sources JSONB DEFAULT '{}';
-
--- Add missing columns to customer_profiles table
-ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS first_interaction TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS last_interaction TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS satisfaction_rating DECIMAL(3,2);
-ALTER TABLE customer_profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
-```
-
-### Step 3: Create Sample Data for Testing
+### Step 2: Create Sample Data for Testing
 
 ```sql
 -- Create sample customer profiles
@@ -72,7 +52,7 @@ SELECT create_conversation('jane.smith@example.com', 'whatsapp', 'Hello, I have 
 SELECT create_conversation('mike.johnson@example.com', 'email', 'I cannot access my dashboard');
 ```
 
-### Step 4: Test the Real-Time System
+### Step 3: Test the Real-Time System
 
 Run the test script to verify everything is working:
 
@@ -91,7 +71,7 @@ node test-realtime-messaging.js
 node test-realtime-messaging.js --performance
 ```
 
-### Step 5: Configure Environment Variables
+### Step 4: Configure Environment Variables
 
 Add these to your `.env` file:
 
