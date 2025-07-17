@@ -691,6 +691,7 @@ CREATE INDEX IF NOT EXISTS idx_customer_profiles_last_interaction ON customer_pr
 ALTER TABLE ai_response_queue ENABLE ROW LEVEL SECURITY;
 
 -- Policy for AI response queue (service accounts only)
+DROP POLICY IF EXISTS "AI response queue access" ON ai_response_queue;
 CREATE POLICY "AI response queue access" ON ai_response_queue
     FOR ALL TO authenticated
     USING (true);
