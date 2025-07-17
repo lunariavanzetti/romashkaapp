@@ -22,8 +22,17 @@ import {
   Volume2,
   Sliders
 } from 'lucide-react';
+import { botConfigurationService } from '../../services/botConfigurationService';
+import { playgroundAIService } from '../../services/playgroundAIService';
+import playgroundService from '../../services/playgroundService';
+import type { 
+  BotConfiguration, 
+  TestScenario, 
+  ABTestConfiguration, 
+  PlaygroundTestResponse 
+} from '../../types/botConfiguration';
 
-// Bot Personality Configuration
+// Bot Personality Configuration (legacy interface for compatibility)
 interface BotPersonality {
   name: string;
   avatar: string;
@@ -42,116 +51,105 @@ interface BotPersonality {
   };
 }
 
-interface TestScenario {
-  id: string;
-  name: string;
-  description: string;
-  userMessages: string[];
-  expectedOutcomes: string[];
-  isActive: boolean;
-}
-
-interface ABTestConfig {
-  id: string;
-  name: string;
-  description: string;
-  variants: {
-    id: string;
-    name: string;
-    personality: Partial<BotPersonality>;
-    weight: number;
-  }[];
-  metrics: {
-    responseTime: number;
-    satisfaction: number;
-    conversions: number;
-  };
-  isRunning: boolean;
-}
-
-const defaultPersonality: BotPersonality = {
-  name: 'ROMASHKA Assistant',
-  avatar: '🤖',
-  tone: 'professional',
-  formality: 70,
-  enthusiasm: 60,
-  technicality: 50,
-  empathy: 80,
-  responseStyle: 'conversational',
-  language: 'en',
-  specialties: ['Customer Support', 'Product Information', 'Technical Help'],
-  brandAlignment: {
-    useCompanyVoice: true,
-    brandKeywords: ['innovative', 'reliable', 'customer-focused'],
-    avoidPhrases: ['I don\'t know', 'That\'s not my job']
-  }
-};
-
 const avatarOptions = ['🤖', '👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔬', '👩‍🔬', '🎯', '⚡', '🌟', '💎'];
-
-const testScenarios: TestScenario[] = [
-  {
-    id: '1',
-    name: 'Product Inquiry',
-    description: 'Customer asking about product features and pricing',
-    userMessages: ['What are your main features?', 'How much does it cost?', 'Do you have a free trial?'],
-    expectedOutcomes: ['Clear feature explanation', 'Pricing information', 'Free trial details'],
-    isActive: true
-  },
-  {
-    id: '2',
-    name: 'Technical Support',
-    description: 'Customer experiencing technical issues',
-    userMessages: ['I can\'t log in', 'The app is crashing', 'How do I integrate with my system?'],
-    expectedOutcomes: ['Login troubleshooting', 'Crash investigation', 'Integration guidance'],
-    isActive: true
-  },
-  {
-    id: '3',
-    name: 'Billing Questions',
-    description: 'Customer asking about billing and payments',
-    userMessages: ['How do I cancel my subscription?', 'I was charged twice', 'Can I get a refund?'],
-    expectedOutcomes: ['Cancellation process', 'Billing investigation', 'Refund policy'],
-    isActive: true
-  }
-];
 
 export default function PlaygroundPage() {
   const [activeTab, setActiveTab] = useState<'personality' | 'testing' | 'abtest'>('personality');
-  const [personality, setPersonality] = useState<BotPersonality>(defaultPersonality);
+  const [botConfig, setBotConfig] = useState<BotConfiguration | null>(null);
   const [testMessage, setTestMessage] = useState('');
-  const [testResponse, setTestResponse] = useState('');
+  const [testResponse, setTestResponse] = useState<PlaygroundTestResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [testHistory, setTestHistory] = useState<{message: string, response: string, timestamp: Date}[]>([]);
-  const [abTests, setAbTests] = useState<ABTestConfig[]>([]);
+  const [testHistory, setTestHistory] = useState<{message: string, response: string, timestamp: Date, confidence?: number}[]>([]);
+  const [abTests, setAbTests] = useState<ABTestConfiguration[]>([]);
+  const [testScenarios, setTestScenarios] = useState<TestScenario[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<TestScenario | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Personality customization handlers
-  const updatePersonality = (field: keyof BotPersonality, value: any) => {
-    setPersonality(prev => ({ ...prev, [field]: value }));
+  // Initialize component
+  useEffect(() => {
+    const initializePlayground = async () => {
+      try {
+        // Load bot configuration
+        let config = await botConfigurationService.loadBotConfig();
+        if (!config) {
+          config = await botConfigurationService.createDefaultConfiguration();
+        }
+        setBotConfig(config);
+
+        // Load test scenarios
+        const scenarios = await botConfigurationService.getTestScenarios();
+        setTestScenarios(scenarios);
+
+        // Load A/B tests
+        const abTestConfigs = await botConfigurationService.getABTestConfigs();
+        setAbTests(abTestConfigs);
+
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Failed to initialize playground:', error);
+      }
+    };
+
+    initializePlayground();
+  }, []);
+
+  // Bot configuration handlers
+  const updateBotConfig = (updates: Partial<BotConfiguration>) => {
+    if (!botConfig) return;
+    setBotConfig(prev => ({ ...prev, ...updates } as BotConfiguration));
   };
 
-  const updateSliderValue = (field: keyof BotPersonality, value: number) => {
-    setPersonality(prev => ({ ...prev, [field]: value }));
+  const updatePersonalityTraits = (field: keyof BotConfiguration['personality_traits'], value: number) => {
+    if (!botConfig) return;
+    setBotConfig(prev => ({
+      ...prev,
+      personality_traits: {
+        ...prev.personality_traits,
+        [field]: value
+      }
+    } as BotConfiguration));
   };
 
-  // Test message handler
+  const saveBotConfiguration = async () => {
+    if (!botConfig) return;
+    
+    try {
+      setIsLoading(true);
+      const savedConfig = await botConfigurationService.saveBotConfig(botConfig);
+      setBotConfig(savedConfig);
+      // Update playground service with new config
+      await playgroundService.updateBotConfig(savedConfig);
+    } catch (error) {
+      console.error('Failed to save bot configuration:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Test message handler with real AI
   const testBotResponse = async () => {
-    if (!testMessage.trim()) return;
+    if (!testMessage.trim() || !botConfig) return;
     
     setIsLoading(true);
     try {
-      // Simulate API call to test bot response
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Generate real AI response
+      const knowledgeContext = playgroundAIService.getDefaultKnowledgeContext();
+      const response = await playgroundAIService.generateTestResponse(
+        testMessage,
+        botConfig,
+        knowledgeContext
+      );
       
-      const mockResponse = `Based on your personality settings (${personality.tone}, ${personality.formality}% formal, ${personality.enthusiasm}% enthusiastic), here's how I would respond: "${testMessage}" - This is a simulated response that considers your bot's personality configuration.`;
-      
-      setTestResponse(mockResponse);
+      setTestResponse(response);
       setTestHistory(prev => [...prev, {
         message: testMessage,
-        response: mockResponse,
-        timestamp: new Date()
+        response: response.response,
+        timestamp: new Date(),
+        confidence: response.confidence / 100
       }]);
+
+      // Clear test message
+      setTestMessage('');
     } catch (error) {
       console.error('Test failed:', error);
     } finally {
@@ -160,41 +158,79 @@ export default function PlaygroundPage() {
   };
 
   // A/B Test management
-  const createABTest = () => {
-    const newTest: ABTestConfig = {
-      id: Date.now().toString(),
-      name: 'New A/B Test',
+  const createABTest = async () => {
+    if (!botConfig) return;
+
+    const newTest: ABTestConfiguration = {
+      test_name: 'New A/B Test',
       description: 'Test different personality configurations',
       variants: [
         {
           id: 'variant-a',
           name: 'Variant A',
-          personality: { tone: 'professional', formality: 80 },
+          personality_traits: { formality: 80, enthusiasm: 40 },
           weight: 50
         },
         {
           id: 'variant-b',
           name: 'Variant B',
-          personality: { tone: 'friendly', formality: 40 },
+          personality_traits: { formality: 40, enthusiasm: 80 },
           weight: 50
         }
       ],
       metrics: {
-        responseTime: 0,
+        response_time: 0,
         satisfaction: 0,
         conversions: 0
       },
-      isRunning: false
+      is_running: false
     };
     
-    setAbTests(prev => [...prev, newTest]);
+    try {
+      const savedTest = await botConfigurationService.saveABTestConfig(newTest);
+      setAbTests(prev => [...prev, savedTest]);
+    } catch (error) {
+      console.error('Failed to create A/B test:', error);
+    }
   };
 
-  const runScenarioTest = (scenario: TestScenario) => {
+  const runScenarioTest = async (scenario: TestScenario) => {
+    if (!botConfig || !scenario.user_messages) return;
+
     setSelectedScenario(scenario);
-    // Simulate running the scenario
-    console.log('Running scenario:', scenario.name);
+    setIsLoading(true);
+    
+    try {
+      const results = await playgroundService.runScenarioTest(scenario.user_messages);
+      
+      // Add results to test history
+      results.forEach((result, index) => {
+        setTestHistory(prev => [...prev, {
+          message: scenario.user_messages[index],
+          response: result.message,
+          timestamp: new Date(),
+          confidence: result.confidence
+        }]);
+      });
+    } catch (error) {
+      console.error('Failed to run scenario test:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (!isInitialized || !botConfig) {
+    return (
+      <div className="min-h-screen bg-bg-secondary dark:bg-bg-darker flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 bg-gradient-button rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Bot className="w-5 h-5 text-white animate-pulse" />
+          </div>
+          <p className="text-gray-600 dark:text-gray-300">Loading playground...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bg-secondary dark:bg-bg-darker">
@@ -265,8 +301,8 @@ export default function PlaygroundPage() {
                     </label>
                     <input
                       type="text"
-                      value={personality.name}
-                      onChange={(e) => updatePersonality('name', e.target.value)}
+                      value={botConfig.bot_name}
+                      onChange={(e) => updateBotConfig({ bot_name: e.target.value })}
                       className="input-primary"
                       placeholder="Enter bot name"
                     />
@@ -280,10 +316,10 @@ export default function PlaygroundPage() {
                       {avatarOptions.map(avatar => (
                         <button
                           key={avatar}
-                          onClick={() => updatePersonality('avatar', avatar)}
+                          onClick={() => updateBotConfig({ avatar_emoji: avatar })}
                           className={`
                             w-12 h-12 rounded-lg flex items-center justify-center text-xl transition-all
-                            ${personality.avatar === avatar 
+                            ${botConfig.avatar_emoji === avatar 
                               ? 'bg-gradient-button text-white shadow-elevation-1' 
                               : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }
@@ -307,7 +343,7 @@ export default function PlaygroundPage() {
                   {[
                     { key: 'formality', label: 'Formality', icon: <Settings className="w-4 h-4" />, description: 'How formal should the bot be?' },
                     { key: 'enthusiasm', label: 'Enthusiasm', icon: <Zap className="w-4 h-4" />, description: 'How energetic and excited should responses be?' },
-                    { key: 'technicality', label: 'Technical Depth', icon: <Brain className="w-4 h-4" />, description: 'How technical and detailed should explanations be?' },
+                    { key: 'technical_depth', label: 'Technical Depth', icon: <Brain className="w-4 h-4" />, description: 'How technical and detailed should explanations be?' },
                     { key: 'empathy', label: 'Empathy', icon: <Heart className="w-4 h-4" />, description: 'How understanding and supportive should the bot be?' }
                   ].map(trait => (
                     <div key={trait.key} className="space-y-2">
@@ -317,18 +353,18 @@ export default function PlaygroundPage() {
                           {trait.label}
                         </label>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          ({(personality[trait.key as keyof BotPersonality] as number)}%)
+                          ({botConfig.personality_traits[trait.key as keyof BotConfiguration['personality_traits']]}%)
                         </span>
                       </div>
                       <input
                         type="range"
                         min="0"
                         max="100"
-                        value={personality[trait.key as keyof BotPersonality] as number}
-                        onChange={(e) => updateSliderValue(trait.key as keyof BotPersonality, parseInt(e.target.value))}
+                        value={botConfig.personality_traits[trait.key as keyof BotConfiguration['personality_traits']]}
+                        onChange={(e) => updatePersonalityTraits(trait.key as keyof BotConfiguration['personality_traits'], parseInt(e.target.value))}
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
                         style={{
-                          background: `linear-gradient(to right, #38b2ac 0%, #38b2ac ${personality[trait.key as keyof BotPersonality] as number}%, #e2e8f0 ${personality[trait.key as keyof BotPersonality] as number}%, #e2e8f0 100%)`
+                          background: `linear-gradient(to right, #38b2ac 0%, #38b2ac ${botConfig.personality_traits[trait.key as keyof BotConfiguration['personality_traits']]}%, #e2e8f0 ${botConfig.personality_traits[trait.key as keyof BotConfiguration['personality_traits']]}%, #e2e8f0 100%)`
                         }}
                       />
                       <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -353,10 +389,10 @@ export default function PlaygroundPage() {
                   ].map(style => (
                     <button
                       key={style.value}
-                      onClick={() => updatePersonality('responseStyle', style.value)}
+                      onClick={() => updateBotConfig({ response_style: style.value as 'concise' | 'detailed' | 'conversational' })}
                       className={`
                         p-4 rounded-lg border-2 transition-all text-left
-                        ${personality.responseStyle === style.value
+                        ${botConfig.response_style === style.value
                           ? 'border-primary-teal bg-primary-teal/10 text-primary-teal'
                           : 'border-gray-200 dark:border-gray-700 hover:border-primary-teal/50'
                         }
@@ -371,10 +407,28 @@ export default function PlaygroundPage() {
                 </div>
               </div>
 
+              {/* Custom Instructions */}
+              <div className="glass-card p-6 rounded-xl">
+                <h2 className="text-xl font-heading font-semibold text-primary-deep-blue dark:text-white mb-4">
+                  Custom Instructions
+                </h2>
+                <textarea
+                  value={botConfig.custom_instructions || ''}
+                  onChange={(e) => updateBotConfig({ custom_instructions: e.target.value })}
+                  className="input-primary h-32 resize-none"
+                  placeholder="Add custom instructions for your bot's behavior..."
+                />
+              </div>
+
               {/* Actions */}
               <div className="flex gap-4">
-                <Button variant="primary" icon={<Save className="w-4 h-4" />}>
-                  Save Personality
+                <Button 
+                  variant="primary" 
+                  icon={<Save className="w-4 h-4" />}
+                  onClick={saveBotConfiguration}
+                  loading={isLoading}
+                >
+                  Save Configuration
                 </Button>
                 <Button variant="outline" icon={<Download className="w-4 h-4" />}>
                   Export Config
@@ -431,8 +485,75 @@ export default function PlaygroundPage() {
                   <h3 className="text-lg font-heading font-semibold text-primary-deep-blue dark:text-white mb-4">
                     Bot Response
                   </h3>
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                    <p className="text-gray-700 dark:text-gray-300">{testResponse}</p>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                    <p className="text-gray-700 dark:text-gray-300">{testResponse.response}</p>
+                  </div>
+                  
+                  {/* Response Analytics */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        {testResponse.confidence}%
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Confidence</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {testResponse.response_time}ms
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Response Time</div>
+                    </div>
+                    <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        {testResponse.personality_score.overall_alignment}%
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Personality Match</div>
+                    </div>
+                  </div>
+
+                  {/* Knowledge Sources */}
+                  {testResponse.knowledge_sources.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Knowledge Sources Used:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {testResponse.knowledge_sources.map((source, index) => (
+                          <span key={index} className="px-2 py-1 bg-primary-teal/10 text-primary-teal rounded-full text-xs">
+                            {source}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Personality Analysis */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">Personality Analysis:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {testResponse.personality_score.formality_score}%
+                        </div>
+                        <div className="text-xs text-gray-500">Formality</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {testResponse.personality_score.enthusiasm_score}%
+                        </div>
+                        <div className="text-xs text-gray-500">Enthusiasm</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {testResponse.personality_score.technical_depth_score}%
+                        </div>
+                        <div className="text-xs text-gray-500">Technical Depth</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {testResponse.personality_score.empathy_score}%
+                        </div>
+                        <div className="text-xs text-gray-500">Empathy</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -454,11 +575,17 @@ export default function PlaygroundPage() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {scenario.description}
                           </p>
+                          <div className="mt-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {scenario.user_messages.length} test messages
+                            </p>
+                          </div>
                         </div>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => runScenarioTest(scenario)}
+                          disabled={isLoading}
                           icon={<Play className="w-3 h-3" />}
                         >
                           Run Test
@@ -523,7 +650,7 @@ export default function PlaygroundPage() {
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <h3 className="font-medium text-gray-900 dark:text-white">
-                            {test.name}
+                            {test.test_name}
                           </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {test.description}
@@ -531,11 +658,11 @@ export default function PlaygroundPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
-                            variant={test.isRunning ? "danger" : "primary"}
+                            variant={test.is_running ? "danger" : "primary"}
                             size="sm"
-                            icon={test.isRunning ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                            icon={test.is_running ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                           >
-                            {test.isRunning ? 'Stop' : 'Start'}
+                            {test.is_running ? 'Stop' : 'Start'}
                           </Button>
                           <Button
                             variant="outline"
@@ -555,7 +682,8 @@ export default function PlaygroundPage() {
                               <span className="text-xs text-gray-500">{variant.weight}%</span>
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Tone: {variant.personality.tone}, Formality: {variant.personality.formality}%
+                              Formality: {variant.personality_traits.formality || 50}%, 
+                              Enthusiasm: {variant.personality_traits.enthusiasm || 50}%
                             </div>
                           </div>
                         ))}
