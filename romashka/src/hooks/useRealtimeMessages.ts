@@ -82,9 +82,9 @@ export const useRealtimeMessages = (options: UseRealtimeMessagesOptions = {}): U
         id: conv.id,
         customerIdentity: {
           id: conv.customer_profiles?.id || conv.customer_id,
-          name: conv.customer_profiles?.name || conv.user_name || 'Unknown',
+          name: conv.customer_profiles?.name || conv.customer_name || conv.user_name || 'Unknown',
           email: conv.customer_profiles?.email || conv.user_email,
-          phone: conv.customer_profiles?.phone,
+          phone: conv.customer_profiles?.phone || conv.customer_phone,
           channels: [conv.channel_type]
         },
         channels: [{
@@ -134,7 +134,7 @@ export const useRealtimeMessages = (options: UseRealtimeMessagesOptions = {}): U
         isFromCustomer: msg.sender_type === 'user',
         deliveryStatus: msg.delivery_status || 'sent',
         channelType: msg.channel_type || 'website',
-        metadata: msg.metadata
+        metadata: msg.metadata || {}
       }));
 
       setMessages(formattedMessages);
@@ -282,13 +282,16 @@ export const useRealtimeMessages = (options: UseRealtimeMessagesOptions = {}): U
   // Mark message as read
   const markMessageAsRead = useCallback(async (messageId: string) => {
     try {
-      await supabase
+      const { error } = await supabase
         .from('messages')
         .update({
           delivery_status: 'read',
-          metadata: supabase.raw('metadata || \'{"read_at": "' + new Date().toISOString() + '"}\'::jsonb')
+          metadata: supabase.raw('COALESCE(metadata, \'{}\'::jsonb) || \'{"read_at": "' + new Date().toISOString() + '"}\'::jsonb'),
+          updated_at: new Date().toISOString()
         })
         .eq('id', messageId);
+
+      if (error) throw error;
 
       // Update local state
       setMessages(prev => prev.map(msg => 

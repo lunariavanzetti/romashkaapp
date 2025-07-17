@@ -177,7 +177,7 @@ export class RealtimeMessagingService {
    */
   public async handleIncomingMessage(message: IncomingMessage): Promise<void> {
     try {
-      // Store message in database
+      // Store message in database with correct schema
       await supabase
         .from('messages')
         .insert({
@@ -185,25 +185,34 @@ export class RealtimeMessagingService {
           conversation_id: message.conversation_id,
           sender_type: message.sender_type,
           content: message.content,
-          channel_type: message.channel_type,
+          channel_type: message.channel_type || 'website',
           external_message_id: message.external_message_id,
-          metadata: message.metadata,
+          message_type: 'text',
+          delivery_status: 'sent',
+          metadata: message.metadata || {},
           created_at: message.created_at
         });
 
-      // Update conversation last message
+      // Update conversation last message and metadata
       await supabase
         .from('conversations')
         .update({
           last_message: message.content,
           last_message_at: message.created_at,
-          message_count: supabase.raw('message_count + 1')
+          message_count: supabase.raw('message_count + 1'),
+          updated_at: new Date().toISOString()
         })
         .eq('id', message.conversation_id);
 
       // Auto-generate AI response for user messages
       if (message.sender_type === 'user') {
-        await this.sendMessage(message.content, message.conversation_id, 'user');
+        setTimeout(async () => {
+          try {
+            await this.sendMessage(message.content, message.conversation_id, 'user');
+          } catch (error) {
+            console.error('Error generating AI response:', error);
+          }
+        }, 100); // Small delay to ensure message is stored first
       }
     } catch (error) {
       console.error('Error handling incoming message:', error);
@@ -313,12 +322,15 @@ export class RealtimeMessagingService {
    */
   private async insertAIResponse(conversationId: string, aiResponse: AIResponse): Promise<void> {
     try {
-      await supabase
+      const { data: insertedMessage, error: insertError } = await supabase
         .from('messages')
         .insert({
           conversation_id: conversationId,
           sender_type: 'ai',
           content: aiResponse.response,
+          channel_type: 'website',
+          message_type: 'text',
+          delivery_status: 'sent',
           metadata: {
             confidence: aiResponse.confidence,
             intent: aiResponse.intent,
@@ -331,7 +343,26 @@ export class RealtimeMessagingService {
           intent_detected: aiResponse.intent,
           knowledge_sources: aiResponse.knowledgeUsed ? { sources: aiResponse.knowledgeUsed } : {},
           created_at: new Date().toISOString()
-        });
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Update conversation with AI response
+      await supabase
+        .from('conversations')
+        .update({
+          last_message: aiResponse.response,
+          last_message_at: new Date().toISOString(),
+          message_count: supabase.raw('message_count + 1'),
+          updated_at: new Date().toISOString(),
+          ai_confidence: aiResponse.confidence,
+          intent: aiResponse.intent,
+          sentiment: aiResponse.sentiment
+        })
+        .eq('id', conversationId);
+
     } catch (error) {
       console.error('Error inserting AI response:', error);
       throw error;
@@ -343,7 +374,7 @@ export class RealtimeMessagingService {
    */
   private async getConversationContext(conversationId: string): Promise<ConversationContext> {
     try {
-      // Get conversation details
+      // Get conversation details with customer profile
       const { data: conversation, error: convError } = await supabase
         .from('conversations')
         .select(`
@@ -355,7 +386,7 @@ export class RealtimeMessagingService {
 
       if (convError) throw convError;
 
-      // Get recent messages
+      // Get recent messages for context
       const { data: messages, error: msgError } = await supabase
         .from('messages')
         .select('*')
@@ -375,12 +406,17 @@ export class RealtimeMessagingService {
           conversation_id: msg.conversation_id,
           sender_type: msg.sender_type,
           content: msg.content,
-          channel_type: msg.channel_type,
+          channel_type: msg.channel_type || 'website',
           external_message_id: msg.external_message_id,
           metadata: msg.metadata,
           created_at: msg.created_at
         })),
-        customer_profile: conversation.customer_profiles,
+        customer_profile: conversation.customer_profiles || {
+          id: conversation.customer_id,
+          name: conversation.customer_name,
+          email: conversation.user_email,
+          phone: conversation.customer_phone
+        },
         intent: conversation.intent,
         sentiment: conversation.sentiment
       };
@@ -503,9 +539,9 @@ export class RealtimeMessagingService {
           id: existingConversation.id,
           customerIdentity: {
             id: customer.id,
-            name: customer.name || 'Unknown',
-            email: customer.email,
-            phone: customer.phone,
+            name: existingConversation.customer_name || customer.name || 'Unknown',
+            email: existingConversation.user_email || customer.email,
+            phone: existingConversation.customer_phone || customer.phone,
             channels: [channelType]
           },
           channels: [{
@@ -527,12 +563,15 @@ export class RealtimeMessagingService {
         .from('conversations')
         .insert({
           customer_id: customer.id,
-          user_name: customer.name,
+          customer_name: customer.name || customerIdentifier,
+          user_name: customer.name || customerIdentifier,
           user_email: customer.email,
+          customer_phone: customer.phone,
           status: 'active',
           priority: 'normal',
           channel_type: channelType,
           language: 'en',
+          department: 'general',
           created_at: new Date().toISOString(),
           last_message_at: new Date().toISOString(),
           last_message: initialMessage || '',
@@ -559,7 +598,7 @@ export class RealtimeMessagingService {
         id: newConversation.id,
         customerIdentity: {
           id: customer.id,
-          name: customer.name || 'Unknown',
+          name: customer.name || customerIdentifier,
           email: customer.email,
           phone: customer.phone,
           channels: [channelType]
