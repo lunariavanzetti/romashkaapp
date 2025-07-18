@@ -187,7 +187,104 @@ export class BotConfigurationService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // If no custom scenarios exist, return default scenarios
+    if (!data || data.length === 0) {
+      return this.getDefaultTestScenarios();
+    }
+    
+    return data;
+  }
+
+  /**
+   * Get default test scenarios for new users
+   */
+  private getDefaultTestScenarios(): TestScenario[] {
+    return [
+      {
+        id: 'default-1',
+        name: 'Customer Support Greeting',
+        description: 'Test how the bot handles initial customer greetings and requests for help',
+        user_messages: [
+          'Hello, I need help with my account',
+          'Hi there! Can someone assist me?',
+          'Good morning, I have a question about your services'
+        ],
+        expected_outcomes: ['Friendly greeting', 'Offer assistance', 'Ask for specifics'],
+        difficulty_level: 'easy',
+        category: 'greeting',
+        is_active: true,
+        user_id: 'default',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'default-2',
+        name: 'Product Information',
+        description: 'Test how the bot provides product details and pricing information',
+        user_messages: [
+          'What are your pricing plans?',
+          'Tell me about your features',
+          'How much does the professional plan cost?'
+        ],
+        expected_outcomes: ['Detailed pricing info', 'Feature comparison', 'Clear pricing structure'],
+        difficulty_level: 'medium',
+        category: 'product_info',
+        is_active: true,
+        user_id: 'default',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'default-3',
+        name: 'Technical Support',
+        description: 'Test how the bot handles technical issues and troubleshooting',
+        user_messages: [
+          'My dashboard is not loading properly',
+          'I\'m getting an error when trying to integrate with Slack',
+          'The AI responses seem slower than usual'
+        ],
+        expected_outcomes: ['Technical diagnosis', 'Step-by-step solution', 'Escalation if needed'],
+        difficulty_level: 'hard',
+        category: 'technical_support',
+        is_active: true,
+        user_id: 'default',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'default-4',
+        name: 'Billing and Account',
+        description: 'Test how the bot handles billing questions and account management',
+        user_messages: [
+          'I want to upgrade my plan',
+          'When will I be charged for next month?',
+          'Can I cancel my subscription?'
+        ],
+        expected_outcomes: ['Clear billing info', 'Upgrade process', 'Account management guidance'],
+        difficulty_level: 'medium',
+        category: 'billing',
+        is_active: true,
+        user_id: 'default',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'default-5',
+        name: 'Complex Problem Solving',
+        description: 'Test how the bot handles complex, multi-part customer issues',
+        user_messages: [
+          'I\'ve been trying to set up WhatsApp integration for 3 days, followed all the docs, but customers\' messages aren\'t coming through. I\'ve checked the webhook URL, verified the API keys, and even recreated the integration twice. What else could be wrong?'
+        ],
+        expected_outcomes: ['Systematic troubleshooting', 'Multiple solution attempts', 'Expert escalation'],
+        difficulty_level: 'expert',
+        category: 'complex_troubleshooting',
+        is_active: true,
+        user_id: 'default',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
   }
 
   /**

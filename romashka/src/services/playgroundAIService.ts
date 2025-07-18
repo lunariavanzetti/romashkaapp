@@ -39,7 +39,7 @@ export class PlaygroundAIService {
       const systemPrompt = this.createSystemPrompt(botConfig, knowledgeContext);
       
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: testMessage }
@@ -216,7 +216,7 @@ export class PlaygroundAIService {
       `;
 
       const analysisResponse = await this.openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: analysisPrompt }],
         temperature: 0.1,
         max_tokens: 500

@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { aiResponseProcessor } from './services/ai/aiResponseProcessor';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { ThemeProvider, Navigation } from './components/layout';
+import { ThemeProvider, Navigation, DashboardLayout } from './components/layout';
 import { useAuthStore } from './stores/authStore';
 import Landing from './pages/Landing';
 import SignUp from './pages/SignUp';
@@ -60,28 +60,28 @@ const AppContent = () => {
         <Route path="/dashboard/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
         <Route path="/dashboard/conversations" element={<ProtectedRoute><Conversations /></ProtectedRoute>} />
         <Route path="/dashboard/actions" element={<ProtectedRoute><QuickActionsPage /></ProtectedRoute>} />
-        <Route path="/knowledge" element={<div className="pt-24"><KnowledgeBasePage /></div>} />
-        <Route path="/knowledge/scanner" element={<div className="pt-24"><UrlScanner onScanComplete={(result) => {
+        <Route path="/knowledge" element={<ProtectedRoute><DashboardLayout><KnowledgeBasePage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/knowledge/scanner" element={<ProtectedRoute><DashboardLayout><UrlScanner onScanComplete={(result) => {
           console.log('Scan completed:', result);
           // Handle scan completion
-        }} /></div>} />
+        }} /></DashboardLayout></ProtectedRoute>} />
         <Route path="/analytics" element={<div className="pt-24"><AnalyticsDashboard /></div>} />
         <Route path="/pricing" element={<div className="pt-24"><Pricing /></div>} />
-        <Route path="/billing" element={<div className="pt-24"><Billing /></div>} />
-        <Route path="/automation" element={<div className="pt-24"><ProtectedRoute><Automation /></ProtectedRoute></div>} />
-        <Route path="/integrations" element={<div className="pt-24"><ProtectedRoute><IntegrationsPage /></ProtectedRoute></div>} />
-        <Route path="/settings" element={<div className="pt-24"><ProtectedRoute><SettingsPage /></ProtectedRoute></div>} />
-        <Route path="/channels" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
-        <Route path="/channel" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
-        <Route path="/channels/whatsapp" element={<div className="pt-24"><ProtectedRoute><WhatsAppPage /></ProtectedRoute></div>} />
-        <Route path="/channels/instagram" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
-        <Route path="/channels/email" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
-        <Route path="/channels/widget" element={<div className="pt-24"><ProtectedRoute><ChannelsPage /></ProtectedRoute></div>} />
-        <Route path="/playground" element={<div className="pt-24"><ProtectedRoute><div><h1>🎮 PLAYGROUND PAGE LOADED</h1><PlaygroundPage /></div></ProtectedRoute></div>} />
-        <Route path="/templates" element={<div className="pt-24"><ProtectedRoute><TemplatesPage /></ProtectedRoute></div>} />
-        <Route path="/personality" element={<div className="pt-24"><ProtectedRoute><div><h1>🎭 PERSONALITY PAGE LOADED</h1><PersonalitySettings /></div></ProtectedRoute></div>} />
-        <Route path="/settings/personality" element={<div className="pt-24"><ProtectedRoute><PersonalitySettings /></ProtectedRoute></div>} />
-        <Route path="/training" element={<div className="pt-24"><ProtectedRoute><TrainingDashboard /></ProtectedRoute></div>} />
+        <Route path="/billing" element={<ProtectedRoute><DashboardLayout><Billing /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/automation" element={<ProtectedRoute><DashboardLayout><Automation /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/integrations" element={<ProtectedRoute><DashboardLayout><IntegrationsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/channels" element={<ProtectedRoute><DashboardLayout><ChannelsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/channel" element={<ProtectedRoute><DashboardLayout><ChannelsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/channels/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsAppPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/channels/instagram" element={<ProtectedRoute><DashboardLayout><ChannelsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/channels/email" element={<ProtectedRoute><DashboardLayout><ChannelsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/channels/widget" element={<ProtectedRoute><DashboardLayout><ChannelsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/playground" element={<ProtectedRoute><DashboardLayout><PlaygroundPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/templates" element={<ProtectedRoute><DashboardLayout><TemplatesPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/personality" element={<ProtectedRoute><DashboardLayout><PersonalitySettings /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/settings/personality" element={<ProtectedRoute><DashboardLayout><PersonalitySettings /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/training" element={<ProtectedRoute><DashboardLayout><TrainingDashboard /></DashboardLayout></ProtectedRoute>} />
         <Route path="/ai-training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
         <Route path="/security" element={<div className="pt-24"><ProtectedRoute><SecurityDashboard /></ProtectedRoute></div>} />
         <Route path="/analytics/real-time" element={<div className="pt-24"><ProtectedRoute><RealTimeAnalytics /></ProtectedRoute></div>} />

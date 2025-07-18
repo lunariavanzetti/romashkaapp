@@ -34,7 +34,6 @@ const navLinks = [
   { label: 'Channels', icon: <Phone size={20} />, to: '/channels' },
   { label: 'Playground', icon: <TestTube size={20} />, to: '/playground' },
   { label: 'Templates', icon: <FileText size={20} />, to: '/templates' },
-  { label: 'Team', icon: <Users size={20} />, to: '/team' },
   { label: 'Settings', icon: <Settings size={20} />, to: '/settings' },
   { label: 'Billing', icon: <CreditCard size={20} />, to: '/billing' },
 ];
