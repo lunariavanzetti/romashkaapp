@@ -80,7 +80,32 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
   };
 
   const validateUrls = (): string[] => {
-    return urls.filter(url => url.trim() !== '');
+    return urls.filter(url => {
+      const trimmed = url.trim();
+      if (!trimmed) return false;
+      
+      // Add protocol if missing
+      if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+        return trimmed.length > 0;
+      }
+      
+      try {
+        new URL(trimmed);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+  };
+
+  const normalizeUrls = (urlList: string[]): string[] => {
+    return urlList.map(url => {
+      const trimmed = url.trim();
+      if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+        return `https://${trimmed}`;
+      }
+      return trimmed;
+    });
   };
 
   const startScan = async () => {
@@ -91,12 +116,17 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
         return;
       }
 
+      const normalizedUrls = normalizeUrls(validUrls);
+      console.log('Starting scan with URLs:', normalizedUrls);
+
       setIsScanning(true);
       setProgress(null);
       setExtractedContent([]);
       setProcessingResult(null);
 
-      const jobId = await websiteScanner.startScanJob(validUrls, scanConfig);
+      showToast({ message: `Starting scan of ${normalizedUrls.length} URL(s)...`, type: 'info' });
+
+      const jobId = await websiteScanner.startScanJob(normalizedUrls, scanConfig);
       
       // Get the scan job details
       const job = await getScanJob(jobId);

@@ -119,11 +119,51 @@ export default function PlaygroundPage() {
       setBotConfig(savedConfig);
       // Update playground service with new config
       await playgroundService.updateBotConfig(savedConfig);
+      
+      // Show success notification
+      alert('✅ Configuration saved successfully!');
     } catch (error) {
       console.error('Failed to save bot configuration:', error);
+      alert('❌ Failed to save configuration. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const exportConfiguration = () => {
+    if (!botConfig) return;
+    
+    const dataStr = JSON.stringify(botConfig, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bot-config-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importConfiguration = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const config = JSON.parse(e.target?.result as string);
+          setBotConfig(config);
+          alert('✅ Configuration imported successfully!');
+        } catch (error) {
+          alert('❌ Invalid configuration file. Please check the format.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
   // Test message handler with real AI
@@ -430,10 +470,18 @@ export default function PlaygroundPage() {
                 >
                   Save Configuration
                 </Button>
-                <Button variant="outline" icon={<Download className="w-4 h-4" />}>
+                <Button 
+                  variant="outline" 
+                  icon={<Download className="w-4 h-4" />}
+                  onClick={exportConfiguration}
+                >
                   Export Config
                 </Button>
-                <Button variant="outline" icon={<Upload className="w-4 h-4" />}>
+                <Button 
+                  variant="outline" 
+                  icon={<Upload className="w-4 h-4" />}
+                  onClick={importConfiguration}
+                >
                   Import Config
                 </Button>
               </div>

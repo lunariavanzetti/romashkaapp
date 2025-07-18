@@ -82,10 +82,10 @@ const AppContent = () => {
         <Route path="/personality" element={<ProtectedRoute><DashboardLayout><PersonalitySettings /></DashboardLayout></ProtectedRoute>} />
         <Route path="/settings/personality" element={<ProtectedRoute><DashboardLayout><PersonalitySettings /></DashboardLayout></ProtectedRoute>} />
         <Route path="/training" element={<ProtectedRoute><DashboardLayout><TrainingDashboard /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/ai-training" element={<div className="pt-24"><ProtectedRoute><TrainingAnalyticsDashboard /></ProtectedRoute></div>} />
-        <Route path="/security" element={<div className="pt-24"><ProtectedRoute><SecurityDashboard /></ProtectedRoute></div>} />
-        <Route path="/analytics/real-time" element={<div className="pt-24"><ProtectedRoute><RealTimeAnalytics /></ProtectedRoute></div>} />
-        <Route path="/analytics/reporting" element={<div className="pt-24"><ProtectedRoute><ReportingDashboard /></ProtectedRoute></div>} />
+        <Route path="/ai-training" element={<ProtectedRoute><DashboardLayout><TrainingAnalyticsDashboard /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/security" element={<ProtectedRoute><DashboardLayout><SecurityDashboard /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/analytics/real-time" element={<ProtectedRoute><DashboardLayout><RealTimeAnalytics /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/analytics/reporting" element={<ProtectedRoute><DashboardLayout><ReportingDashboard /></DashboardLayout></ProtectedRoute>} />
         <Route path="/analytics/predictive" element={<div className="pt-24"><ProtectedRoute><PredictiveAnalyticsTab /></ProtectedRoute></div>} />
         <Route path="/debug" element={<div className="pt-24"><Debug /></div>} />
         <Route path="/debug-onboarding" element={<div className="pt-24"><DebugOnboarding /></div>} />
