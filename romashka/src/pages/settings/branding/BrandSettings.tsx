@@ -18,7 +18,8 @@ import LogoUploader from '../components/LogoUploader';
 import ColorPicker from '../components/ColorPicker';
 import BrandPreview from '../components/BrandPreview';
 import { useThemeStore } from '../../../stores/themeStore';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../../services/supabaseClient';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface BrandSettings {
   logo: {
@@ -43,6 +44,7 @@ interface BrandSettings {
 
 export default function BrandSettings() {
   const { theme } = useThemeStore();
+  const { user } = useAuth();
   const [settings, setSettings] = useState<BrandSettings>({
     logo: {
       light: '',
@@ -71,43 +73,44 @@ export default function BrandSettings() {
 
   // Load existing settings
   useEffect(() => {
-    loadBrandSettings();
-  }, []);
+    if (user) {
+      loadBrandSettings();
+    }
+  }, [user]);
 
   const loadBrandSettings = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
       
-      if (user) {
-        const { data, error } = await supabase
-          .from('system_settings')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
 
-        if (data && !error) {
-          setSettings({
-            logo: {
-              light: data.custom_logo_url || '',
-              dark: data.custom_logo_url || '',
-              favicon: data.custom_logo_url || '',
-            },
-            colors: {
-              primary: data.custom_primary_color || '#1E40AF',
-              secondary: data.custom_secondary_color || '#10B981',
-              accent: data.custom_accent_color || '#F59E0B',
-            },
-            company: {
-              name: data.custom_company_name || 'ROMASHKA',
-              tagline: data.custom_tagline || 'AI-Powered Customer Service',
-            },
-            whiteLabelSettings: {
-              hidePoweredBy: data.white_label_enabled || false,
-              customDomain: data.custom_domain || '',
-            },
-          });
-        }
+      if (data && !error) {
+        setSettings({
+          logo: {
+            light: data.custom_logo_url || '',
+            dark: data.custom_logo_url || '',
+            favicon: data.custom_logo_url || '',
+          },
+          colors: {
+            primary: data.primary_color || '#1E40AF',
+            secondary: data.secondary_color || '#10B981',
+            accent: data.primary_color || '#F59E0B',
+          },
+          company: {
+            name: data.company_name || 'ROMASHKA',
+            tagline: 'AI-Powered Customer Service',
+          },
+          whiteLabelSettings: {
+            hidePoweredBy: data.white_label_enabled || false,
+            customDomain: data.custom_domain || '',
+          },
+        });
       }
     } catch (error) {
       console.error('Error loading brand settings:', error);
@@ -117,27 +120,28 @@ export default function BrandSettings() {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      alert('❌ Please sign in to save brand settings.');
+      return;
+    }
+
     try {
       setSaving(true);
       setSaveStatus('idle');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { error } = await supabase
-          .from('system_settings')
-          .upsert({
-            user_id: user.id,
-            custom_logo_url: settings.logo.light,
-            custom_primary_color: settings.colors.primary,
-            custom_secondary_color: settings.colors.secondary,
-            custom_accent_color: settings.colors.accent,
-            custom_company_name: settings.company.name,
-            custom_tagline: settings.company.tagline,
-            white_label_enabled: settings.whiteLabelSettings.hidePoweredBy,
-            custom_domain: settings.whiteLabelSettings.customDomain,
-            updated_at: new Date().toISOString(),
-          });
+      const { error } = await supabase
+        .from('system_settings')
+        .upsert({
+          user_id: user.id,
+          custom_logo_url: settings.logo.light,
+          primary_color: settings.colors.primary,
+          secondary_color: settings.colors.secondary,
+          company_name: settings.company.name,
+          white_label_enabled: settings.whiteLabelSettings.hidePoweredBy,
+          custom_domain: settings.whiteLabelSettings.customDomain,
+        }, {
+          onConflict: 'user_id'
+        });
 
         if (error) {
           throw error;

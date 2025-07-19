@@ -22,6 +22,8 @@ import {
   Target
 } from 'lucide-react';
 import { Button } from '../../../components/ui';
+import { supabase } from '../../../services/supabaseClient';
+import { useAuth } from '../../../hooks/useAuth';
 
 interface PersonalityConfig {
   id: string;
@@ -48,6 +50,7 @@ interface PersonalityConfig {
 }
 
 export default function PersonalitySettings() {
+  const { user } = useAuth();
   const [config, setConfig] = useState<PersonalityConfig>({
     id: '1',
     name: 'Helpful Assistant',
@@ -98,11 +101,82 @@ export default function PersonalitySettings() {
     { value: 'long', label: 'Long', description: '4+ sentences with details' }
   ];
 
+  // Load personality config from database
+  useEffect(() => {
+    if (user) {
+      loadPersonalityConfig();
+    }
+  }, [user]);
+
+  const loadPersonalityConfig = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('personality_configs')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (data) {
+        setConfig({
+          id: data.id,
+          name: data.name,
+          description: data.description || '',
+          traits: data.traits || config.traits,
+          tone: data.tone || 'friendly',
+          style: data.style || 'conversational',
+          language: data.language || 'en',
+          responseLength: data.response_length || 'medium',
+          personality: data.personality || config.personality,
+          customInstructions: data.custom_instructions || '',
+          greeting: data.greeting || config.greeting,
+          fallback: data.fallback || config.fallback,
+          isActive: data.is_active !== false,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at
+        });
+      }
+    } catch (error) {
+      console.error('Error loading personality config:', error);
+    }
+  };
+
   const handleSave = async () => {
+    if (!user) {
+      alert('❌ Please sign in to save configuration.');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const configData = {
+        user_id: user.id,
+        name: config.name,
+        description: config.description,
+        traits: config.traits,
+        tone: config.tone,
+        style: config.style,
+        language: config.language,
+        response_length: config.responseLength,
+        personality: config.personality,
+        custom_instructions: config.customInstructions,
+        greeting: config.greeting,
+        fallback: config.fallback,
+        is_active: config.isActive
+      };
+
+      const { error } = await supabase
+        .from('personality_configs')
+        .upsert([configData], {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving configuration:', error);
+        alert('❌ Failed to save configuration. Please try again.');
+        return;
+      }
       
       setConfig(prev => ({
         ...prev,

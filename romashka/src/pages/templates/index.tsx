@@ -29,6 +29,7 @@ import { Button } from '../../components/ui';
 import { useAuth } from '../../hooks/useAuth';
 import { TemplateService } from '../../services/templates/templateService';
 import { AITrainingService } from '../../services/templates/aiTrainingService';
+import { supabase } from '../../services/supabaseClient';
 
 interface Template {
   id: string;
@@ -102,8 +103,39 @@ export default function TemplatesPage() {
     try {
       setLoading(true);
       
-      // Load templates (mock data for now)
-      const mockTemplates: Template[] = [
+      // Load templates from database
+      const { data: templatesData, error } = await supabase
+        .from('response_templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading templates:', error);
+        // Fall back to mock data if database not available
+      }
+
+      // Use database data if available, otherwise mock data
+      let loadedTemplates: Template[] = [];
+      
+      if (templatesData && templatesData.length > 0) {
+        loadedTemplates = templatesData.map(t => ({
+          id: t.id,
+          name: t.name,
+          description: t.description || '',
+          category: t.category,
+          content: t.content,
+          variables: t.variables || [],
+          usageCount: t.usage_count || 0,
+          effectivenessScore: t.effectiveness_score || 0,
+          language: t.language,
+          createdAt: t.created_at,
+          updatedAt: t.updated_at,
+          tags: t.tags || [],
+          isActive: t.is_active
+        }));
+      } else {
+        // Mock data for demo/testing
+        loadedTemplates = [
         {
           id: '1',
           name: 'Welcome Message',
@@ -157,15 +189,17 @@ export default function TemplatesPage() {
         }
       ];
 
-      setTemplates(mockTemplates);
+      }
+
+      setTemplates(loadedTemplates);
 
       // Load analytics
       const mockAnalytics: TemplateAnalytics = {
-        totalTemplates: mockTemplates.length,
-        activeTemplates: mockTemplates.filter(t => t.isActive).length,
-        averageEffectiveness: mockTemplates.reduce((sum, t) => sum + t.effectivenessScore, 0) / mockTemplates.length,
-        totalUsage: mockTemplates.reduce((sum, t) => sum + t.usageCount, 0),
-        topPerformingTemplate: mockTemplates.sort((a, b) => b.effectivenessScore - a.effectivenessScore)[0]?.name || '',
+        totalTemplates: loadedTemplates.length,
+        activeTemplates: loadedTemplates.filter(t => t.isActive).length,
+        averageEffectiveness: loadedTemplates.length > 0 ? loadedTemplates.reduce((sum, t) => sum + t.effectivenessScore, 0) / loadedTemplates.length : 0,
+        totalUsage: loadedTemplates.reduce((sum, t) => sum + t.usageCount, 0),
+        topPerformingTemplate: loadedTemplates.sort((a, b) => b.effectivenessScore - a.effectivenessScore)[0]?.name || '',
         recentOptimizations: 5
       };
 
@@ -218,40 +252,77 @@ export default function TemplatesPage() {
     }
   };
 
-  const handleCreateTemplate = () => {
+  const handleCreateTemplate = async () => {
     if (!newTemplate.name || !newTemplate.content) {
       alert('❌ Please fill in at least the template name and content.');
       return;
     }
 
-    const template: Template = {
-      id: Date.now().toString(),
-      name: newTemplate.name!,
-      description: newTemplate.description || '',
-      category: newTemplate.category || 'support',
-      content: newTemplate.content!,
-      variables: extractVariablesFromContent(newTemplate.content!),
-      usageCount: 0,
-      effectivenessScore: 0,
-      language: newTemplate.language || 'en',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      tags: newTemplate.tags || [],
-      isActive: true
-    };
+    if (!user) {
+      alert('❌ Please sign in to create templates.');
+      return;
+    }
 
-    setTemplates(prev => [template, ...prev]);
-    setNewTemplate({
-      name: '',
-      description: '',
-      category: 'support',
-      content: '',
-      variables: [],
-      language: 'en',
-      tags: []
-    });
-    setShowCreateModal(false);
-    alert('✅ Template created successfully!');
+    try {
+      const templateData = {
+        user_id: user.id,
+        name: newTemplate.name!,
+        description: newTemplate.description || '',
+        category: newTemplate.category || 'support',
+        content: newTemplate.content!,
+        variables: extractVariablesFromContent(newTemplate.content!),
+        usage_count: 0,
+        effectiveness_score: 0,
+        language: newTemplate.language || 'en',
+        tags: newTemplate.tags || [],
+        is_active: true
+      };
+
+      const { data, error } = await supabase
+        .from('response_templates')
+        .insert([templateData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating template:', error);
+        alert('❌ Failed to create template. Please try again.');
+        return;
+      }
+
+      // Convert database record to UI format
+      const template: Template = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        category: data.category,
+        content: data.content,
+        variables: data.variables || [],
+        usageCount: data.usage_count || 0,
+        effectivenessScore: data.effectiveness_score || 0,
+        language: data.language,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        tags: data.tags || [],
+        isActive: data.is_active
+      };
+
+      setTemplates(prev => [template, ...prev]);
+      setNewTemplate({
+        name: '',
+        description: '',
+        category: 'support',
+        content: '',
+        variables: [],
+        language: 'en',
+        tags: []
+      });
+      setShowCreateModal(false);
+      alert('✅ Template created successfully!');
+    } catch (error) {
+      console.error('Error creating template:', error);
+      alert('❌ Failed to create template. Please try again.');
+    }
   };
 
   const handleUpdateTemplate = () => {
@@ -648,7 +719,7 @@ export default function TemplatesPage() {
                   placeholder="Template content with variables in {variable_name} format"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  💡 Use {curly_braces} to define variables. Example: "Hello {customer_name}!"
+                  💡 Use {"{"} {"}"} to define variables. Example: "Hello {"{"}"customer_name"{"}"}"!"
                 </p>
               </div>
 
