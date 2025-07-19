@@ -72,6 +72,16 @@ export default function TemplatesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [newTemplate, setNewTemplate] = useState<Partial<Template>>({
+    name: '',
+    description: '',
+    category: 'support',
+    content: '',
+    variables: [],
+    language: 'en',
+    tags: []
+  });
 
   const templateService = new TemplateService();
   const aiTrainingService = new AITrainingService();
@@ -195,7 +205,7 @@ export default function TemplatesPage() {
   const handleDuplicateTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (template) {
-      const newTemplate = {
+      const duplicatedTemplate = {
         ...template,
         id: Date.now().toString(),
         name: `${template.name} (Copy)`,
@@ -203,8 +213,103 @@ export default function TemplatesPage() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      setTemplates(prev => [newTemplate, ...prev]);
+      setTemplates(prev => [duplicatedTemplate, ...prev]);
+      alert('✅ Template duplicated successfully!');
     }
+  };
+
+  const handleCreateTemplate = () => {
+    if (!newTemplate.name || !newTemplate.content) {
+      alert('❌ Please fill in at least the template name and content.');
+      return;
+    }
+
+    const template: Template = {
+      id: Date.now().toString(),
+      name: newTemplate.name!,
+      description: newTemplate.description || '',
+      category: newTemplate.category || 'support',
+      content: newTemplate.content!,
+      variables: extractVariablesFromContent(newTemplate.content!),
+      usageCount: 0,
+      effectivenessScore: 0,
+      language: newTemplate.language || 'en',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      tags: newTemplate.tags || [],
+      isActive: true
+    };
+
+    setTemplates(prev => [template, ...prev]);
+    setNewTemplate({
+      name: '',
+      description: '',
+      category: 'support',
+      content: '',
+      variables: [],
+      language: 'en',
+      tags: []
+    });
+    setShowCreateModal(false);
+    alert('✅ Template created successfully!');
+  };
+
+  const handleUpdateTemplate = () => {
+    if (!editingTemplate) return;
+
+    const updatedTemplate = {
+      ...editingTemplate,
+      variables: extractVariablesFromContent(editingTemplate.content),
+      updatedAt: new Date().toISOString()
+    };
+
+    setTemplates(prev => prev.map(t => 
+      t.id === editingTemplate.id ? updatedTemplate : t
+    ));
+    setEditingTemplate(null);
+    alert('✅ Template updated successfully!');
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    if (confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+      setTemplates(prev => prev.filter(t => t.id !== templateId));
+      alert('✅ Template deleted successfully!');
+    }
+  };
+
+  const extractVariablesFromContent = (content: string) => {
+    const variableRegex = /\{([^}]+)\}/g;
+    const variables = [];
+    let match;
+    
+    while ((match = variableRegex.exec(content)) !== null) {
+      const variableName = match[1];
+      if (!variables.find(v => v.name === variableName)) {
+        variables.push({
+          name: variableName,
+          type: 'text',
+          required: true
+        });
+      }
+    }
+    
+    return variables;
+  };
+
+  const addTagToNewTemplate = (tag: string) => {
+    if (tag && !newTemplate.tags?.includes(tag)) {
+      setNewTemplate(prev => ({
+        ...prev,
+        tags: [...(prev.tags || []), tag]
+      }));
+    }
+  };
+
+  const removeTagFromNewTemplate = (tagToRemove: string) => {
+    setNewTemplate(prev => ({
+      ...prev,
+      tags: prev.tags?.filter(tag => tag !== tagToRemove) || []
+    }));
   };
 
   const renderTemplateCard = (template: Template) => (
@@ -284,11 +389,26 @@ export default function TemplatesPage() {
           Optimize
         </Button>
         <Button
+          onClick={() => setEditingTemplate(template)}
+          variant="outline"
+          size="sm"
+        >
+          <Edit className="w-4 h-4" />
+        </Button>
+        <Button
           onClick={() => handleDuplicateTemplate(template.id)}
           variant="outline"
           size="sm"
         >
           <Copy className="w-4 h-4" />
+        </Button>
+        <Button
+          onClick={() => handleDeleteTemplate(template.id)}
+          variant="outline"
+          size="sm"
+          className="text-red-600 hover:text-red-700"
+        >
+          <Trash2 className="w-4 h-4" />
         </Button>
       </div>
     </motion.div>
@@ -464,6 +584,257 @@ export default function TemplatesPage() {
         )}
       </div>
 
+      {/* Create Template Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Create New Template</h3>
+              <Button
+                onClick={() => setShowCreateModal(false)}
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Template Name *</label>
+                  <input
+                    type="text"
+                    value={newTemplate.name || ''}
+                    onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="e.g., Welcome Message"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    value={newTemplate.category || 'support'}
+                    onChange={(e) => setNewTemplate(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="greetings">Greetings</option>
+                    <option value="support">Support</option>
+                    <option value="sales">Sales</option>
+                    <option value="closing">Closing</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <input
+                  type="text"
+                  value={newTemplate.description || ''}
+                  onChange={(e) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Brief description of this template"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Template Content *</label>
+                <textarea
+                  value={newTemplate.content || ''}
+                  onChange={(e) => setNewTemplate(prev => ({ ...prev, content: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-32 resize-none"
+                  placeholder="Template content with variables in {variable_name} format"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Use {curly_braces} to define variables. Example: "Hello {customer_name}!"
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {newTemplate.tags?.map((tag, index) => (
+                    <span key={index} className="px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded flex items-center gap-1">
+                      {tag}
+                      <button
+                        onClick={() => removeTagFromNewTemplate(tag)}
+                        className="text-purple-500 hover:text-purple-700"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    id="new-tag"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Add a tag"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        const input = e.target as HTMLInputElement;
+                        addTagToNewTemplate(input.value.trim());
+                        input.value = '';
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={() => {
+                      const input = document.getElementById('new-tag') as HTMLInputElement;
+                      if (input.value.trim()) {
+                        addTagToNewTemplate(input.value.trim());
+                        input.value = '';
+                      }
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+
+              {newTemplate.content && (
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Detected Variables</h4>
+                  <div className="space-y-2">
+                    {extractVariablesFromContent(newTemplate.content).map((variable, index) => (
+                      <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
+                        <span className="font-medium text-gray-900">{variable.name}</span>
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                          {variable.type}
+                        </span>
+                        <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">
+                          Required
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end space-x-4 pt-4 border-t">
+                <Button
+                  onClick={() => setShowCreateModal(false)}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateTemplate}
+                  className="bg-purple-500 hover:bg-purple-600 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Template
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Template Modal */}
+      {editingTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Template</h3>
+              <Button
+                onClick={() => setEditingTemplate(null)}
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </Button>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Template Name *</label>
+                  <input
+                    type="text"
+                    value={editingTemplate.name}
+                    onChange={(e) => setEditingTemplate(prev => prev ? { ...prev, name: e.target.value } : null)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    value={editingTemplate.category}
+                    onChange={(e) => setEditingTemplate(prev => prev ? { ...prev, category: e.target.value } : null)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="greetings">Greetings</option>
+                    <option value="support">Support</option>
+                    <option value="sales">Sales</option>
+                    <option value="closing">Closing</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <input
+                  type="text"
+                  value={editingTemplate.description}
+                  onChange={(e) => setEditingTemplate(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Template Content *</label>
+                <textarea
+                  value={editingTemplate.content}
+                  onChange={(e) => setEditingTemplate(prev => prev ? { ...prev, content: e.target.value } : null)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent h-32 resize-none"
+                />
+              </div>
+
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Current Variables</h4>
+                <div className="space-y-2">
+                  {extractVariablesFromContent(editingTemplate.content).map((variable, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
+                      <span className="font-medium text-gray-900">{variable.name}</span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded">
+                        {variable.type}
+                      </span>
+                      <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded">
+                        Required
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-4 pt-4 border-t">
+                <Button
+                  onClick={() => setEditingTemplate(null)}
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleUpdateTemplate}
+                  className="bg-purple-500 hover:bg-purple-600 text-white"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Update Template
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Template Details Modal */}
       {selectedTemplate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -484,6 +855,18 @@ export default function TemplatesPage() {
               <div>
                 <h4 className="font-medium text-gray-900 mb-2">{selectedTemplate.name}</h4>
                 <p className="text-gray-600 mb-4">{selectedTemplate.description}</p>
+                
+                <div className="flex items-center gap-4 mb-4">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded">
+                    {selectedTemplate.category}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    Used {selectedTemplate.usageCount} times
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {selectedTemplate.effectivenessScore.toFixed(1)}% effective
+                  </span>
+                </div>
               </div>
 
               <div>
@@ -496,7 +879,7 @@ export default function TemplatesPage() {
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Variables</h4>
+                <h4 className="font-medium text-gray-900 mb-2">Variables ({selectedTemplate.variables.length})</h4>
                 <div className="space-y-2">
                   {selectedTemplate.variables.map((variable, index) => (
                     <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
@@ -514,10 +897,31 @@ export default function TemplatesPage() {
                 </div>
               </div>
 
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedTemplate.tags.map((tag, index) => (
+                    <span key={index} className="px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center space-x-4">
                 <Button
-                  onClick={() => handleOptimizeTemplate(selectedTemplate.id)}
+                  onClick={() => {
+                    setEditingTemplate(selectedTemplate);
+                    setSelectedTemplate(null);
+                  }}
                   className="bg-purple-500 hover:bg-purple-600 text-white"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Template
+                </Button>
+                <Button
+                  onClick={() => handleOptimizeTemplate(selectedTemplate.id)}
+                  variant="outline"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Optimize with AI

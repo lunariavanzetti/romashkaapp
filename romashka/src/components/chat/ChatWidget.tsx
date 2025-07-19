@@ -36,6 +36,21 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   // Test workflow ID - you can change this to test different workflows
   const TEST_WORKFLOW_ID = workflowId;
 
+  // Initialize with welcome message
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: `welcome-${Date.now()}`,
+        conversation_id: 'welcome',
+        sender_type: 'ai',
+        content: 'Hello! I\'m ROMASHKA AI, your customer service assistant. How can I help you today?',
+        metadata: {},
+        created_at: new Date().toISOString()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [isOpen, messages.length]);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -145,12 +160,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
         setMessages(prev => [...prev, aiMsg]);
       } else {
-        // Add error message
+        // Add error message with helpful suggestions
         const errorMsg: Message = {
           id: `msg-${Date.now() + 1}`,
           conversation_id: currentConversationId,
           sender_type: 'ai',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: 'I apologize, but I\'m having trouble processing your request right now. You can try:\n\n• Rephrasing your question\n• Asking about our products or services\n• Contacting our support team directly\n\nHow else can I help you?',
           metadata: {},
           created_at: new Date().toISOString()
         };
@@ -164,7 +179,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         id: `msg-${Date.now() + 1}`,
         conversation_id: conversationId || 'temp',
         sender_type: 'ai',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: 'I\'m sorry, but I\'m experiencing some technical difficulties. Please try again in a moment, or contact our support team for immediate assistance.',
         metadata: {},
         created_at: new Date().toISOString()
       };
@@ -280,7 +295,21 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 <div className="flex-1 p-4 overflow-y-auto space-y-3">
                   {messages.length === 0 ? (
                     <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                      <p className="text-sm">Start a conversation with ROMASHKA AI</p>
+                      <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-medium">ROMASHKA AI</p>
+                      <p className="text-xs mb-4">Your intelligent customer support assistant</p>
+                      
+                      <div className="text-left bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-xs space-y-1">
+                        <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">💡 Try asking me about:</p>
+                        <p className="text-gray-600 dark:text-gray-400">• Product information and features</p>
+                        <p className="text-gray-600 dark:text-gray-400">• Account setup and troubleshooting</p>
+                        <p className="text-gray-600 dark:text-gray-400">• Pricing and billing questions</p>
+                        <p className="text-gray-600 dark:text-gray-400">• Technical support</p>
+                      </div>
                     </div>
                   ) : (
                     messages.map((message) => (
@@ -297,7 +326,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                               : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                           }`}
                         >
-                          <p className="text-sm">{message.content}</p>
+                          <p className="text-sm whitespace-pre-line">{message.content}</p>
                           {message.metadata?.attachments && (
                             <div className="mt-2 space-y-1">
                               {message.metadata.attachments.map((file: File, index: number) => (
