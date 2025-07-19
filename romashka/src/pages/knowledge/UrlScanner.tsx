@@ -80,24 +80,15 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
   };
 
   const validateUrls = (): string[] => {
+    console.log('🔍 EMERGENCY: Using bypass validation');
     return urls.filter(url => {
       const trimmed = url.trim();
       if (!trimmed) return false;
       
-      // Basic URL validation - must have domain
-      if (!trimmed.includes('.')) return false;
-      
-      // Try to construct URL with https:// if no protocol
-      try {
-        let testUrl = trimmed;
-        if (!testUrl.startsWith('http://') && !testUrl.startsWith('https://')) {
-          testUrl = `https://${testUrl}`;
-        }
-        new URL(testUrl);
-        return true;
-      } catch {
-        return false;
-      }
+      // EMERGENCY: Accept any URL with a dot (bypass ALL validation)
+      const isValid = trimmed.includes('.');
+      console.log(`🔎 EMERGENCY: URL "${trimmed}" valid: ${isValid}`);
+      return isValid;
     });
   };
 
