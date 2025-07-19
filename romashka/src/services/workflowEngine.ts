@@ -67,8 +67,8 @@ export class WorkflowEngine {
         throw new Error('Workflow not found');
       }
 
-      // Execute workflow nodes
-      const result = await this.executeNodes(workflow.steps, workflow.connections);
+      // Execute workflow nodes (using 'nodes' column name from actual database)
+      const result = await this.executeNodes(workflow.nodes || workflow.steps, workflow.connections);
       
       // Store execution result
       await this.storeExecutionResult(workflowId, conversationId, result);
