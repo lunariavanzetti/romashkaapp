@@ -166,11 +166,29 @@ export default function PersonalitySettings() {
         is_active: config.isActive
       };
 
-      const { error } = await supabase
+      // First try to update existing record
+      const { data: existingData } = await supabase
         .from('personality_configs')
-        .upsert([configData], {
-          onConflict: 'user_id'
-        });
+        .select('id')
+        .eq('user_id', user.id.toString())
+        .single();
+
+      let error;
+      
+      if (existingData) {
+        // Update existing record
+        const result = await supabase
+          .from('personality_configs')
+          .update(configData)
+          .eq('user_id', user.id.toString());
+        error = result.error;
+      } else {
+        // Insert new record
+        const result = await supabase
+          .from('personality_configs')
+          .insert([configData]);
+        error = result.error;
+      }
 
       if (error) {
         console.error('Error saving configuration:', error);
