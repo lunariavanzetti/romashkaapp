@@ -103,8 +103,8 @@ export default function BrandSettings() {
               tagline: data.custom_tagline || 'AI-Powered Customer Service',
             },
             whiteLabelSettings: {
-              hidePoweredBy: data.enable_white_labeling || false,
-              customDomain: data.white_label_domain || '',
+              hidePoweredBy: data.white_label_enabled || false,
+              customDomain: data.custom_domain || '',
             },
           });
         }
@@ -134,8 +134,8 @@ export default function BrandSettings() {
             custom_accent_color: settings.colors.accent,
             custom_company_name: settings.company.name,
             custom_tagline: settings.company.tagline,
-            enable_white_labeling: settings.whiteLabelSettings.hidePoweredBy,
-            white_label_domain: settings.whiteLabelSettings.customDomain,
+            white_label_enabled: settings.whiteLabelSettings.hidePoweredBy,
+            custom_domain: settings.whiteLabelSettings.customDomain,
             updated_at: new Date().toISOString(),
           });
 
