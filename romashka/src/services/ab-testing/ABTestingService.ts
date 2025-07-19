@@ -18,7 +18,7 @@ export interface ABTestVariant {
 
 export interface ABTest {
   id: string;
-  user_id: string;
+  user_id: string; // TEXT field to avoid foreign key issues
   name: string;
   description: string;
   variant_a_config: ABTestVariant;

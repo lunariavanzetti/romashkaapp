@@ -265,7 +265,7 @@ export default function TemplatesPage() {
 
     try {
       const templateData = {
-        user_id: user.id,
+        user_id: user.id.toString(),
         name: newTemplate.name!,
         description: newTemplate.description || '',
         category: newTemplate.category || 'support',

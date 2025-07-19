@@ -115,7 +115,7 @@ export default function PersonalitySettings() {
       const { data, error } = await supabase
         .from('personality_configs')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', user.id.toString())
         .single();
 
       if (data) {
@@ -151,7 +151,7 @@ export default function PersonalitySettings() {
     setIsSaving(true);
     try {
       const configData = {
-        user_id: user.id,
+        user_id: user.id.toString(),
         name: config.name,
         description: config.description,
         traits: config.traits,

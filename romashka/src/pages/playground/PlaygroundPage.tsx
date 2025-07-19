@@ -212,7 +212,7 @@ export default function PlaygroundPage() {
       setIsLoading(true);
       
       const newTest = await abTestingService.createTest({
-        user_id: user.id,
+        user_id: user.id.toString(),
         name: `Personality Test ${abTests.length + 1}`,
         description: 'Test different personality configurations to optimize performance',
         variant_a_config: {
