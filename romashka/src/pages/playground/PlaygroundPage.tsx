@@ -25,6 +25,8 @@ import {
 import { botConfigurationService } from '../../services/botConfigurationService';
 import { playgroundAIService } from '../../services/playgroundAIService';
 import playgroundService from '../../services/playgroundService';
+import { ABTestingService, ABTest, ABTestAnalysis } from '../../services/ab-testing/ABTestingService';
+import { useAuth } from '../../hooks/useAuth';
 import type { 
   BotConfiguration, 
   TestScenario, 
@@ -54,7 +56,9 @@ interface BotPersonality {
 const avatarOptions = ['🤖', '👨‍💼', '👩‍💼', '🧑‍💻', '👨‍🔬', '👩‍🔬', '🎯', '⚡', '🌟', '💎'];
 
 export default function PlaygroundPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'personality' | 'testing' | 'abtest'>('personality');
+  const abTestingService = new ABTestingService();
   const [botConfig, setBotConfig] = useState<BotConfiguration | null>(null);
   const [testMessage, setTestMessage] = useState('');
   const [testResponse, setTestResponse] = useState<PlaygroundTestResponse | null>(null);
@@ -199,51 +203,94 @@ export default function PlaygroundPage() {
 
   // A/B Test management
   const createABTest = async () => {
-    if (!botConfig) return;
+    if (!botConfig || !user) {
+      alert('❌ Please sign in and configure bot personality first.');
+      return;
+    }
 
-    const testNumber = abTests.length + 1;
-    const newTest: ABTestConfiguration = {
-      test_name: `Personality Test ${testNumber}`,
-      description: 'Compare different personality configurations to optimize performance',
-      variants: [
-        {
-          id: `variant-a-${Date.now()}`,
-          name: 'High Formality',
-          personality_traits: { 
-            formality: 80, 
-            enthusiasm: 40,
-            technical_depth: botConfig.personality_traits.technical_depth,
-            empathy: botConfig.personality_traits.empathy
-          },
-          weight: 50
-        },
-        {
-          id: `variant-b-${Date.now()}`,
-          name: 'High Enthusiasm',
-          personality_traits: { 
-            formality: 40, 
-            enthusiasm: 80,
-            technical_depth: botConfig.personality_traits.technical_depth,
-            empathy: botConfig.personality_traits.empathy
-          },
-          weight: 50
-        }
-      ],
-      metrics: {
-        response_time: 0,
-        satisfaction: 0,
-        conversions: 0
-      },
-      is_running: false,
-      sample_size: 100,
-      confidence_level: 0.95
-    };
-    
     try {
       setIsLoading(true);
-      const savedTest = await botConfigurationService.saveABTestConfig(newTest);
-      setAbTests(prev => [...prev, savedTest]);
-      alert('✅ A/B Test created successfully! Configure variants and start testing.');
+      
+      const newTest = await abTestingService.createTest({
+        user_id: user.id,
+        name: `Personality Test ${abTests.length + 1}`,
+        description: 'Test different personality configurations to optimize performance',
+        variant_a_config: {
+          id: 'variant-a',
+          traits: {
+            friendliness: 60,
+            professionalism: 90,
+            empathy: 70,
+            enthusiasm: 50,
+            helpfulness: 85
+          },
+          tone: 'formal',
+          style: 'professional',
+          greeting: 'How may I assist you today?',
+          responseLength: 'medium',
+          personality: 'You are a professional AI assistant. Always maintain a formal, helpful tone.'
+        },
+        variant_b_config: {
+          id: 'variant-b',
+          traits: {
+            friendliness: 95,
+            professionalism: 70,
+            empathy: 90,
+            enthusiasm: 85,
+            helpfulness: 95
+          },
+          tone: 'friendly',
+          style: 'conversational',
+          greeting: 'Hey! I\'d love to help you out 😊',
+          responseLength: 'medium',
+          personality: 'You are a friendly, warm AI assistant. Use a conversational tone and be empathetic.'
+        },
+        traffic_split: 0.5,
+        target_sample_size: 100,
+        confidence_level: 0.95
+      });
+
+      // Convert to legacy format for compatibility
+      const legacyTest: ABTestConfiguration = {
+        id: newTest.id,
+        test_name: newTest.name,
+        description: newTest.description,
+        variants: [
+          {
+            id: 'variant-a',
+            name: 'Professional Tone',
+            personality_traits: {
+              formality: 90,
+              enthusiasm: 50,
+              technical_depth: 70,
+              empathy: 70
+            },
+            weight: 50
+          },
+          {
+            id: 'variant-b',
+            name: 'Friendly Tone',
+            personality_traits: {
+              formality: 40,
+              enthusiasm: 85,
+              technical_depth: 70,
+              empathy: 90
+            },
+            weight: 50
+          }
+        ],
+        is_running: newTest.status === 'running',
+        metrics: {
+          response_time: 0,
+          satisfaction: 0,
+          conversions: 0
+        },
+        sample_size: newTest.target_sample_size,
+        confidence_level: newTest.confidence_level
+      };
+
+      setAbTests(prev => [...prev, legacyTest]);
+      alert('✅ A/B Test created successfully! Start the test to begin comparing personality variants.');
     } catch (error) {
       console.error('Failed to create A/B test:', error);
       alert('❌ Failed to create A/B test. Please try again.');
@@ -286,21 +333,32 @@ export default function PlaygroundPage() {
     
     try {
       setIsLoading(true);
-      const updatedTest = {
+      
+      let updatedTest;
+      if (!test.is_running) {
+        // Start the test
+        updatedTest = await abTestingService.startTest(test.id);
+        // Generate sample data for demonstration
+        await abTestingService.generateSampleData(test.id, test.sample_size || 100);
+      } else {
+        // Stop the test
+        updatedTest = await abTestingService.stopTest(test.id);
+      }
+      
+      // Update UI state
+      const legacyTest = {
         ...test,
-        is_running: !test.is_running,
-        start_date: !test.is_running ? new Date().toISOString() : test.start_date,
-        end_date: test.is_running ? new Date().toISOString() : test.end_date
+        is_running: updatedTest.status === 'running',
+        start_date: updatedTest.start_date,
+        end_date: updatedTest.end_date
       };
       
-      const savedTest = await botConfigurationService.saveABTestConfig(updatedTest);
+      setAbTests(prev => prev.map(t => t.id === test.id ? legacyTest : t));
       
-      setAbTests(prev => prev.map(t => t.id === test.id ? savedTest : t));
-      
-      if (savedTest.is_running) {
-        alert('🚀 A/B Test started! Variants will be tested automatically with incoming interactions.');
+      if (updatedTest.status === 'running') {
+        alert('🚀 A/B Test started! Sample data generated for demonstration. In production, real user interactions would be tracked.');
       } else {
-        alert('⏸️ A/B Test stopped. You can view results to analyze performance.');
+        alert('⏸️ A/B Test stopped. View results to see the performance analysis.');
       }
     } catch (error) {
       console.error('Failed to toggle A/B test:', error);
@@ -315,27 +373,46 @@ export default function PlaygroundPage() {
     if (!test.id) return;
     
     try {
-      // In a real implementation, you would fetch actual results from the database
-      const mockResults = {
-        total_interactions: Math.floor(Math.random() * 200) + 50,
-        avg_response_time: Math.floor(Math.random() * 500) + 200,
-        avg_satisfaction: (Math.random() * 2 + 3).toFixed(1),
-        conversion_rate: (Math.random() * 20 + 5).toFixed(1)
-      };
+      const analysis = await abTestingService.analyzeTest(test.id);
       
-      alert(`📊 A/B Test Results for "${test.test_name}":
+      const winner = analysis.statistical_significance.winner;
+      const improvement = analysis.statistical_significance.improvement_percentage;
+      const isSignificant = analysis.statistical_significance.is_significant;
+      
+      let resultMessage = `📊 A/B Test Results for "${test.test_name}":
 
-` +
-            `• Total Interactions: ${mockResults.total_interactions}
-` +
-            `• Avg Response Time: ${mockResults.avg_response_time}ms
-` +
-            `• Avg Satisfaction: ${mockResults.avg_satisfaction}/5
-` +
-            `• Conversion Rate: ${mockResults.conversion_rate}%
+**Variant A (Professional Tone):**
+• Total Interactions: ${analysis.variant_a_metrics.total_interactions}
+• Avg Response Time: ${analysis.variant_a_metrics.avg_response_time}ms
+• Avg Satisfaction: ${analysis.variant_a_metrics.avg_satisfaction}/5
+• Conversion Rate: ${analysis.variant_a_metrics.conversion_rate}%
+• Escalation Rate: ${analysis.variant_a_metrics.escalation_rate}%
 
-` +
-            `💡 Results will be shown in a detailed dashboard in future updates.`);
+**Variant B (Friendly Tone):**
+• Total Interactions: ${analysis.variant_b_metrics.total_interactions}
+• Avg Response Time: ${analysis.variant_b_metrics.avg_response_time}ms
+• Avg Satisfaction: ${analysis.variant_b_metrics.avg_satisfaction}/5
+• Conversion Rate: ${analysis.variant_b_metrics.conversion_rate}%
+• Escalation Rate: ${analysis.variant_b_metrics.escalation_rate}%
+
+`;
+
+      if (isSignificant && winner) {
+        resultMessage += `🏆 **Winner: Variant ${winner}** (+${improvement?.toFixed(1)}% improvement)
+
+`;
+      } else {
+        resultMessage += `⏳ **Not yet statistically significant** - continue testing
+
+`;
+      }
+
+      resultMessage += `**Recommendations:**
+${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
+
+This demonstrates how real A/B testing would work with your personality configurations!`;
+
+      alert(resultMessage);
     } catch (error) {
       console.error('Failed to view A/B test results:', error);
       alert('❌ Failed to load test results. Please try again.');

@@ -84,13 +84,16 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
       const trimmed = url.trim();
       if (!trimmed) return false;
       
-      // Add protocol if missing
-      if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
-        return trimmed.length > 0;
-      }
+      // Basic URL validation - must have domain
+      if (!trimmed.includes('.')) return false;
       
+      // Try to construct URL with https:// if no protocol
       try {
-        new URL(trimmed);
+        let testUrl = trimmed;
+        if (!testUrl.startsWith('http://') && !testUrl.startsWith('https://')) {
+          testUrl = `https://${testUrl}`;
+        }
+        new URL(testUrl);
         return true;
       } catch {
         return false;
@@ -110,14 +113,18 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
 
   const startScan = async () => {
     try {
+      console.log('Raw URLs:', urls);
       const validUrls = validateUrls();
+      console.log('Valid URLs after validation:', validUrls);
+      
       if (validUrls.length === 0) {
-        showToast({ message: 'Please enter at least one valid URL', type: 'error' });
+        console.log('No valid URLs found');
+        showToast({ message: 'Please enter at least one valid URL (e.g., www.example.com)', type: 'error' });
         return;
       }
 
       const normalizedUrls = normalizeUrls(validUrls);
-      console.log('Starting scan with URLs:', normalizedUrls);
+      console.log('Starting scan with normalized URLs:', normalizedUrls);
 
       setIsScanning(true);
       setProgress(null);
@@ -135,7 +142,7 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
       showToast({ message: 'Scan started successfully', type: 'success' });
     } catch (error) {
       console.error('Error starting scan:', error);
-      showToast({ message: 'Failed to start scan', type: 'error' });
+      showToast({ message: `Failed to start scan: ${error.message}`, type: 'error' });
       setIsScanning(false);
     }
   };
