@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../lib/supabase';
 import { auditService } from './auditService';
 import { gdprService } from './gdprService';
 import type { 
