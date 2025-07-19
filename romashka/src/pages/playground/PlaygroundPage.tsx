@@ -18,6 +18,8 @@ import {
   BarChart3,
   Users,
   Brain,
+  Code,
+  Copy,
   Heart,
   Volume2,
   Sliders
@@ -57,7 +59,7 @@ const avatarOptions = ['🤖', '👨‍💼', '👩‍💼', '🧑‍💻', '�
 
 export default function PlaygroundPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'personality' | 'testing' | 'abtest'>('personality');
+  const [activeTab, setActiveTab] = useState<'personality' | 'testing' | 'abtest' | 'widget'>('personality');
   const abTestingService = new ABTestingService();
   const [botConfig, setBotConfig] = useState<BotConfiguration | null>(null);
   const [testMessage, setTestMessage] = useState('');
@@ -68,6 +70,20 @@ export default function PlaygroundPage() {
   const [testScenarios, setTestScenarios] = useState<TestScenario[]>([]);
   const [selectedScenario, setSelectedScenario] = useState<TestScenario | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Widget embedding state
+  const [widgetConfig, setWidgetConfig] = useState({
+    primaryColor: '#3B82F6',
+    position: 'bottom-right',
+    greeting: 'Hello! How can I help you today?',
+    placeholder: 'Type your message...',
+    showAvatar: true,
+    enableSounds: true,
+    customDomain: '',
+    widgetTitle: 'Chat Support'
+  });
+  const [embedCode, setEmbedCode] = useState('');
+  const [isEmbedCopied, setIsEmbedCopied] = useState(false);
 
   // Initialize component
   useEffect(() => {
@@ -424,6 +440,58 @@ This demonstrates how real A/B testing would work with your personality configur
     }
   };
 
+  // Widget embedding functions
+  const generateEmbedCode = () => {
+    if (!user || !botConfig) return '';
+    
+    const config = {
+      userId: user.id,
+      apiUrl: 'https://romashkaai.vercel.app',
+      widget: {
+        ...widgetConfig,
+        personality: {
+          formality: botConfig.personality_traits.formality,
+          enthusiasm: botConfig.personality_traits.enthusiasm,
+          technical_depth: botConfig.personality_traits.technical_depth,
+          empathy: botConfig.personality_traits.empathy
+        },
+        style: botConfig.response_style,
+        avatar: botConfig.avatar
+      }
+    };
+
+    const code = `<!-- ROMASHKA AI Chat Widget -->
+<script>
+  window.RomashkaConfig = ${JSON.stringify(config, null, 2)};
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  })();
+</script>
+<!-- End ROMASHKA Widget -->`;
+
+    return code;
+  };
+
+  const handleGenerateEmbed = () => {
+    const code = generateEmbedCode();
+    setEmbedCode(code);
+    alert('✅ Widget embed code generated! Copy the code below and paste it into your website\'s HTML.');
+  };
+
+  const handleCopyEmbed = async () => {
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setIsEmbedCopied(true);
+      setTimeout(() => setIsEmbedCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy embed code:', error);
+      alert('❌ Failed to copy to clipboard. Please select and copy manually.');
+    }
+  };
+
   if (!isInitialized || !botConfig) {
     return (
       <div className="min-h-screen bg-bg-secondary dark:bg-bg-darker flex items-center justify-center">
@@ -464,7 +532,8 @@ This demonstrates how real A/B testing would work with your personality configur
           {[
             { id: 'personality', label: 'Personality', icon: <Palette className="w-4 h-4" /> },
             { id: 'testing', label: 'Response Testing', icon: <TestTube className="w-4 h-4" /> },
-            { id: 'abtest', label: 'A/B Testing', icon: <BarChart3 className="w-4 h-4" /> }
+            { id: 'abtest', label: 'A/B Testing', icon: <BarChart3 className="w-4 h-4" /> },
+            { id: 'widget', label: 'Widget Embed', icon: <Code className="w-4 h-4" /> }
           ].map(tab => (
             <button
               key={tab.id}
@@ -1123,6 +1192,178 @@ This demonstrates how real A/B testing would work with your personality configur
                     </div>
                   ))
                 )}
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'widget' && (
+            <motion.div
+              key="widget"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              {/* Widget Header */}
+              <div className="glass-card p-6 rounded-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-heading font-semibold text-primary-deep-blue dark:text-white">
+                      Widget Embedding
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      Generate embed code to add the AI chat widget to your website
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    onClick={handleGenerateEmbed}
+                    icon={<Code className="w-4 h-4" />}
+                  >
+                    Generate Embed Code
+                  </Button>
+                </div>
+
+                {/* Widget Configuration */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-gray-900 dark:text-white">Widget Settings</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Widget Title
+                      </label>
+                      <input
+                        type="text"
+                        value={widgetConfig.widgetTitle}
+                        onChange={(e) => setWidgetConfig(prev => ({ ...prev, widgetTitle: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        placeholder="Chat Support"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Greeting Message
+                      </label>
+                      <input
+                        type="text"
+                        value={widgetConfig.greeting}
+                        onChange={(e) => setWidgetConfig(prev => ({ ...prev, greeting: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                        placeholder="Hello! How can I help you today?"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Primary Color
+                      </label>
+                      <input
+                        type="color"
+                        value={widgetConfig.primaryColor}
+                        onChange={(e) => setWidgetConfig(prev => ({ ...prev, primaryColor: e.target.value }))}
+                        className="w-full h-10 border border-gray-300 dark:border-gray-600 rounded-lg"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Position
+                      </label>
+                      <select
+                        value={widgetConfig.position}
+                        onChange={(e) => setWidgetConfig(prev => ({ ...prev, position: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                      >
+                        <option value="bottom-right">Bottom Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="top-right">Top Right</option>
+                        <option value="top-left">Top Left</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-gray-900 dark:text-white">Preview</h3>
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 min-h-[200px] relative border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                        <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <p>Widget Preview</p>
+                        <p className="text-sm">Chat widget will appear here</p>
+                      </div>
+                      
+                      {/* Mock widget button */}
+                      <div 
+                        className={`absolute ${widgetConfig.position.includes('right') ? 'right-4' : 'left-4'} ${widgetConfig.position.includes('bottom') ? 'bottom-4' : 'top-4'}`}
+                      >
+                        <div 
+                          className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-white font-medium cursor-pointer transform hover:scale-110 transition-transform"
+                          style={{ backgroundColor: widgetConfig.primaryColor }}
+                        >
+                          <MessageSquare className="w-6 h-6" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <p><strong>Current Personality:</strong></p>
+                      <p>🎭 Formality: {botConfig.personality_traits.formality}%</p>
+                      <p>⚡ Enthusiasm: {botConfig.personality_traits.enthusiasm}%</p>
+                      <p>🧠 Technical: {botConfig.personality_traits.technical_depth}%</p>
+                      <p>❤️ Empathy: {botConfig.personality_traits.empathy}%</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Embed Code Section */}
+                {embedCode && (
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium text-gray-900 dark:text-white">Embed Code</h3>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyEmbed}
+                        icon={<Copy className="w-4 h-4" />}
+                      >
+                        {isEmbedCopied ? 'Copied!' : 'Copy Code'}
+                      </Button>
+                    </div>
+                    <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto">
+                      <code>{embedCode}</code>
+                    </pre>
+                    <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                      <p><strong>How to use:</strong></p>
+                      <ol className="list-decimal list-inside space-y-1 mt-2">
+                        <li>Copy the embed code above</li>
+                        <li>Paste it into your website's HTML (before closing &lt;/body&gt; tag)</li>
+                        <li>The chat widget will appear on your site</li>
+                        <li>Visitors can chat with your AI using the personality settings configured above</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+
+                {/* A/B Testing Integration */}
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-6 mt-6">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-3">A/B Testing Integration</h3>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <p className="text-blue-800 dark:text-blue-200 text-sm">
+                      <strong>💡 Pro Tip:</strong> When you create A/B tests in the A/B Testing tab, 
+                      the widget will automatically use different personality variants for different visitors. 
+                      This lets you test which personality performs better with real customers!
+                    </p>
+                    <div className="mt-3">
+                      <p className="text-blue-700 dark:text-blue-300 text-sm">
+                        <strong>Active A/B Tests:</strong> {abTests.filter(test => test.is_running).length}
+                      </p>
+                      <p className="text-blue-700 dark:text-blue-300 text-sm">
+                        <strong>Total Tests:</strong> {abTests.length}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
