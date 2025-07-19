@@ -3,7 +3,25 @@
   "builds": [
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } }
   ],
+  "headers": [
+    {
+      "source": "/widget.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    }
+  ],
   "rewrites": [
+    { "source": "/widget.js", "destination": "/widget.js" },
+    { "source": "/privacy.html", "destination": "/privacy.html" },
+    { "source": "/(.*\\.(js|css|png|svg|jpg|jpeg|gif|ico|woff|woff2|ttf|eot))$", "destination": "/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "env": {
