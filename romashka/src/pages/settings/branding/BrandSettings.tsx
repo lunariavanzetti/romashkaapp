@@ -132,7 +132,7 @@ export default function BrandSettings() {
       const { error } = await supabase
         .from('system_settings')
         .upsert({
-          user_id: user.id,
+          user_id: user.id.toString(),
           custom_logo_url: settings.logo.light,
           primary_color: settings.colors.primary,
           secondary_color: settings.colors.secondary,
@@ -153,7 +153,6 @@ export default function BrandSettings() {
         
         // Auto-hide success message after 3 seconds
         setTimeout(() => setSaveStatus('idle'), 3000);
-      }
     } catch (error) {
       console.error('Error saving brand settings:', error);
       setSaveStatus('error');
