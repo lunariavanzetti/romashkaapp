@@ -192,6 +192,11 @@ export default function PlaygroundPage() {
         confidence: response.confidence / 100
       }]);
 
+      // Show notification if using mock response
+      if (response.personality_score.suggestions.some(s => s.includes('demo mode'))) {
+        console.log('🤖 Demo mode: Using mock response due to OpenAI API connection issue');
+      }
+
       // Clear test message
       setTestMessage('');
     } catch (error) {

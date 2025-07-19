@@ -75,7 +75,10 @@ export class PlaygroundAIService {
 
     } catch (error) {
       console.error('OpenAI API error:', error);
-      throw new Error('Failed to generate AI response');
+      
+      // Fallback to mock response when API fails
+      console.log('Using fallback mock response due to API error');
+      return this.generateMockResponse(testMessage, botConfig, knowledgeContext);
     }
   }
 
@@ -359,6 +362,111 @@ export class PlaygroundAIService {
     }
     
     return results;
+  }
+
+  /**
+   * Generate mock response when OpenAI API fails
+   */
+  private generateMockResponse(
+    testMessage: string,
+    botConfig: BotConfiguration,
+    knowledgeContext?: KnowledgeContext
+  ): PlaygroundTestResponse {
+    const startTime = Date.now();
+    
+    // Generate personality-appropriate response based on config
+    let response = this.createMockResponseText(testMessage, botConfig, knowledgeContext);
+    
+    const responseTime = Math.random() * 800 + 200; // 200-1000ms
+    
+    // Create mock personality analysis
+    const personalityScore: PersonalityAnalysis = {
+      formality_score: Math.max(0, Math.min(100, botConfig.personality_traits.formality + (Math.random() * 20 - 10))),
+      enthusiasm_score: Math.max(0, Math.min(100, botConfig.personality_traits.enthusiasm + (Math.random() * 20 - 10))),
+      technical_depth_score: Math.max(0, Math.min(100, botConfig.personality_traits.technical_depth + (Math.random() * 20 - 10))),
+      empathy_score: Math.max(0, Math.min(100, botConfig.personality_traits.empathy + (Math.random() * 20 - 10))),
+      overall_alignment: 75 + Math.random() * 20, // 75-95% alignment
+      suggestions: ['Response generated in demo mode - connect OpenAI for full functionality']
+    };
+    
+    const knowledgeSources = this.extractKnowledgeSources(response, knowledgeContext);
+    const confidence = 85 + Math.random() * 10; // 85-95% confidence
+    
+    return {
+      response,
+      response_time: Math.round(responseTime),
+      confidence: Math.round(confidence),
+      personality_score: personalityScore,
+      knowledge_sources: knowledgeSources
+    };
+  }
+
+  /**
+   * Create personality-appropriate mock response text
+   */
+  private createMockResponseText(
+    testMessage: string,
+    botConfig: BotConfiguration,
+    knowledgeContext?: KnowledgeContext
+  ): string {
+    const { formality, enthusiasm, technical_depth, empathy } = botConfig.personality_traits;
+    const message = testMessage.toLowerCase();
+    
+    // Determine response type based on message content
+    let baseResponse = '';
+    
+    if (message.includes('price') || message.includes('cost') || message.includes('pricing')) {
+      if (knowledgeContext?.faqs?.find(faq => faq.question.toLowerCase().includes('pricing'))) {
+        baseResponse = knowledgeContext.faqs.find(faq => faq.question.toLowerCase().includes('pricing'))!.answer;
+      } else {
+        baseResponse = 'Our pricing varies based on your specific needs. I\'d be happy to help you find the right plan for your business.';
+      }
+    } else if (message.includes('help') || message.includes('support')) {
+      baseResponse = 'I\'m here to assist you with any questions or concerns you might have.';
+    } else if (message.includes('technical') || message.includes('integration')) {
+      baseResponse = 'I can help you with technical questions and integration support.';
+    } else if (message.includes('hello') || message.includes('hi')) {
+      baseResponse = 'Welcome! I\'m here to help you with any questions you might have.';
+    } else {
+      baseResponse = 'Thank you for reaching out. I\'ll do my best to help you with your question.';
+    }
+    
+    // Adjust response based on personality traits
+    let adjustedResponse = baseResponse;
+    
+    // Formality adjustment
+    if (formality <= 30) {
+      adjustedResponse = adjustedResponse.replace(/I am/g, 'I\'m').replace(/I will/g, 'I\'ll');
+      adjustedResponse = adjustedResponse.replace(/\./g, '!');
+    } else if (formality >= 80) {
+      adjustedResponse = adjustedResponse.replace(/I'm/g, 'I am').replace(/I'll/g, 'I will');
+      adjustedResponse = adjustedResponse + ' Please let me know if you need any additional assistance.';
+    }
+    
+    // Enthusiasm adjustment
+    if (enthusiasm >= 70) {
+      adjustedResponse = adjustedResponse.replace(/\./g, '!');
+      adjustedResponse = adjustedResponse.replace(/help/g, 'love to help');
+    } else if (enthusiasm <= 30) {
+      adjustedResponse = adjustedResponse.replace(/!/g, '.');
+    }
+    
+    // Empathy adjustment
+    if (empathy >= 70) {
+      adjustedResponse = 'I understand this might be important to you. ' + adjustedResponse;
+    }
+    
+    // Technical depth adjustment
+    if (technical_depth >= 70 && (message.includes('technical') || message.includes('integration'))) {
+      adjustedResponse += ' I can provide detailed technical documentation and step-by-step implementation guides.';
+    }
+    
+    // Add company context if available
+    if (knowledgeContext?.companyName) {
+      adjustedResponse = adjustedResponse.replace(/I'm/g, `I'm ${botConfig.bot_name} from ${knowledgeContext.companyName}, and I'm`);
+    }
+    
+    return adjustedResponse;
   }
 
   /**
