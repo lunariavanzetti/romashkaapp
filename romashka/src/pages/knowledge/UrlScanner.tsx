@@ -520,10 +520,40 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
             </div>
           </div>
 
+          {/* Extracted Content Preview */}
+          {extractedContent.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-900 mb-3">Extracted Content ({extractedContent.length} pages)</h4>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {extractedContent.map((content, index) => (
+                  <div key={index} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h5 className="font-medium text-gray-900">{content.title}</h5>
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        {content.content_type}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      <strong>URL:</strong> {content.url}
+                    </div>
+                    <div className="text-sm text-gray-700 mb-3">
+                      {content.content.substring(0, 300)}...
+                    </div>
+                    <div className="flex gap-2 text-xs text-gray-500">
+                      <span>{content.word_count} words</span>
+                      <span>•</span>
+                      <span>{(content.processing_quality * 100).toFixed(1)}% quality</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Knowledge Items Preview */}
           {processingResult.knowledgeItems.length > 0 && (
             <div>
-              <h4 className="text-md font-semibold text-gray-900 mb-3">Generated Knowledge Items</h4>
+              <h4 className="text-md font-semibent text-gray-900 mb-3">Generated Knowledge Items</h4>
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {processingResult.knowledgeItems.slice(0, 5).map((item, index) => (
                   <div key={index} className="bg-gray-50 p-3 rounded-lg">
