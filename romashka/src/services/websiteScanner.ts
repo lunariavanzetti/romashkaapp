@@ -1,3 +1,7 @@
+/*
+ * WebsiteScanner Service - CORS-Safe Implementation v2.0.0
+ * Cache-bust: 2025-07-19T19:50:00Z
+ */
 import { supabase } from './supabaseClient';
 import type {
   WebsiteScanJob,
@@ -251,57 +255,52 @@ export class WebsiteScannerService implements WebsiteScanner {
   }
 
   async validateUrl(url: string): Promise<UrlValidationResult> {
+    // COMPLETELY AVOID ANY NETWORK REQUESTS - CORS SAFE VALIDATION ONLY
+    console.log(`🔎 [CORS-SAFE] Validating URL: ${url}`);
+    
+    const result: UrlValidationResult = {
+      isValid: false,
+      errors: [],
+      warnings: []
+    };
+    
     try {
-      const result: UrlValidationResult = {
-        isValid: false,
-        errors: [],
-        warnings: []
-      };
-      
-      // Basic URL validation
-      let normalizedUrl: string;
-      try {
-        // Handle URLs without protocol
-        let testUrl = url.trim();
-        if (!testUrl.startsWith('http://') && !testUrl.startsWith('https://')) {
-          testUrl = `https://${testUrl}`;
-        }
-        
-        const urlObj = new URL(testUrl);
-        normalizedUrl = urlObj.toString();
-        result.isValid = true;
-        result.normalizedUrl = normalizedUrl;
-        
-        // Basic validation checks
-        if (!urlObj.hostname || urlObj.hostname.length < 3) {
-          result.errors?.push('Invalid hostname');
-          result.isValid = false;
-          return result;
-        }
-        
-        if (!urlObj.hostname.includes('.')) {
-          result.errors?.push('Hostname must contain a domain');
-          result.isValid = false;
-          return result;
-        }
-        
-        // Skip CORS-prone accessibility check for now
-        // In production, this would be handled by a backend service
-        console.log(`✅ URL validation passed for: ${normalizedUrl}`);
-        
-      } catch (error) {
-        result.errors?.push('Invalid URL format');
-        result.isValid = false;
+      // Handle URLs without protocol
+      let testUrl = url.trim();
+      if (!testUrl) {
+        result.errors?.push('Empty URL');
         return result;
       }
       
+      if (!testUrl.startsWith('http://') && !testUrl.startsWith('https://')) {
+        testUrl = `https://${testUrl}`;
+      }
+      
+      // Use URL constructor for validation (no network request)
+      const urlObj = new URL(testUrl);
+      
+      // Basic validation checks
+      if (!urlObj.hostname || urlObj.hostname.length < 3) {
+        result.errors?.push('Invalid hostname');
+        return result;
+      }
+      
+      if (!urlObj.hostname.includes('.')) {
+        result.errors?.push('Hostname must contain a domain');
+        return result;
+      }
+      
+      // All checks passed
+      result.isValid = true;
+      result.normalizedUrl = urlObj.toString();
+      
+      console.log(`✅ [CORS-SAFE] URL validation passed: ${result.normalizedUrl}`);
       return result;
+      
     } catch (error) {
-      console.error('Error validating URL:', error);
-      return {
-        isValid: false,
-        errors: ['Validation failed']
-      };
+      console.error(`❌ [CORS-SAFE] URL validation failed for ${url}:`, error);
+      result.errors?.push(`Invalid URL format: ${error.message}`);
+      return result;
     }
   }
 
