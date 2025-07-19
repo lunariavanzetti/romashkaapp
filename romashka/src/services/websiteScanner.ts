@@ -32,16 +32,26 @@ export class WebsiteScannerService implements WebsiteScanner {
     try {
       this.checkSupabase();
       
+      console.log('🔍 Starting scan job with URLs:', urls);
+      
       // Validate URLs
       const validationResults = await Promise.all(
-        urls.map(url => this.validateUrl(url))
+        urls.map(url => {
+          console.log(`🔎 Validating URL: ${url}`);
+          return this.validateUrl(url);
+        })
       );
+      
+      console.log('📊 Validation results:', validationResults);
       
       const validUrls = validationResults
         .filter(result => result.isValid)
         .map(result => result.normalizedUrl!);
 
+      console.log('✅ Valid URLs found:', validUrls);
+
       if (validUrls.length === 0) {
+        console.error('❌ No valid URLs after validation');
         throw new Error('No valid URLs provided');
       }
 
@@ -277,7 +287,7 @@ export class WebsiteScannerService implements WebsiteScanner {
         
         // Skip CORS-prone accessibility check for now
         // In production, this would be handled by a backend service
-        console.log(`URL validation passed for: ${normalizedUrl}`);
+        console.log(`✅ URL validation passed for: ${normalizedUrl}`);
         
       } catch (error) {
         result.errors?.push('Invalid URL format');
