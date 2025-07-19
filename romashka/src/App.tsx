@@ -1,5 +1,8 @@
 // import React from 'react';
 import React, { useEffect } from 'react';
+
+// Force rebuild verification - v2.0.1
+console.log('🚀 ROMASHKA v2.0.1 - CORS-Safe Scanner Deployed!');
 import { aiResponseProcessor } from './services/ai/aiResponseProcessor';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider, Navigation, DashboardLayout } from './components/layout';
