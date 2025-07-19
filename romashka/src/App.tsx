@@ -57,7 +57,7 @@ const AppContent = () => {
         <Route path="/verify-email" element={<EmailVerification />} />
         <Route path="/privacy" element={<div className="pt-24"><Privacy /></div>} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/dashboard/analytics" element={<ProtectedRoute><AnalyticsDashboard /></ProtectedRoute>} />
+        <Route path="/dashboard/analytics" element={<ProtectedRoute><DashboardLayout><AnalyticsDashboard /></DashboardLayout></ProtectedRoute>} />
         <Route path="/dashboard/conversations" element={<ProtectedRoute><Conversations /></ProtectedRoute>} />
         <Route path="/dashboard/actions" element={<ProtectedRoute><QuickActionsPage /></ProtectedRoute>} />
         <Route path="/knowledge" element={<ProtectedRoute><DashboardLayout><KnowledgeBasePage /></DashboardLayout></ProtectedRoute>} />
@@ -65,7 +65,7 @@ const AppContent = () => {
           console.log('Scan completed:', result);
           // Handle scan completion
         }} /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/analytics" element={<div className="pt-24"><AnalyticsDashboard /></div>} />
+        <Route path="/analytics" element={<ProtectedRoute><DashboardLayout><AnalyticsDashboard /></DashboardLayout></ProtectedRoute>} />
         <Route path="/pricing" element={<div className="pt-24"><Pricing /></div>} />
         <Route path="/billing" element={<ProtectedRoute><DashboardLayout><Billing /></DashboardLayout></ProtectedRoute>} />
         <Route path="/automation" element={<ProtectedRoute><DashboardLayout><Automation /></DashboardLayout></ProtectedRoute>} />
@@ -86,7 +86,7 @@ const AppContent = () => {
         <Route path="/security" element={<ProtectedRoute><DashboardLayout><SecurityDashboard /></DashboardLayout></ProtectedRoute>} />
         <Route path="/analytics/real-time" element={<ProtectedRoute><DashboardLayout><RealTimeAnalytics /></DashboardLayout></ProtectedRoute>} />
         <Route path="/analytics/reporting" element={<ProtectedRoute><DashboardLayout><ReportingDashboard /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/analytics/predictive" element={<div className="pt-24"><ProtectedRoute><PredictiveAnalyticsTab /></ProtectedRoute></div>} />
+        <Route path="/analytics/predictive" element={<ProtectedRoute><DashboardLayout><PredictiveAnalyticsTab /></DashboardLayout></ProtectedRoute>} />
         <Route path="/debug" element={<div className="pt-24"><Debug /></div>} />
         <Route path="/debug-onboarding" element={<div className="pt-24"><DebugOnboarding /></div>} />
         <Route path="/test-training" element={<div className="pt-24"><h1>🧪 TEST TRAINING PAGE - NO PROTECTION</h1></div>} />
