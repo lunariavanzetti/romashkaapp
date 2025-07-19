@@ -1,0 +1,3 @@
+Deployment triggered at: 2025-07-19T19:55:00Z
+Version: 0.0.1
+Fix: CORS-safe URL validation for website scanner
