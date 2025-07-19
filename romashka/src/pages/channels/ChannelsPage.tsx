@@ -113,7 +113,32 @@ const ChannelsPage: React.FC = () => {
     loadChannelStatus();
     loadWebhookInfo();
     loadMetrics();
+    loadStoredConfigurations();
   }, []);
+  
+  const loadStoredConfigurations = () => {
+    try {
+      const stored = localStorage.getItem('romashka-channel-configs');
+      if (stored) {
+        const configs = JSON.parse(stored);
+        
+        if (configs.whatsapp) {
+          setWhatsappConfig(configs.whatsapp);
+        }
+        if (configs.instagram) {
+          setInstagramConfig(configs.instagram);
+        }
+        if (configs.email) {
+          setEmailConfig(configs.email);
+        }
+        if (configs.widget) {
+          setWidgetConfig(configs.widget);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading stored configurations:', error);
+    }
+  };
 
   const loadChannelStatus = async () => {
     setIsLoading(true);
@@ -239,7 +264,29 @@ const ChannelsPage: React.FC = () => {
   };
 
   const initializeChannelManager = async () => {
+    setIsLoading(true);
     try {
+      // Validate configurations
+      const errors = [];
+      
+      if (whatsappConfig.accessToken && (!whatsappConfig.phoneNumberId || !whatsappConfig.webhookSecret)) {
+        errors.push('WhatsApp: Missing Phone Number ID or Webhook Secret');
+      }
+      
+      if (instagramConfig.accessToken && (!instagramConfig.appSecret || !instagramConfig.pageId)) {
+        errors.push('Instagram: Missing App Secret or Page ID');
+      }
+      
+      if (emailConfig.sendgridApiKey && !emailConfig.supportEmail) {
+        errors.push('Email: Missing Support Email address');
+      }
+      
+      if (errors.length > 0) {
+        alert('❌ Configuration errors:\n\n' + errors.join('\n') + 
+              '\n\nPlease fix these issues before saving.');
+        return;
+      }
+      
       const config: UnifiedChannelConfig = {
         whatsapp: whatsappConfig.accessToken ? whatsappConfig : undefined,
         instagram: instagramConfig.accessToken ? instagramConfig : undefined,
@@ -251,47 +298,135 @@ const ChannelsPage: React.FC = () => {
       const manager = new UnifiedChannelManager(config);
       setChannelManager(manager);
       
-      // Update channel statuses
-      await loadChannelStatus();
+      // Save configurations to localStorage for persistence
+      localStorage.setItem('romashka-channel-configs', JSON.stringify({
+        whatsapp: whatsappConfig,
+        instagram: instagramConfig,
+        email: emailConfig,
+        widget: widgetConfig
+      }));
+      
+      // Update channel statuses based on configuration
+      setChannels(prev => prev.map(ch => {
+        let status: 'active' | 'inactive' | 'error' | 'setup_required' = 'setup_required';
+        
+        switch (ch.type) {
+          case 'whatsapp':
+            status = whatsappConfig.accessToken ? 'active' : 'setup_required';
+            break;
+          case 'instagram':
+            status = instagramConfig.accessToken ? 'active' : 'setup_required';
+            break;
+          case 'email':
+            status = emailConfig.sendgridApiKey ? 'active' : 'setup_required';
+            break;
+          case 'website':
+            status = widgetConfig.enabled ? 'active' : 'inactive';
+            break;
+          default:
+            status = 'inactive';
+        }
+        
+        return { ...ch, status };
+      }));
+      
       await loadWebhookInfo();
+      
+      alert('✅ Channel configuration saved successfully! You can now test your webhooks.');
+      
     } catch (error) {
       console.error('Error initializing channel manager:', error);
+      alert('❌ Failed to save configuration: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleChannelSetup = async (channelType: ChannelType) => {
     setShowSetup(channelType);
+    setActiveTab('setup');
+    
+    // Scroll to the relevant setup section
+    setTimeout(() => {
+      const setupSection = document.getElementById(`setup-${channelType}`);
+      if (setupSection) {
+        setupSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setupSection.style.backgroundColor = '#fef3c7'; // Highlight yellow
+        setTimeout(() => {
+          setupSection.style.backgroundColor = '';
+        }, 2000);
+      }
+    }, 100);
   };
 
   const handleWebhookTest = async (channelType: ChannelType) => {
+    setIsLoading(true);
     try {
       const webhook = webhooks[channelType];
       if (!webhook.url) {
-        throw new Error('Webhook URL not configured');
+        alert('❌ Webhook URL not configured for ' + channelType + '. Please set up the channel first.');
+        return;
       }
 
-      // Test webhook endpoint
-      const response = await fetch(webhook.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test: true, channel: channelType })
-      });
+      // Show testing in progress
+      alert('🔄 Testing webhook for ' + channelType + '...');
 
-      if (response.ok) {
-        setWebhooks(prev => ({
-          ...prev,
-          [channelType]: {
-            ...prev[channelType],
-            status: 'active',
-            lastTriggered: new Date(),
-            errorCount: 0
-          }
-        }));
-      } else {
-        throw new Error(`Webhook test failed: ${response.statusText}`);
+      // Test webhook endpoint with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      try {
+        const response = await fetch(webhook.url, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'User-Agent': 'ROMASHKA-Test-Agent/1.0'
+          },
+          body: JSON.stringify({ 
+            test: true, 
+            channel: channelType,
+            timestamp: new Date().toISOString(),
+            source: 'romashka-dashboard'
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          setWebhooks(prev => ({
+            ...prev,
+            [channelType]: {
+              ...prev[channelType],
+              status: 'active',
+              lastTriggered: new Date(),
+              errorCount: 0
+            }
+          }));
+          
+          // Update channel status
+          setChannels(prev => prev.map(ch => 
+            ch.type === channelType 
+              ? { ...ch, status: 'active' as const }
+              : ch
+          ));
+          
+          alert('✅ Webhook test successful for ' + channelType + '! The endpoint is responding correctly.');
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          throw new Error('Request timeout - webhook endpoint took too long to respond');
+        }
+        throw fetchError;
       }
     } catch (error) {
       console.error('Webhook test failed:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
       setWebhooks(prev => ({
         ...prev,
         [channelType]: {
@@ -300,6 +435,18 @@ const ChannelsPage: React.FC = () => {
           errorCount: prev[channelType].errorCount + 1
         }
       }));
+      
+      // Update channel status
+      setChannels(prev => prev.map(ch => 
+        ch.type === channelType 
+          ? { ...ch, status: 'error' as const, errorMessage }
+          : ch
+      ));
+      
+      alert('❌ Webhook test failed for ' + channelType + ':\n\n' + errorMessage + 
+            '\n\nPlease check your webhook configuration and ensure the endpoint is accessible.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -335,31 +482,56 @@ const ChannelsPage: React.FC = () => {
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex justify-between">
                   <span>Messages:</span>
-                  <span className="font-medium">{channel.messageCount}</span>
+                  <span className="font-medium">{channel.messageCount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Response Time:</span>
-                  <span className="font-medium">{channel.responseTime}s</span>
+                  <span className="font-medium">
+                    {channel.responseTime > 0 ? `${channel.responseTime}s` : 'N/A'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Last Activity:</span>
-                  <span className="font-medium">{channel.lastActivity.toLocaleTimeString()}</span>
+                  <span className="font-medium">
+                    {channel.messageCount > 0 ? channel.lastActivity.toLocaleTimeString() : 'Never'}
+                  </span>
                 </div>
+                {channel.errorMessage && (
+                  <div className="text-red-600 text-xs mt-2 p-2 bg-red-50 rounded border border-red-200">
+                    <strong>Error:</strong> {channel.errorMessage}
+                  </div>
+                )}
               </div>
               
               <div className="mt-4 flex space-x-2">
                 <button
                   onClick={() => handleChannelSetup(channel.type)}
-                  className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200"
+                  disabled={isLoading}
+                  className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <CogIcon className="w-4 h-4 inline mr-1" />
-                  Setup
+                  {isLoading ? 'Loading...' : 'Setup'}
                 </button>
                 <button
                   onClick={() => handleWebhookTest(channel.type)}
-                  className="flex-1 px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  disabled={isLoading || channel.status === 'setup_required'}
+                  className="flex-1 px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  title={channel.status === 'setup_required' ? 'Complete setup first' : 'Test webhook connection'}
                 >
-                  Test
+                  {isLoading ? (
+                    <ArrowPathIcon className="w-4 h-4 inline mr-1 animate-spin" />
+                  ) : (
+                    <>
+                      {channel.status === 'active' ? (
+                        <CheckCircleIcon className="w-4 h-4 inline mr-1" />
+                      ) : channel.status === 'error' ? (
+                        <ExclamationTriangleIcon className="w-4 h-4 inline mr-1" />
+                      ) : (
+                        <CogIcon className="w-4 h-4 inline mr-1" />
+                      )}
+                    </>
+                  )}
+                  {isLoading ? 'Testing...' : 'Test'}
                 </button>
               </div>
             </div>
@@ -371,41 +543,73 @@ const ChannelsPage: React.FC = () => {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Webhook Status</h3>
         <div className="space-y-4">
-          {Object.entries(webhooks).map(([channel, webhook]) => (
-            <div key={channel} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className={`w-8 h-8 rounded-full ${channelColors[channel as ChannelType]} flex items-center justify-center`}>
-                  {React.createElement(channelIcons[channel as ChannelType], { className: "w-4 h-4 text-white" })}
+          {Object.entries(webhooks).map(([channel, webhook]) => {
+            const channelName = channel.charAt(0).toUpperCase() + channel.slice(1);
+            return (
+              <div key={channel} className="p-4 bg-gray-50 rounded-lg border transition-colors hover:bg-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 rounded-full ${channelColors[channel as ChannelType]} flex items-center justify-center`}>
+                      {React.createElement(channelIcons[channel as ChannelType], { className: "w-4 h-4 text-white" })}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900">{channelName}</h4>
+                      <p className="text-sm text-gray-500 font-mono">
+                        {webhook.url || (
+                          <span className="text-yellow-600 font-normal">Not configured</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      webhook.status === 'active' ? 'text-green-600 bg-green-100' :
+                      webhook.status === 'error' ? 'text-red-600 bg-red-100' :
+                      'text-gray-600 bg-gray-100'
+                    }`}>
+                      {webhook.status === 'active' ? '✅ Active' :
+                       webhook.status === 'error' ? '❌ Error' :
+                       '⏸️ Inactive'}
+                    </span>
+                    
+                    <button
+                      onClick={() => handleWebhookTest(channel as ChannelType)}
+                      disabled={isLoading || !webhook.url}
+                      className="px-3 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                      title={!webhook.url ? 'Configure webhook URL first' : 'Test webhook connection'}
+                    >
+                      {isLoading ? 'Testing...' : 'Test'}
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">{channel}</h4>
-                  <p className="text-sm text-gray-500">{webhook.url || 'Not configured'}</p>
+                
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center space-x-4">
+                    {webhook.lastTriggered && (
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                        Last triggered: {webhook.lastTriggered.toLocaleString()}
+                      </span>
+                    )}
+                    
+                    {webhook.errorCount > 0 && (
+                      <span className="flex items-center gap-1 text-red-500">
+                        <ExclamationTriangleIcon className="w-3 h-3" />
+                        {webhook.errorCount} error{webhook.errorCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {webhook.url && (
+                    <span className="text-green-600">
+                      ✓ Configured
+                    </span>
+                  )}
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  webhook.status === 'active' ? 'text-green-600 bg-green-100' :
-                  webhook.status === 'error' ? 'text-red-600 bg-red-100' :
-                  'text-gray-600 bg-gray-100'
-                }`}>
-                  {webhook.status}
-                </span>
-                
-                {webhook.lastTriggered && (
-                  <span className="text-xs text-gray-500">
-                    Last: {webhook.lastTriggered.toLocaleTimeString()}
-                  </span>
-                )}
-                
-                {webhook.errorCount > 0 && (
-                  <span className="text-xs text-red-500">
-                    {webhook.errorCount} errors
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -447,8 +651,29 @@ const ChannelsPage: React.FC = () => {
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Channel Setup</h3>
         
         {/* WhatsApp Setup */}
-        <div className="mb-8">
-          <h4 className="text-md font-medium text-gray-900 mb-4">WhatsApp Business</h4>
+        <div id="setup-whatsapp" className="mb-8 p-4 rounded-lg border transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-8 h-8 rounded-full ${channelColors.whatsapp} flex items-center justify-center`}>
+              <DevicePhoneMobileIcon className="w-4 h-4 text-white" />
+            </div>
+            <h4 className="text-md font-medium text-gray-900">WhatsApp Business</h4>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              whatsappConfig.accessToken ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+            }`}>
+              {whatsappConfig.accessToken ? 'Configured' : 'Setup Required'}
+            </span>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h5 className="text-sm font-medium text-blue-900 mb-2">Setup Instructions:</h5>
+            <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+              <li>Create a WhatsApp Business Account on Meta for Developers</li>
+              <li>Get your Phone Number ID from the WhatsApp API configuration</li>
+              <li>Generate a permanent access token (not temporary)</li>
+              <li>Set up webhook URL: <code className="bg-blue-100 px-1 rounded">https://api.romashka.ai/webhooks/whatsapp</code></li>
+              <li>Configure webhook secret for security</li>
+            </ol>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number ID</label>
@@ -497,8 +722,29 @@ const ChannelsPage: React.FC = () => {
         </div>
 
         {/* Instagram Setup */}
-        <div className="mb-8">
-          <h4 className="text-md font-medium text-gray-900 mb-4">Instagram DM</h4>
+        <div id="setup-instagram" className="mb-8 p-4 rounded-lg border transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-8 h-8 rounded-full ${channelColors.instagram} flex items-center justify-center`}>
+              <ChatBubbleLeftRightIcon className="w-4 h-4 text-white" />
+            </div>
+            <h4 className="text-md font-medium text-gray-900">Instagram DM</h4>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              instagramConfig.accessToken ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+            }`}>
+              {instagramConfig.accessToken ? 'Configured' : 'Setup Required'}
+            </span>
+          </div>
+          
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+            <h5 className="text-sm font-medium text-purple-900 mb-2">Setup Instructions:</h5>
+            <ol className="text-sm text-purple-700 space-y-1 list-decimal list-inside">
+              <li>Create a Facebook App and add Instagram Basic Display</li>
+              <li>Connect your Instagram Business Account</li>
+              <li>Generate a long-lived access token</li>
+              <li>Configure webhook URL: <code className="bg-purple-100 px-1 rounded">https://api.romashka.ai/webhooks/instagram</code></li>
+              <li>Subscribe to messaging webhooks</li>
+            </ol>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Access Token</label>
@@ -536,8 +782,29 @@ const ChannelsPage: React.FC = () => {
         </div>
 
         {/* Email Setup */}
-        <div className="mb-8">
-          <h4 className="text-md font-medium text-gray-900 mb-4">Email Support</h4>
+        <div id="setup-email" className="mb-8 p-4 rounded-lg border transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-8 h-8 rounded-full ${channelColors.email} flex items-center justify-center`}>
+              <EnvelopeIcon className="w-4 h-4 text-white" />
+            </div>
+            <h4 className="text-md font-medium text-gray-900">Email Support</h4>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              emailConfig.sendgridApiKey ? 'text-green-600 bg-green-100' : 'text-yellow-600 bg-yellow-100'
+            }`}>
+              {emailConfig.sendgridApiKey ? 'Configured' : 'Setup Required'}
+            </span>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h5 className="text-sm font-medium text-blue-900 mb-2">Setup Instructions:</h5>
+            <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+              <li>Create a SendGrid account and verify your domain</li>
+              <li>Generate an API key with full access permissions</li>
+              <li>Configure your support email address for incoming messages</li>
+              <li>Set up email parsing webhook: <code className="bg-blue-100 px-1 rounded">https://api.romashka.ai/webhooks/email</code></li>
+              <li>Test email sending and receiving functionality</li>
+            </ol>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">SendGrid API Key</label>
@@ -564,8 +831,29 @@ const ChannelsPage: React.FC = () => {
         </div>
 
         {/* Widget Setup */}
-        <div className="mb-8">
-          <h4 className="text-md font-medium text-gray-900 mb-4">Website Widget</h4>
+        <div id="setup-website" className="mb-8 p-4 rounded-lg border transition-colors">
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-8 h-8 rounded-full ${channelColors.website} flex items-center justify-center`}>
+              <GlobeAltIcon className="w-4 h-4 text-white" />
+            </div>
+            <h4 className="text-md font-medium text-gray-900">Website Widget</h4>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              widgetConfig.enabled ? 'text-green-600 bg-green-100' : 'text-gray-600 bg-gray-100'
+            }`}>
+              {widgetConfig.enabled ? 'Enabled' : 'Disabled'}
+            </span>
+          </div>
+          
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <h5 className="text-sm font-medium text-green-900 mb-2">Setup Instructions:</h5>
+            <ol className="text-sm text-green-700 space-y-1 list-decimal list-inside">
+              <li>Enable the website widget below</li>
+              <li>Configure your project ID (or use default)</li>
+              <li>Customize widget appearance and behavior</li>
+              <li>Copy the embed code and add it to your website</li>
+              <li>Test the widget functionality on your site</li>
+            </ol>
+          </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
               <input
@@ -593,13 +881,34 @@ const ChannelsPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <button
-            onClick={initializeChannelManager}
-            className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Save Configuration
-          </button>
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            💡 Configurations are automatically saved to your browser. Make sure to test webhooks after setup.
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                setWhatsappConfig({ phoneNumberId: '', accessToken: '', webhookSecret: '', businessAccountId: '' });
+                setInstagramConfig({ accessToken: '', appSecret: '', pageId: '' });
+                setEmailConfig({ sendgridApiKey: '', supportEmail: '', smtpHost: '', smtpPort: 587, smtpUser: '', smtpPassword: '', imapHost: '', imapPort: 993 });
+                setWidgetConfig({ enabled: false, projectId: 'default-project' });
+                localStorage.removeItem('romashka-channel-configs');
+                alert('✅ All configurations cleared!');
+              }}
+              disabled={isLoading}
+              className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Clear All
+            </button>
+            <button
+              onClick={initializeChannelManager}
+              disabled={isLoading}
+              className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {isLoading && <ArrowPathIcon className="w-4 h-4 animate-spin" />}
+              {isLoading ? 'Saving...' : 'Save Configuration'}
+            </button>
+          </div>
         </div>
       </div>
 
