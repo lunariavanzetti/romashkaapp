@@ -84,6 +84,7 @@ export default function PlaygroundPage() {
   });
   const [embedCode, setEmbedCode] = useState('');
   const [isEmbedCopied, setIsEmbedCopied] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState('html');
 
   // Initialize component
   useEffect(() => {
@@ -460,9 +461,13 @@ This demonstrates how real A/B testing would work with your personality configur
       }
     };
 
-    const code = `<!-- ROMASHKA AI Chat Widget -->
+    const configJson = JSON.stringify(config, null, 2);
+
+    switch (selectedPlatform) {
+      case 'html':
+        return `<!-- ROMASHKA AI Chat Widget -->
 <script>
-  window.RomashkaConfig = ${JSON.stringify(config, null, 2)};
+  window.RomashkaConfig = ${configJson};
   (function() {
     var script = document.createElement('script');
     script.src = 'https://romashkaai.vercel.app/widget.js';
@@ -472,7 +477,346 @@ This demonstrates how real A/B testing would work with your personality configur
 </script>
 <!-- End ROMASHKA Widget -->`;
 
-    return code;
+      case 'react':
+        return `// Install: npm install romashka-widget (when available)
+// Or use useEffect hook for script loading
+
+import { useEffect } from 'react';
+
+const RomashkaWidget = () => {
+  useEffect(() => {
+    // Set configuration
+    window.RomashkaConfig = ${configJson};
+    
+    // Load widget script
+    const script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+    
+    // Cleanup function
+    return () => {
+      const existingScript = document.querySelector('script[src="https://romashkaai.vercel.app/widget.js"]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
+
+  return null; // Widget renders itself
+};
+
+export default RomashkaWidget;
+
+// Usage in your component:
+// import RomashkaWidget from './RomashkaWidget';
+// <RomashkaWidget />`;
+
+      case 'nextjs':
+        return `// pages/_app.js or app/layout.js
+import Script from 'next/script';
+
+const romashkaConfig = ${configJson};
+
+export default function MyApp({ Component, pageProps }) {
+  return (
+    <>
+      <Component {...pageProps} />
+      
+      {/* ROMASHKA Widget */}
+      <Script id="romashka-config" strategy="beforeInteractive">
+        {\`window.RomashkaConfig = \${JSON.stringify(romashkaConfig)};\`}
+      </Script>
+      
+      <Script
+        src="https://romashkaai.vercel.app/widget.js"
+        strategy="afterInteractive"
+      />
+    </>
+  );
+}
+
+// Or for App Router (app/layout.js):
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        
+        <Script id="romashka-config" strategy="beforeInteractive">
+          {\`window.RomashkaConfig = \${JSON.stringify(romashkaConfig)};\`}
+        </Script>
+        
+        <Script
+          src="https://romashkaai.vercel.app/widget.js"
+          strategy="afterInteractive"
+        />
+      </body>
+    </html>
+  );
+}`;
+
+      case 'vite':
+        return `// src/main.js or src/main.ts
+import './style.css';
+
+// Set ROMASHKA configuration
+window.RomashkaConfig = ${configJson};
+
+// Load widget script
+const script = document.createElement('script');
+script.src = 'https://romashkaai.vercel.app/widget.js';
+script.async = true;
+document.head.appendChild(script);
+
+// Your app initialization...
+import { createApp } from 'vue'; // or React
+import App from './App.vue';
+
+createApp(App).mount('#app');
+
+// Alternative: Create a composable (Vue 3)
+// composables/useRomashka.js
+export function useRomashka() {
+  const loadWidget = () => {
+    if (!window.RomashkaConfig) {
+      window.RomashkaConfig = ${configJson};
+    }
+    
+    if (!document.querySelector('script[src*="romashkaai.vercel.app"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://romashkaai.vercel.app/widget.js';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  };
+  
+  return { loadWidget };
+}`;
+
+      case 'vue':
+        return `<!-- App.vue or main component -->
+<template>
+  <div id="app">
+    <!-- Your app content -->
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'App',
+  mounted() {
+    this.loadRomashkaWidget();
+  },
+  methods: {
+    loadRomashkaWidget() {
+      // Set configuration
+      window.RomashkaConfig = ${configJson};
+      
+      // Load widget script
+      const script = document.createElement('script');
+      script.src = 'https://romashkaai.vercel.app/widget.js';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  },
+  beforeUnmount() {
+    // Cleanup if needed
+    const script = document.querySelector('script[src*="romashkaai.vercel.app"]');
+    if (script) {
+      script.remove();
+    }
+  }
+};
+</script>
+
+<!-- Or as a composable (Vue 3): -->
+<!-- composables/useRomashka.js -->
+<script setup>
+import { onMounted, onUnmounted } from 'vue';
+
+export function useRomashka() {
+  onMounted(() => {
+    window.RomashkaConfig = ${configJson};
+    
+    const script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  });
+  
+  onUnmounted(() => {
+    const script = document.querySelector('script[src*="romashkaai.vercel.app"]');
+    if (script) script.remove();
+  });
+}
+</script>`;
+
+      case 'angular':
+        return `// app.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  template: \`
+    <!-- Your app content -->
+  \`
+})
+export class AppComponent implements OnInit, OnDestroy {
+  
+  ngOnInit() {
+    this.loadRomashkaWidget();
+  }
+  
+  ngOnDestroy() {
+    const script = document.querySelector('script[src*="romashkaai.vercel.app"]');
+    if (script) {
+      script.remove();
+    }
+  }
+  
+  private loadRomashkaWidget() {
+    // Set configuration
+    (window as any).RomashkaConfig = ${configJson};
+    
+    // Load widget script
+    const script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+}
+
+// Or create a service:
+// romashka.service.ts
+import { Injectable } from '@angular/core';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RomashkaService {
+  
+  loadWidget() {
+    if (!(window as any).RomashkaConfig) {
+      (window as any).RomashkaConfig = ${configJson};
+    }
+    
+    if (!document.querySelector('script[src*="romashkaai.vercel.app"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://romashkaai.vercel.app/widget.js';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  }
+}`;
+
+      case 'svelte':
+        return `<!-- App.svelte or main component -->
+<script>
+  import { onMount, onDestroy } from 'svelte';
+  
+  onMount(() => {
+    loadRomashkaWidget();
+  });
+  
+  onDestroy(() => {
+    const script = document.querySelector('script[src*="romashkaai.vercel.app"]');
+    if (script) {
+      script.remove();
+    }
+  });
+  
+  function loadRomashkaWidget() {
+    // Set configuration
+    window.RomashkaConfig = ${configJson};
+    
+    // Load widget script
+    const script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+</script>
+
+<!-- Your app content -->
+<main>
+  <!-- Widget will appear automatically -->
+</main>`;
+
+      case 'wordpress':
+        return `<!-- WordPress Implementation -->
+
+<!-- Method 1: Theme's functions.php -->
+<?php
+function add_romashka_widget() {
+    $config = json_encode(${configJson});
+    ?>
+    <script>
+      window.RomashkaConfig = <?php echo $config; ?>;
+      (function() {
+        var script = document.createElement('script');
+        script.src = 'https://romashkaai.vercel.app/widget.js';
+        script.async = true;
+        document.head.appendChild(script);
+      })();
+    </script>
+    <?php
+}
+add_action('wp_footer', 'add_romashka_widget');
+
+<!-- Method 2: Direct HTML in footer.php -->
+<!-- ROMASHKA AI Chat Widget -->
+<script>
+  window.RomashkaConfig = ${configJson};
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  })();
+</script>
+<!-- End ROMASHKA Widget -->
+
+<!-- Method 3: Code Injection Plugin -->
+<!-- Install "Insert Headers and Footers" plugin -->
+<!-- Paste the HTML code in Footer section -->`;
+
+      case 'shopify':
+        return `<!-- Shopify Implementation -->
+
+<!-- Method 1: theme.liquid -->
+<!-- Go to: Online Store > Themes > Edit Code > Layout > theme.liquid -->
+<!-- Add before closing </body> tag: -->
+
+<script>
+  window.RomashkaConfig = ${configJson};
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  })();
+</script>
+
+<!-- Method 2: Settings > Checkout > Additional Scripts -->
+<!-- (Available on Shopify Plus only) -->
+
+<!-- Method 3: Custom HTML Section -->
+<!-- Create custom.liquid section with the script -->`;
+
+      default:
+        return `<!-- ROMASHKA AI Chat Widget -->
+<script>
+  window.RomashkaConfig = ${configJson};
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://romashkaai.vercel.app/widget.js';
+    script.async = true;
+    document.head.appendChild(script);
+  })();
+</script>
+<!-- End ROMASHKA Widget -->`;
+    }
   };
 
   const handleGenerateEmbed = () => {
@@ -489,6 +833,111 @@ This demonstrates how real A/B testing would work with your personality configur
     } catch (error) {
       console.error('Failed to copy embed code:', error);
       alert('❌ Failed to copy to clipboard. Please select and copy manually.');
+    }
+  };
+
+  const getPlatformInstructions = () => {
+    switch (selectedPlatform) {
+      case 'html':
+        return {
+          title: 'HTML / Static Website Implementation',
+          steps: [
+            'Copy the embed code above',
+            'Paste it into your HTML file before the closing </body> tag',
+            'Save and reload your website',
+            'The chat widget will appear in the chosen position'
+          ]
+        };
+      case 'react':
+        return {
+          title: 'React Implementation',
+          steps: [
+            'Create a new component file (e.g., RomashkaWidget.jsx)',
+            'Copy the code above and save it as your component',
+            'Import and use <RomashkaWidget /> in your main App component',
+            'The widget will load automatically when the component mounts'
+          ]
+        };
+      case 'nextjs':
+        return {
+          title: 'Next.js Implementation',
+          steps: [
+            'Add the code to your _app.js file (Pages Router) or layout.js (App Router)',
+            'The Script components will load the widget optimally',
+            'Deploy your Next.js app',
+            'Widget appears on all pages automatically'
+          ]
+        };
+      case 'vite':
+        return {
+          title: 'Vite Implementation',
+          steps: [
+            'Add the code to your main.js or main.ts file',
+            'Or use the composable approach for Vue projects',
+            'Run your Vite dev server: npm run dev',
+            'Widget loads with your application'
+          ]
+        };
+      case 'vue':
+        return {
+          title: 'Vue.js Implementation',
+          steps: [
+            'Add the code to your main App.vue component',
+            'Or create a separate component for the widget',
+            'The widget loads in the mounted() lifecycle hook',
+            'Use the composable approach for Vue 3 projects'
+          ]
+        };
+      case 'angular':
+        return {
+          title: 'Angular Implementation',
+          steps: [
+            'Add the code to your app.component.ts file',
+            'Or create a dedicated service using RomashkaService',
+            'The widget loads in ngOnInit() lifecycle hook',
+            'Inject the service in components that need the widget'
+          ]
+        };
+      case 'svelte':
+        return {
+          title: 'Svelte/SvelteKit Implementation',
+          steps: [
+            'Add the code to your main App.svelte component',
+            'The widget loads in the onMount() lifecycle function',
+            'Clean up occurs automatically in onDestroy()',
+            'Works with both Svelte and SvelteKit projects'
+          ]
+        };
+      case 'wordpress':
+        return {
+          title: 'WordPress Implementation',
+          steps: [
+            'Method 1: Add PHP code to your theme\'s functions.php file',
+            'Method 2: Paste HTML directly in footer.php template',
+            'Method 3: Use "Insert Headers and Footers" plugin',
+            'Widget appears on all pages of your WordPress site'
+          ]
+        };
+      case 'shopify':
+        return {
+          title: 'Shopify Implementation',
+          steps: [
+            'Go to Online Store > Themes > Edit Code',
+            'Open theme.liquid file in Layout folder',
+            'Paste the code before closing </body> tag',
+            'Save changes - widget appears on all store pages'
+          ]
+        };
+      default:
+        return {
+          title: 'Implementation Instructions',
+          steps: [
+            'Copy the embed code above',
+            'Follow the platform-specific instructions',
+            'Test the widget on your website',
+            'Configure personality and A/B testing as needed'
+          ]
+        };
     }
   };
 
@@ -1229,6 +1678,31 @@ This demonstrates how real A/B testing would work with your personality configur
                   <div className="space-y-4">
                     <h3 className="font-medium text-gray-900 dark:text-white">Widget Settings</h3>
                     
+                    {/* Platform Selector */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Platform / Framework
+                      </label>
+                      <select
+                        value={selectedPlatform}
+                        onChange={(e) => setSelectedPlatform(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white"
+                      >
+                        <option value="html">HTML / Static Website</option>
+                        <option value="react">React</option>
+                        <option value="nextjs">Next.js</option>
+                        <option value="vite">Vite (Vue/React)</option>
+                        <option value="vue">Vue.js</option>
+                        <option value="angular">Angular</option>
+                        <option value="svelte">Svelte/SvelteKit</option>
+                        <option value="wordpress">WordPress</option>
+                        <option value="shopify">Shopify</option>
+                      </select>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Choose your platform to get specific implementation code
+                      </p>
+                    </div>
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Widget Title
@@ -1334,13 +1808,25 @@ This demonstrates how real A/B testing would work with your personality configur
                       <code>{embedCode}</code>
                     </pre>
                     <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                      <p><strong>How to use:</strong></p>
-                      <ol className="list-decimal list-inside space-y-1 mt-2">
-                        <li>Copy the embed code above</li>
-                        <li>Paste it into your website's HTML (before closing &lt;/body&gt; tag)</li>
-                        <li>The chat widget will appear on your site</li>
-                        <li>Visitors can chat with your AI using the personality settings configured above</li>
-                      </ol>
+                      {(() => {
+                        const instructions = getPlatformInstructions();
+                        return (
+                          <>
+                            <p><strong>{instructions.title}:</strong></p>
+                            <ol className="list-decimal list-inside space-y-1 mt-2">
+                              {instructions.steps.map((step, index) => (
+                                <li key={index}>{step}</li>
+                              ))}
+                            </ol>
+                            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                                <strong>💡 Platform Note:</strong> This code is optimized for {selectedPlatform === 'html' ? 'HTML/Static websites' : selectedPlatform === 'nextjs' ? 'Next.js' : selectedPlatform === 'vite' ? 'Vite projects' : selectedPlatform.charAt(0).toUpperCase() + selectedPlatform.slice(1)} projects. 
+                                Select a different platform above to get framework-specific implementation code.
+                              </p>
+                            </div>
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
