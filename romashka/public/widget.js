@@ -1,5 +1,5 @@
 // ROMASHKA AI Chat Widget
-// Version 1.0.0
+// Version 1.0.1 - Real FAQ Integration
 
 (function() {
   'use strict';
