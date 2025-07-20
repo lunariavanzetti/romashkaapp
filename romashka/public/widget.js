@@ -298,8 +298,10 @@
   // Initialize Supabase client for widget
   function createSupabaseClient() {
     // Use the same Supabase config as the main app
-    const supabaseUrl = 'https://ztcnqxswlbevqmuzudpw.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Y25xeHN3bGJldnFtdXp1ZHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4NzQ4MTEsImV4cCI6MjA0NzQ1MDgxMX0.iKw3LBnXaEd_9Q2yyE5H3gj1FHV-LnTPDbcIjZYmqAE';
+    const supabaseUrl = 'https://dbieawxwlbwakkuvaihh.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRiaWVhd3h3bGJ3YWtrdXZhaWhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExNTA5MzAsImV4cCI6MjA2NjcyNjkzMH0.GGYzv6V1Ie6ZlD_2sBPJ4FO2PkylgKLBhRDfVaAEtN8';
+    
+    console.log('🔧 Widget: Creating Supabase client with URL:', supabaseUrl);
     
     // Create a simple Supabase client without importing the full library
     return {
@@ -749,6 +751,29 @@
     document.head.appendChild(style);
 
     console.log('ROMASHKA Widget initialized successfully');
+    
+    // Test database connection on startup
+    testDatabaseConnection();
+  }
+
+  // Test database connection
+  async function testDatabaseConnection() {
+    try {
+      console.log('🧪 Widget: Testing database connection...');
+      const faqData = await getRealFAQData();
+      console.log('🧪 Widget: Database test result:', {
+        success: true,
+        entriesFound: faqData.length,
+        sample: faqData.length > 0 ? {
+          url: faqData[0].url,
+          type: faqData[0].content_type,
+          hasContent: !!faqData[0].content,
+          contentLength: faqData[0].content?.length || 0
+        } : null
+      });
+    } catch (error) {
+      console.error('🧪 Widget: Database test failed:', error);
+    }
   }
 
   // Wait for DOM to be ready
