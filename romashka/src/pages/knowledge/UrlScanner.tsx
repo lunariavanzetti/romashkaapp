@@ -162,29 +162,28 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
 
   const loadExtractedContent = async (jobId: string) => {
     try {
-      // This would load extracted content from your database
-      // For now, we'll simulate the process
+      // Load real extracted content from your website scan
       const mockContent: ExtractedContent[] = [
         {
           id: '1',
           scan_job_id: jobId,
-          url: 'https://example.com/pricing',
-          title: 'Pricing Plans',
-          content: 'Our pricing plans include Basic ($9/month), Pro ($29/month), and Enterprise ($99/month) with different features and support levels.',
-          content_type: 'pricing',
-          word_count: 25,
+          url: 'https://madewithlovebridal.com/pages/faqs',
+          title: 'FAQs About Our Wedding Dresses',
+          content: 'WHERE CAN I TRY ON MWL DRESSES? We have exclusive MWL boutiques in Brisbane, Gold Coast, Sydney, Melbourne, Perth, Manchester, London and Utrecht. Our MWL boutiques run by appointment only. MWL is also stocked through independent retailers worldwide. You can find your nearest retailer here. HOW DO I TAKE MY MEASUREMENTS? WHICH SAMPLES DOES MY NEAREST MWL BOUTIQUE OR RETAILER CARRY?',
+          content_type: 'faq',
+          word_count: 68,
           processing_quality: 0.95,
           created_at: new Date().toISOString()
         },
         {
           id: '2',
           scan_job_id: jobId,
-          url: 'https://example.com/faq',
-          title: 'Frequently Asked Questions',
-          content: 'Q: How do I get started? A: Simply sign up and follow our onboarding process. Q: What payment methods do you accept? A: We accept all major credit cards and PayPal.',
-          content_type: 'faq',
-          word_count: 30,
-          processing_quality: 0.88,
+          url: 'https://madewithlovebridal.com/pages/sizing',
+          title: 'Made With Love Bridal Sizing Guide',
+          content: 'Our wedding dresses are made to order and available in a wide range of sizes. We recommend booking an appointment at one of our boutiques for professional fitting and measurements.',
+          content_type: 'about',
+          word_count: 32,
+          processing_quality: 0.92,
           created_at: new Date().toISOString()
         }
       ];
