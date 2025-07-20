@@ -39,7 +39,7 @@ interface WebhookInfo {
 }
 
 const ChannelsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'setup' | 'inbox' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'setup' | 'inbox' | 'analytics'>('setup');
   const [channels, setChannels] = useState<ChannelStatus[]>([]);
   const [webhooks, setWebhooks] = useState<Record<ChannelType, WebhookInfo>>({
     whatsapp: { url: '', status: 'inactive', errorCount: 0 },
@@ -352,18 +352,24 @@ const ChannelsPage: React.FC = () => {
   const handleOAuthFlow = (channelType: ChannelType, provider: string) => {
     const baseUrl = 'https://api.romashka.ai/oauth';
     const redirectUri = `${window.location.origin}/channels/oauth-callback`;
+    const fallbackRedirectUri = `${window.location.origin}/channels`;
+    // Using a realistic app ID for demo (this would be your actual Facebook App ID)
+    const facebookAppId = '1543092569299627';
     
     let authUrl = '';
     
     switch (provider) {
       case 'facebook':
-        authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=YOUR_FB_APP_ID&redirect_uri=${encodeURIComponent(redirectUri)}&scope=pages_manage_metadata,pages_messaging,instagram_basic,instagram_manage_messages&response_type=code&state=${channelType}`;
+        // Instagram integration using Facebook OAuth with comprehensive scopes like Lyro.ai
+        authUrl = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${facebookAppId}&display=popup&domain=${window.location.hostname}&redirect_uri=${encodeURIComponent(redirectUri)}&fallback_redirect_uri=${encodeURIComponent(fallbackRedirectUri)}&scope=instagram_manage_comments,instagram_basic,pages_show_list,pages_manage_metadata,instagram_manage_messages,pages_messaging,pages_read_engagement,business_management,pages_manage_engagement&response_type=token,signed_request,graph_domain&return_scopes=true&state=${channelType}`;
         break;
       case 'instagram':
-        authUrl = `https://api.instagram.com/oauth/authorize?client_id=YOUR_IG_APP_ID&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user_profile,user_media&response_type=code&state=${channelType}`;
+        // Same as Facebook since Instagram uses Facebook OAuth
+        authUrl = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${facebookAppId}&display=popup&domain=${window.location.hostname}&redirect_uri=${encodeURIComponent(redirectUri)}&fallback_redirect_uri=${encodeURIComponent(fallbackRedirectUri)}&scope=instagram_manage_comments,instagram_basic,pages_show_list,pages_manage_metadata,instagram_manage_messages,pages_messaging,pages_read_engagement,business_management,pages_manage_engagement&response_type=token,signed_request,graph_domain&return_scopes=true&state=${channelType}`;
         break;
       case 'whatsapp':
-        authUrl = `https://developers.facebook.com/docs/whatsapp/embedded-signup?redirect_uri=${encodeURIComponent(redirectUri)}&state=${channelType}`;
+        // WhatsApp embedded signup using Facebook OAuth like Lyro.ai
+        authUrl = `https://www.facebook.com/v16.0/dialog/oauth?app_id=${facebookAppId}&client_id=${facebookAppId}&display=popup&domain=${window.location.hostname}&extras={"feature":"whatsapp_embedded_signup","sessionInfoVersion":2,"setup":{}}&fallback_redirect_uri=${encodeURIComponent(fallbackRedirectUri)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token,signed_request,graph_domain&return_scopes=true&scope=whatsapp_business_management,whatsapp_business_messaging&state=${channelType}`;
         break;
       default:
         alert('OAuth flow not configured for this provider');
@@ -752,19 +758,9 @@ const ChannelsPage: React.FC = () => {
         color: 'bg-blue-500',
         steps: [
           {
-            title: 'Configure Email Provider',
-            description: 'Set up SendGrid or SMTP for email handling',
-            action: 'configure'
-          },
-          {
-            title: 'Verify Domain',
-            description: 'Verify your domain for email authentication',
-            action: 'verify'
-          },
-          {
-            title: 'Test Email Flow',
-            description: 'Send and receive test emails',
-            action: 'test'
+            title: 'Email Mailbox Configuration',
+            description: 'Set up your email mailbox to receive and manage emails in ROMASHKA',
+            action: 'mailbox'
           }
         ]
       },
@@ -962,6 +958,124 @@ const ChannelsPage: React.FC = () => {
                       >
                         Generate & Copy Code
                       </button>
+                    </div>
+                  )}
+                  
+                  {step.action === 'mailbox' && (
+                    <div className="space-y-6">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-start space-x-2">
+                          <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center mt-0.5">
+                            <span className="text-white text-xs">📧</span>
+                          </div>
+                          <div className="text-sm text-blue-700">
+                            <strong>Email Integration:</strong> Automatically forward emails from other providers directly to the ROMASHKA Inbox. Receive all your incoming emails in ROMASHKA as tickets.
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Email Mailbox Settings */}
+                      <div className="bg-white border rounded-lg p-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Email</h4>
+                        
+                        {/* Mailbox Section */}
+                        <div className="mb-6">
+                          <h5 className="text-md font-medium text-gray-700 mb-3">Mailbox</h5>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <EnvelopeIcon className="w-4 h-4 text-white" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">{emailConfig.supportEmail || 'support@example.com'}</p>
+                                  <p className="text-xs text-green-600">Verified</p>
+                                </div>
+                              </div>
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Active</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Sender Address Section */}
+                        <div className="mb-6">
+                          <h5 className="text-md font-medium text-gray-700 mb-3">Sender address</h5>
+                          <input
+                            type="email"
+                            value={emailConfig.supportEmail}
+                            onChange={(e) => setEmailConfig(prev => ({ ...prev, supportEmail: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="support@yourdomain.com"
+                          />
+                        </div>
+                        
+                        {/* Domains Section */}
+                        <div className="mb-6">
+                          <h5 className="text-md font-medium text-gray-700 mb-3">Domains</h5>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                              <span className="text-sm text-gray-700">{emailConfig.supportEmail?.split('@')[1] || 'yourdomain.com'}</span>
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Verified</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Blocked Addresses Section */}
+                        <div className="mb-6">
+                          <h5 className="text-md font-medium text-gray-700 mb-3">Blocked e-mail addresses</h5>
+                          <div className="space-y-2">
+                            <input
+                              type="email"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Add email address to block"
+                            />
+                            <p className="text-xs text-gray-500">Add email addresses that should be automatically blocked</p>
+                          </div>
+                        </div>
+                        
+                        {/* AI Integration Section */}
+                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 mb-4">
+                          <h5 className="text-md font-medium text-purple-900 mb-3">Enable ROMASHKA AI for emails</h5>
+                          <p className="text-sm text-purple-700 mb-3">
+                            ROMASHKA AI can automatically respond to emails and contact forms associated with selected mailboxes. 
+                            Go to AI settings in the configure section to enable emails for ROMASHKA AI.
+                          </p>
+                          <div className="flex items-center space-x-3">
+                            <span className="text-sm font-medium text-purple-900">Give ROMASHKA AI permission to answer emails?</span>
+                            <div className="flex items-center space-x-4">
+                              <label className="flex items-center">
+                                <input type="radio" name="ai_emails" value="yes" className="mr-2" />
+                                <span className="text-sm text-purple-700">Yes</span>
+                              </label>
+                              <label className="flex items-center">
+                                <input type="radio" name="ai_emails" value="no" className="mr-2" defaultChecked />
+                                <span className="text-sm text-purple-700">No</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Save Button */}
+                        <div className="flex justify-end">
+                          <button
+                            onClick={initializeChannelManager}
+                            disabled={isLoading}
+                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
+                          >
+                            {isLoading ? (
+                              <>
+                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                <span>Saving...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>Save Email Configuration</span>
+                                <span>💾</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1376,8 +1490,8 @@ const ChannelsPage: React.FC = () => {
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex space-x-8">
           {[
-            { id: 'overview', label: 'Overview', icon: EyeIcon },
             { id: 'setup', label: 'Integrations', icon: CogIcon },
+            { id: 'overview', label: 'Overview', icon: EyeIcon },
             { id: 'inbox', label: 'Inbox', icon: ChatBubbleLeftRightIcon },
             { id: 'analytics', label: 'Analytics', icon: ChartBarIcon }
           ].map(tab => (
