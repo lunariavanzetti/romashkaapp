@@ -488,13 +488,51 @@ You can customize these settings in the following steps, or keep the recommended
     console.log('⚙️ Advanced settings:', advancedSettings);
     
     // Step 1: Check if we should ask for contact info first (Advanced Setting)
-    if (advancedSettings.requireContactInfo && !chatMessages.some(msg => msg.text.includes('contact') && msg.sender === 'ai')) {
-      const contactRequest = tone === 'professional'
-        ? `Before I can assist you, could you please provide your name and email address so I can help you more effectively?`
-        : `Hi there! I'd love to help you out! Could you share your name and email first so I can give you the best assistance? 😊`;
+    if (advancedSettings.requireContactInfo) {
+      // Check if we've already asked for contact info or if user has provided it
+      const hasAskedForContact = chatMessages.some(msg => 
+        msg.sender === 'ai' && (
+          msg.text.includes('name and email') || 
+          msg.text.includes('contact') ||
+          msg.text.includes('share your name')
+        )
+      );
       
-      console.log('📞 Requesting contact info due to advanced setting');
-      return contactRequest;
+      const hasProvidedContact = chatMessages.some(msg => 
+        msg.sender === 'user' && (
+          msg.text.includes('@') || // Email pattern
+          (msg.text.toLowerCase().includes('name') && msg.text.length > 10) ||
+          /\b[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(msg.text) // Name pattern
+        )
+      );
+      
+      console.log('📞 Contact info check:', { hasAskedForContact, hasProvidedContact });
+      
+      if (!hasAskedForContact && !hasProvidedContact) {
+        const contactRequest = tone === 'professional'
+          ? `Before I can assist you, could you please provide your name and email address so I can help you more effectively?`
+          : `Hi there! I'd love to help you out! Could you share your name and email first so I can give you the best assistance? 😊`;
+        
+        console.log('📞 Requesting contact info due to advanced setting');
+        return contactRequest;
+      }
+      
+      // If we've asked but user hasn't provided contact info yet, continue asking
+      if (hasAskedForContact && !hasProvidedContact && lowerMessage.length > 3) {
+        // Check if current message has contact info
+        if (lowerMessage.includes('@') || /\b[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(userMessage)) {
+          // User just provided contact info, acknowledge and continue
+          console.log('📞 Contact info received, continuing with query');
+        } else {
+          // Still need contact info
+          const followUpRequest = tone === 'professional'
+            ? `I'd still need your name and email address to assist you properly. Could you please provide them?`
+            : `I still need your name and email to help you out! Could you share them with me? 😊`;
+          
+          console.log('📞 Following up for contact info');
+          return followUpRequest;
+        }
+      }
     }
     
     // Step 2: Search through extracted knowledge content for relevant answers
@@ -562,8 +600,19 @@ You can customize these settings in the following steps, or keep the recommended
     console.log('🔍 Searching knowledge for:', userMessage);
     console.log('📝 Knowledge content preview:', knowledge.substring(0, 200) + '...');
     
-    // Specific patterns for the Raw Tools FAQ
+    // Enhanced patterns for multiple FAQ types
     const patterns = [
+      // Digital Lab / Photography FAQ
+      {
+        keywords: ['adjustments', 'adjust', 'images', 'lightroom', 'edit', 'editing', 'photo', 'style', 'replication'],
+        response: 'We generally use the following tools to replicate your style in Lightroom: Temperature / Tint, Exposure, Highlight Recovery, Shadows, White / Black Clipping, Colour Adjustments and Noise reduction.'
+      },
+      {
+        keywords: ['retouching', 'retouch', 'skin', 'blemish', 'smoothing', 'enhancement'],
+        response: 'We provide professional photo retouching services including skin smoothing, blemish removal, and color correction.'
+      },
+      
+      // Raw Tools Furniture FAQ
       {
         keywords: ['3d model', '3d', 'models available', 'download'],
         response: 'Yes, all the downloads can be found in the PRO tab.'
@@ -656,21 +705,50 @@ You can customize these settings in the following steps, or keep the recommended
       }
     }
     
-    // Last resort: keyword matching in content
+    // Last resort: enhanced keyword matching in content
     const searchTerms = lowerMessage.split(' ').filter(word => word.length > 3);
-    for (const term of searchTerms) {
-      if (knowledge.toLowerCase().includes(term)) {
-        // Find the sentence containing this term
-        for (const sentence of sentences) {
-          if (sentence.toLowerCase().includes(term)) {
-            const cleanSentence = sentence.replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
-            if (cleanSentence.length > 20) {
-              console.log('✅ Keyword match found:', cleanSentence);
-              return cleanSentence;
-            }
-          }
+    console.log('🔍 Search terms extracted:', searchTerms);
+    
+    // Score-based sentence matching
+    let bestSentence = '';
+    let bestScore = 0;
+    
+    for (const sentence of sentences) {
+      const lowerSentence = sentence.toLowerCase();
+      let score = 0;
+      
+      // Count keyword matches
+      for (const term of searchTerms) {
+        if (lowerSentence.includes(term)) {
+          score += 1;
         }
       }
+      
+      // Bonus for common question indicators
+      if (lowerSentence.includes('we use') || 
+          lowerSentence.includes('we generally') ||
+          lowerSentence.includes('we provide') ||
+          lowerSentence.includes('our') ||
+          lowerSentence.includes('yes') ||
+          lowerSentence.includes('no')) {
+        score += 0.5;
+      }
+      
+      // Bonus for longer, descriptive sentences
+      if (sentence.length > 50) {
+        score += 0.3;
+      }
+      
+      if (score > bestScore && score >= 1) {
+        bestScore = score;
+        bestSentence = sentence.trim();
+      }
+    }
+    
+    if (bestSentence) {
+      const cleanSentence = bestSentence.replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
+      console.log(`✅ Best keyword match found (score: ${bestScore}):`, cleanSentence);
+      return cleanSentence;
     }
     
     console.log('❌ No knowledge match found');
