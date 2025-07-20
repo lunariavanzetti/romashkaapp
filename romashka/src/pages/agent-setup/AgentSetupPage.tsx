@@ -10,10 +10,12 @@ import {
   CogIcon,
   GlobeAltIcon,
   SparklesIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { agentSetupService, type AgentSetupData } from '../../services/agentSetupService';
+import { HumanAgentService, type HumanAgent } from '../../services/humanAgentService';
 
 interface SetupStep {
   id: number;
@@ -24,6 +26,13 @@ interface SetupStep {
   optional?: boolean;
 }
 
+interface HumanAgentForm {
+  name: string;
+  email: string;
+  isValid?: boolean;
+  errors?: string[];
+}
+
 const AgentSetupPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [businessType, setBusinessType] = useState('');
@@ -32,10 +41,11 @@ const AgentSetupPage: React.FC = () => {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [knowledgeContent, setKnowledgeContent] = useState('');
-  const [humanAgents, setHumanAgents] = useState([{ name: '', email: '' }]);
+  const [humanAgents, setHumanAgents] = useState<HumanAgentForm[]>([{ name: '', email: '' }]);
   const [setupComplete, setSetupComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Chat widget testing state
   const [chatMessages, setChatMessages] = useState<Array<{id: string, text: string, sender: 'user' | 'ai', timestamp: Date}>>([]);
@@ -49,6 +59,11 @@ const AgentSetupPage: React.FC = () => {
     escalateComplexQueries: false,
     limitResponseLength: false
   });
+
+  // Human agent management state
+  const [existingHumanAgents, setExistingHumanAgents] = useState<HumanAgent[]>([]);
+  const [isLoadingAgents, setIsLoadingAgents] = useState(false);
+  const [agentSaveErrors, setAgentSaveErrors] = useState<Record<number, string>>({});
 
   const [steps, setSteps] = useState<SetupStep[]>([
     {
@@ -109,10 +124,13 @@ const AgentSetupPage: React.FC = () => {
     }
   ]);
 
-  // Load existing progress on component mount
+  // Load existing progress and human agents on component mount
   useEffect(() => {
     const loadProgress = async () => {
       try {
+        setIsLoading(true);
+        
+        // Load setup progress
         const result = await agentSetupService.loadProgress();
         if (result.success && result.data) {
           const data = result.data;
@@ -136,6 +154,10 @@ const AgentSetupPage: React.FC = () => {
             }))
           );
         }
+
+        // Load existing human agents
+        await loadExistingHumanAgents();
+        
       } catch (error) {
         console.error('Error loading setup progress:', error);
         setSaveError('Failed to load previous progress');
@@ -146,6 +168,28 @@ const AgentSetupPage: React.FC = () => {
 
     loadProgress();
   }, []);
+
+  // Load existing human agents
+  const loadExistingHumanAgents = async () => {
+    try {
+      setIsLoadingAgents(true);
+      const agents = await HumanAgentService.getHumanAgents();
+      setExistingHumanAgents(agents);
+      
+      // If we have existing agents, populate the form
+      if (agents.length > 0 && humanAgents.length === 1 && !humanAgents[0].name) {
+        setHumanAgents(agents.map(agent => ({ 
+          name: agent.name, 
+          email: agent.email,
+          isValid: true
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading human agents:', error);
+    } finally {
+      setIsLoadingAgents(false);
+    }
+  };
 
   // Auto-save when key fields change (debounced to avoid too many saves)
   useEffect(() => {
@@ -160,7 +204,10 @@ const AgentSetupPage: React.FC = () => {
 
   // Save progress whenever important state changes
   const saveProgress = async (additionalData?: Partial<AgentSetupData>) => {
+    if (isSaving) return; // Prevent concurrent saves
+    
     try {
+      setIsSaving(true);
       setSaveError(null);
       const data: Partial<AgentSetupData> = {
         currentStep,
@@ -181,6 +228,92 @@ const AgentSetupPage: React.FC = () => {
     } catch (error) {
       console.error('Error saving progress:', error);
       setSaveError('Failed to save progress');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Validate human agent form
+  const validateHumanAgent = (agent: HumanAgentForm, index: number): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (!agent.name.trim()) {
+      errors.push('Name is required');
+    }
+    
+    if (!agent.email.trim()) {
+      errors.push('Email is required');
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(agent.email)) {
+      errors.push('Invalid email format');
+    }
+    
+    // Check for duplicate emails in the current form
+    const duplicateEmail = humanAgents.some((a, i) => 
+      i !== index && a.email.toLowerCase() === agent.email.toLowerCase()
+    );
+    if (duplicateEmail) {
+      errors.push('Email already used by another agent');
+    }
+    
+    // Check against existing agents in database
+    const existingEmail = existingHumanAgents.some(a => 
+      a.email.toLowerCase() === agent.email.toLowerCase()
+    );
+    if (existingEmail) {
+      errors.push('Email already exists in database');
+    }
+
+    return { isValid: errors.length === 0, errors };
+  };
+
+  // Save human agents to database
+  const saveHumanAgents = async (): Promise<boolean> => {
+    try {
+      setAgentSaveErrors({});
+      let hasErrors = false;
+      
+      // Validate all agents first
+      const validatedAgents = humanAgents.map((agent, index) => {
+        const validation = validateHumanAgent(agent, index);
+        if (!validation.isValid) {
+          setAgentSaveErrors(prev => ({ ...prev, [index]: validation.errors.join(', ') }));
+          hasErrors = true;
+        }
+        return { ...agent, ...validation };
+      });
+      
+      if (hasErrors) {
+        return false;
+      }
+      
+      // Save valid agents to database
+      const savePromises = validatedAgents
+        .filter(agent => agent.name.trim() && agent.email.trim())
+        .map(async (agent) => {
+          const result = await HumanAgentService.addHumanAgent({
+            name: agent.name.trim(),
+            email: agent.email.trim(),
+            status: 'available'
+          });
+          return result;
+        });
+      
+      const results = await Promise.all(savePromises);
+      const failedSaves = results.filter(result => result === null);
+      
+      if (failedSaves.length > 0) {
+        setSaveError(`Failed to save ${failedSaves.length} human agent(s)`);
+        return false;
+      }
+      
+      // Reload agents to get the updated list
+      await loadExistingHumanAgents();
+      return true;
+      
+    } catch (error) {
+      console.error('Error saving human agents:', error);
+      setSaveError('Failed to save human agents');
+      return false;
     }
   };
 
@@ -192,6 +325,15 @@ const AgentSetupPage: React.FC = () => {
 
   const nextStep = async () => {
     if (currentStep < steps.length) {
+      // Special handling for step 6 (Human Agent Fallback)
+      if (currentStep === 6) {
+        const saveSuccess = await saveHumanAgents();
+        if (!saveSuccess) {
+          setSaveError('Please fix the errors in human agent information before proceeding');
+          return;
+        }
+      }
+      
       updateStepStatus(currentStep, 'completed');
       const newStep = currentStep + 1;
       setCurrentStep(newStep);
@@ -432,6 +574,15 @@ You can customize these settings in the following steps, or keep the recommended
       i === index ? { ...agent, [field]: value } : agent
     );
     setHumanAgents(updated);
+    
+    // Clear errors for this agent when they start typing
+    if (agentSaveErrors[index]) {
+      setAgentSaveErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[index];
+        return newErrors;
+      });
+    }
   };
 
   // Chat widget functions
@@ -1215,39 +1366,105 @@ You can customize these settings in the following steps, or keep the recommended
             </div>
             
             <div className="max-w-2xl mx-auto">
+              {/* Show existing agents if any */}
+              {existingHumanAgents.length > 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <h3 className="font-medium text-green-900 mb-3">✅ Existing Human Agents ({existingHumanAgents.length})</h3>
+                  <div className="space-y-2">
+                    {existingHumanAgents.map((agent, index) => (
+                      <div key={agent.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-green-100">
+                        <div>
+                          <div className="font-medium text-gray-900">{agent.name}</div>
+                          <div className="text-sm text-gray-600">{agent.email}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            agent.status === 'available' 
+                              ? 'bg-green-100 text-green-800' 
+                              : agent.status === 'busy'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {agent.status}
+                          </span>
+                          {agent.is_online && (
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isLoadingAgents && (
+                <div className="text-center py-4">
+                  <div className="inline-flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <span className="text-gray-600">Loading existing agents...</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="space-y-4">
+                <h3 className="font-medium text-gray-900">Add New Human Agents</h3>
                 {humanAgents.map((agent, index) => (
-                  <div key={index} className="border rounded-lg p-4">
+                  <div key={index} className={`border rounded-lg p-4 ${
+                    agentSaveErrors[index] ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                  }`}>
                     <div className="flex justify-between items-center mb-3">
-                      <h3 className="font-medium text-gray-900">Human Agent {index + 1}</h3>
+                      <h4 className="font-medium text-gray-900">New Agent {index + 1}</h4>
                       {humanAgents.length > 1 && (
                         <button
                           onClick={() => removeHumanAgent(index)}
-                          className="text-red-500 hover:text-red-700 text-sm"
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Remove this agent"
                         >
-                          Remove
+                          <XMarkIcon className="w-4 h-4" />
                         </button>
                       )}
                     </div>
+                    
+                    {agentSaveErrors[index] && (
+                      <div className="mb-3 p-2 bg-red-100 border border-red-300 rounded-md">
+                        <p className="text-sm text-red-700">
+                          <ExclamationCircleIcon className="w-4 h-4 inline mr-1" />
+                          {agentSaveErrors[index]}
+                        </p>
+                      </div>
+                    )}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Agent Name <span className="text-red-500">*</span>
+                        </label>
                         <input
                           type="text"
                           value={agent.name}
                           onChange={(e) => updateHumanAgent(index, 'name', e.target.value)}
-                          placeholder="Agent name"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., John Smith"
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                            agentSaveErrors[index] 
+                              ? 'border-red-300 focus:ring-red-500' 
+                              : 'border-gray-300 focus:ring-blue-500'
+                          }`}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Email Address <span className="text-red-500">*</span>
+                        </label>
                         <input
                           type="email"
                           value={agent.email}
                           onChange={(e) => updateHumanAgent(index, 'email', e.target.value)}
-                          placeholder="agent@company.com"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="john@company.com"
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                            agentSaveErrors[index] 
+                              ? 'border-red-300 focus:ring-red-500' 
+                              : 'border-gray-300 focus:ring-blue-500'
+                          }`}
                         />
                       </div>
                     </div>
@@ -1256,9 +1473,10 @@ You can customize these settings in the following steps, or keep the recommended
                 
                 <button
                   onClick={addHumanAgent}
-                  className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                  className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center gap-2"
                 >
-                  + Add Another Human Agent
+                  <UsersIcon className="w-4 h-4" />
+                  Add Another Human Agent
                 </button>
               </div>
               
@@ -1269,7 +1487,17 @@ You can customize these settings in the following steps, or keep the recommended
                   <li>• If it's unsure, it will offer to connect the customer to a human agent</li>
                   <li>• Your team will be notified via email and dashboard notifications</li>
                   <li>• Seamless handoff with full conversation context</li>
+                  <li>• Agents can manage their availability and status in real-time</li>
                 </ul>
+                
+                {existingHumanAgents.length > 0 && (
+                  <div className="mt-3 p-2 bg-blue-100 rounded-md">
+                    <p className="text-xs text-blue-800">
+                      💡 You already have {existingHumanAgents.length} human agent(s) configured. 
+                      You can add more agents above or manage existing ones in the dashboard.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1280,62 +1508,210 @@ You can customize these settings in the following steps, or keep the recommended
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Embed Widget on Your Website</h2>
-              <p className="text-gray-600">Copy this code and paste it before the closing &lt;/body&gt; tag in your website</p>
+              <p className="text-gray-600">Choose your platform and follow the integration guide</p>
             </div>
             
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-6">
+              {/* Widget Code Section */}
               <div className="bg-gray-900 rounded-lg p-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-white font-medium">JavaScript Widget Code</h3>
+                  <h3 className="text-white font-medium">Universal Widget Code</h3>
                   <button
                     onClick={() => {
-                      const code = `<script src="https://widget.romashka.ai/embed.js" data-agent="${agentName || 'romashka'}" data-tone="${agentTone}"></script>`;
+                      const code = `<script src="https://widget.romashka.ai/embed.js" data-agent="${agentName || 'romashka'}" data-tone="${agentTone}" data-business="${businessType}"></script>`;
                       navigator.clipboard.writeText(code);
-                      alert('Widget code copied to clipboard!');
+                      // Show success feedback
+                      const button = event.target as HTMLButtonElement;
+                      const originalText = button.textContent;
+                      button.textContent = 'Copied!';
+                      button.className = button.className.replace('bg-blue-500 hover:bg-blue-600', 'bg-green-500');
+                      setTimeout(() => {
+                        button.textContent = originalText;
+                        button.className = button.className.replace('bg-green-500', 'bg-blue-500 hover:bg-blue-600');
+                      }, 2000);
                     }}
-                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                    className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
                   >
                     Copy Code
                   </button>
                 </div>
-                <code className="text-green-400 text-sm block break-all">
-                  {`<script src="https://widget.romashka.ai/embed.js" data-agent="${agentName || 'romashka'}" data-tone="${agentTone}"></script>`}
+                <code className="text-green-400 text-sm block break-all font-mono">
+                  {`<script src="https://widget.romashka.ai/embed.js" data-agent="${agentName || 'romashka'}" data-tone="${agentTone}" data-business="${businessType}"></script>`}
                 </code>
+                <p className="text-gray-400 text-xs mt-2">
+                  💡 This code is personalized with your agent settings and will work on any website
+                </p>
               </div>
               
+              {/* Platform-specific Integration */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="border rounded-lg p-4 text-center">
+                {/* WordPress */}
+                <div className="border rounded-lg p-4 hover:border-orange-300 hover:bg-orange-50 transition-colors cursor-pointer">
                   <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <span className="text-orange-600 font-bold">W</span>
+                    <span className="text-orange-600 font-bold text-lg">W</span>
                   </div>
-                  <h3 className="font-medium text-gray-900">WordPress</h3>
-                  <p className="text-sm text-gray-600 mt-1">Add to theme footer or use plugin</p>
+                  <h3 className="font-medium text-gray-900 mb-2">WordPress</h3>
+                  <p className="text-sm text-gray-600 mb-3">Add to your WordPress site</p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div>1. Go to Appearance → Theme Editor</div>
+                    <div>2. Edit footer.php</div>
+                    <div>3. Paste code before &lt;/body&gt;</div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const wpCode = `<?php
+// ROMASHKA AI Widget
+?>
+<script src="https://widget.romashka.ai/embed.js" 
+        data-agent="${agentName || 'romashka'}" 
+        data-tone="${agentTone}" 
+        data-business="${businessType}">
+</script>`;
+                      navigator.clipboard.writeText(wpCode);
+                      alert('WordPress code copied to clipboard!');
+                    }}
+                    className="mt-3 w-full px-3 py-1 bg-orange-500 text-white rounded text-sm hover:bg-orange-600"
+                  >
+                    Copy WordPress Code
+                  </button>
                 </div>
-                <div className="border rounded-lg p-4 text-center">
+
+                {/* Shopify */}
+                <div className="border rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition-colors cursor-pointer">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <span className="text-green-600 font-bold">S</span>
+                    <span className="text-green-600 font-bold text-lg">S</span>
                   </div>
-                  <h3 className="font-medium text-gray-900">Shopify</h3>
-                  <p className="text-sm text-gray-600 mt-1">Paste in theme.liquid file</p>
+                  <h3 className="font-medium text-gray-900 mb-2">Shopify</h3>
+                  <p className="text-sm text-gray-600 mb-3">Add to your Shopify store</p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div>1. Go to Online Store → Themes</div>
+                    <div>2. Edit Code → theme.liquid</div>
+                    <div>3. Paste code before &lt;/body&gt;</div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const shopifyCode = `<!-- ROMASHKA AI Widget -->
+<script src="https://widget.romashka.ai/embed.js" 
+        data-agent="${agentName || 'romashka'}" 
+        data-tone="${agentTone}" 
+        data-business="${businessType}"
+        data-shopify="true">
+</script>`;
+                      navigator.clipboard.writeText(shopifyCode);
+                      alert('Shopify code copied to clipboard!');
+                    }}
+                    className="mt-3 w-full px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                  >
+                    Copy Shopify Code
+                  </button>
                 </div>
-                <div className="border rounded-lg p-4 text-center">
+
+                {/* HTML/React */}
+                <div className="border rounded-lg p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                    <span className="text-blue-600 font-bold">H</span>
+                    <span className="text-blue-600 font-bold text-lg">⚛</span>
                   </div>
-                  <h3 className="font-medium text-gray-900">HTML</h3>
-                  <p className="text-sm text-gray-600 mt-1">Add before &lt;/body&gt; tag</p>
+                  <h3 className="font-medium text-gray-900 mb-2">React/Vue/HTML</h3>
+                  <p className="text-sm text-gray-600 mb-3">For custom websites</p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div>1. Add to your index.html</div>
+                    <div>2. Or use as React component</div>
+                    <div>3. Place before closing &lt;/body&gt;</div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const reactCode = `// React Component Usage
+import { useEffect } from 'react';
+
+function ChatWidget() {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://widget.romashka.ai/embed.js';
+    script.setAttribute('data-agent', '${agentName || 'romashka'}');
+    script.setAttribute('data-tone', '${agentTone}');
+    script.setAttribute('data-business', '${businessType}');
+    document.body.appendChild(script);
+    
+    return () => document.body.removeChild(script);
+  }, []);
+  
+  return null;
+}`;
+                      navigator.clipboard.writeText(reactCode);
+                      alert('React component code copied to clipboard!');
+                    }}
+                    className="mt-3 w-full px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  >
+                    Copy React Code
+                  </button>
                 </div>
               </div>
               
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="font-medium text-green-900 mb-2">✅ Widget Features</h3>
-                <ul className="text-sm text-green-700 space-y-1">
-                  <li>• Responsive design that works on all devices</li>
-                  <li>• Customizable colors and positioning</li>
-                  <li>• GDPR compliant and privacy-friendly</li>
-                  <li>• Real-time typing indicators</li>
-                  <li>• File upload support</li>
-                </ul>
+              {/* Widget Preview */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+                <h3 className="font-medium text-purple-900 mb-4">🎨 Widget Preview</h3>
+                <div className="bg-white rounded-lg shadow-lg max-w-sm mx-auto">
+                  <div className="bg-blue-500 text-white p-3 rounded-t-lg flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{agentName || 'ROMASHKA'}</div>
+                      <div className="text-xs opacity-90">Online • Powered by ROMASHKA AI</div>
+                    </div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  </div>
+                  <div className="p-4 h-32 bg-gray-50 flex items-center justify-center text-gray-500 text-sm">
+                    Chat interface will appear here
+                  </div>
+                  <div className="p-3 border-t">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-8 bg-gray-100 rounded-full"></div>
+                      <div className="w-8 h-8 bg-blue-500 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Features and Customization */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="font-medium text-green-900 mb-2">✅ Widget Features</h3>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>• Responsive design for all devices</li>
+                    <li>• Customizable colors and branding</li>
+                    <li>• GDPR compliant and secure</li>
+                    <li>• Real-time typing indicators</li>
+                    <li>• File upload support</li>
+                    <li>• Multi-language support</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-medium text-blue-900 mb-2">🎛️ Advanced Options</h3>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Custom CSS styling</li>
+                    <li>• Position control (bottom-right, left, etc.)</li>
+                    <li>• Welcome message customization</li>
+                    <li>• Trigger conditions (time, page, scroll)</li>
+                    <li>• Analytics tracking integration</li>
+                    <li>• White-label options available</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Testing Section */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h3 className="font-medium text-yellow-900 mb-2">🧪 Testing Your Widget</h3>
+                <div className="text-sm text-yellow-700 space-y-2">
+                  <p>After embedding the widget:</p>
+                  <ul className="space-y-1 ml-4">
+                    <li>• Check that the chat bubble appears in the bottom-right corner</li>
+                    <li>• Test the conversation flow with sample questions</li>
+                    <li>• Verify escalation to human agents works</li>
+                    <li>• Test on mobile devices for responsiveness</li>
+                  </ul>
+                  <p className="mt-3 font-medium">
+                    💡 Need help? The widget will be live within 5 minutes of embedding the code.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -1501,7 +1877,7 @@ You can customize these settings in the following steps, or keep the recommended
             <div className="flex items-center">
               <ExclamationCircleIcon className="w-5 h-5 text-red-400 mr-2" />
               <p className="text-sm text-red-700">
-                Failed to save progress: {saveError}
+                {saveError}
               </p>
               <button
                 onClick={() => setSaveError(null)}
@@ -1509,6 +1885,18 @@ You can customize these settings in the following steps, or keep the recommended
               >
                 ×
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Save Progress Indicator */}
+        {isSaving && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+              <p className="text-sm text-blue-700">
+                Saving your progress...
+              </p>
             </div>
           </div>
         )}
@@ -1578,16 +1966,29 @@ You can customize these settings in the following steps, or keep the recommended
         <button
           onClick={nextStep}
           disabled={
+            isSaving ||
             currentStep === steps.length ||
             (currentStep === 2 && !businessType) ||
             (currentStep === 3 && !websiteUrl && !knowledgeContent) ||
             (currentStep === 4 && (!agentName || !agentTone)) ||
-            (currentStep === 6 && humanAgents.some(agent => !agent.name || !agent.email))
+            (currentStep === 6 && (
+              humanAgents.some(agent => !agent.name.trim() || !agent.email.trim()) ||
+              Object.keys(agentSaveErrors).length > 0
+            ))
           }
           className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {currentStep === steps.length ? 'Complete Setup' : 'Next'}
-          <ArrowRightIcon className="w-4 h-4" />
+          {isSaving ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Saving...
+            </>
+          ) : (
+            <>
+              {currentStep === steps.length ? 'Complete Setup' : 'Next'}
+              <ArrowRightIcon className="w-4 h-4" />
+            </>
+          )}
         </button>
       </div>
     </div>

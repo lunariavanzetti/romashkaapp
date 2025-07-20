@@ -1,215 +1,244 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import workflowEngine from '../../services/workflowEngine';
-import { supabase } from '../../services/supabaseClient';
-import { useAuthStore } from '../../stores/authStore';
-import { Button, AnimatedSpinner } from '../ui';
-import { Send, Paperclip, Smile, X, Minimize2, Maximize2 } from 'lucide-react';
-import type { Message } from '../../types/workflow';
+import { 
+  ChatBubbleLeftRightIcon, 
+  XMarkIcon, 
+  PaperAirplaneIcon,
+  PaperClipIcon,
+  FaceSmileIcon,
+  MinusIcon,
+  ArrowsPointingOutIcon,
+  ExclamationTriangleIcon,
+  CheckIcon,
+  ClockIcon
+} from '@heroicons/react/24/outline';
+import { useRealTimeChat, type ChatMessage } from '../../hooks/useRealTimeChat';
+import { ConversationMonitoringService } from '../../services/conversationMonitoringService';
 
 interface ChatWidgetProps {
-  projectId?: string;
-  workflowId?: string;
+  agentName?: string;
+  agentTone?: 'friendly' | 'professional' | 'casual';
+  businessType?: string;
   position?: 'bottom-right' | 'bottom-left';
   theme?: 'light' | 'dark' | 'auto';
+  primaryColor?: string;
+  welcomeMessage?: string;
+  knowledgeBase?: string;
+  enableFileUpload?: boolean;
+  enableEmojis?: boolean;
+  maxFileSize?: number; // in MB
+  allowedFileTypes?: string[];
 }
 
 export const ChatWidget: React.FC<ChatWidgetProps> = ({
-  projectId = 'default-project',
-  workflowId = 'default-workflow',
+  agentName = 'ROMASHKA',
+  agentTone = 'friendly',
+  businessType = 'general',
   position = 'bottom-right',
-  theme = 'auto'
+  theme = 'auto',
+  primaryColor = '#ec4899',
+  welcomeMessage,
+  knowledgeBase = '',
+  enableFileUpload = true,
+  enableEmojis = true,
+  maxFileSize = 10,
+  allowedFileTypes = ['image/*', '.pdf', '.doc', '.docx', '.txt']
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [conversationId] = useState(`conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [userId] = useState(`user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [showWelcome, setShowWelcome] = useState(true);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user } = useAuthStore();
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Test workflow ID - you can change this to test different workflows
-  const TEST_WORKFLOW_ID = workflowId;
+  // Use the enhanced real-time chat hook
+  const {
+    messages,
+    participants,
+    typingIndicators,
+    isConnected,
+    isLoading,
+    error,
+    sendMessage,
+    setTyping,
+    retryMessage,
+    unreadCount,
+    isAnyoneTyping,
+    onlineParticipants
+  } = useRealTimeChat({
+    conversationId,
+    userId,
+    onMessageReceived: (message) => {
+      // Play notification sound or show notification
+      if (message.sender !== 'user' && !isOpen) {
+        // Show notification badge or play sound
+        console.log('New message received:', message);
+      }
+    },
+    onError: (error) => {
+      console.error('Chat error:', error);
+    },
+    autoMarkAsRead: true
+  });
 
-  // Initialize with welcome message
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      const welcomeMessage: Message = {
-        id: `welcome-${Date.now()}`,
-        conversation_id: 'welcome',
-        sender_type: 'ai',
-        content: 'Hello! I\'m ROMASHKA AI, your customer service assistant. How can I help you today?',
-        metadata: {},
-        created_at: new Date().toISOString()
-      };
-      setMessages([welcomeMessage]);
-    }
-  }, [isOpen, messages.length]);
-
-  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  }, [messages]);
 
+  // Send welcome message when chat opens for the first time
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
-
-  // Real-time subscription for messages
-  useEffect(() => {
-    if (!conversationId) return;
-
-    const subscription = supabase
-      .channel(`messages:${conversationId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=eq.${conversationId}`,
-      }, (payload) => {
-        const newMessage = payload.new as Message;
-        setMessages(prev => [...prev, newMessage]);
-      })
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [conversationId]);
-
-  const createConversation = async () => {
-    if (!user) return null;
-
-    const { data: conversation, error } = await supabase
-      .from('conversations')
-      .insert({
-        workflow_id: TEST_WORKFLOW_ID,
-        user_email: user.email,
-        user_name: user.user_metadata?.full_name || 'User',
-        status: 'active',
-        metadata: { projectId }
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating conversation:', error);
-      return null;
+    if (isOpen && showWelcome && messages.length === 0) {
+      const welcome = welcomeMessage || generateWelcomeMessage();
+      setTimeout(() => {
+        sendMessage(welcome, 'text', { isWelcome: true, agentName, businessType });
+        setShowWelcome(false);
+      }, 500);
     }
+  }, [isOpen, showWelcome, messages.length, welcomeMessage, agentName, businessType, sendMessage]);
 
-    return conversation.id;
-  };
-
-  const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
-
-    const userMessage = inputValue.trim();
-    setInputValue('');
-    setIsLoading(true);
-    setIsTyping(true);
-
-    // Add user message to chat
-    const userMsg: Message = {
-      id: `msg-${Date.now()}`,
-      conversation_id: conversationId || 'temp',
-      sender_type: 'user',
-      content: userMessage,
-      metadata: { attachments },
-      created_at: new Date().toISOString()
+  // Generate contextual welcome message
+  const generateWelcomeMessage = useCallback(() => {
+    const greetings = {
+      friendly: `Hi there! 👋 I'm ${agentName}, your friendly AI assistant. I'm here to help you with any questions you might have!`,
+      professional: `Good day. I'm ${agentName}, your AI customer service representative. How may I assist you today?`,
+      casual: `Hey! 😊 ${agentName} here. What's up? How can I help you out?`
     };
+    
+    const businessContext = {
+      ecommerce: ' Whether it\'s about products, orders, shipping, or returns, I\'m here to help!',
+      service: ' I can help you with our services, pricing, or connect you with our team.',
+      saas: ' Need help with features, billing, or technical questions? I\'ve got you covered!',
+      education: ' Questions about courses, enrollment, or learning resources? I\'m here to help!',
+      healthcare: ' I can assist with appointments, services, or general inquiries.',
+      other: ' I\'m here to answer your questions and provide assistance.'
+    };
+    
+    return greetings[agentTone] + (businessContext[businessType as keyof typeof businessContext] || businessContext.other);
+  }, [agentName, agentTone, businessType]);
 
-    setMessages(prev => [...prev, userMsg]);
+  // Handle sending messages
+  const handleSendMessage = useCallback(async () => {
+    if (!inputValue.trim() && attachments.length === 0) return;
+
+    const messageContent = inputValue.trim();
+    const messageAttachments = [...attachments];
+
+    // Clear input and attachments immediately for better UX
+    setInputValue('');
     setAttachments([]);
 
     try {
-      // Create conversation if it doesn't exist
-      let currentConversationId = conversationId;
-      if (!currentConversationId) {
-        currentConversationId = await createConversation();
-        setConversationId(currentConversationId);
-      }
-
-      if (!currentConversationId) {
-        throw new Error('Failed to create conversation');
-      }
-
-      // Simulate typing delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Execute workflow
-      const result = await workflowEngine.executeWorkflow(
-        TEST_WORKFLOW_ID,
-        userMessage,
-        currentConversationId
+      // Send message with attachments if any
+      await sendMessage(
+        messageContent || '📎 File attachment',
+        attachments.length > 0 ? 'file' : 'text',
+        { 
+          attachments: messageAttachments.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type
+          }))
+        }
       );
 
-      if (result.success && result.message) {
-        // Add AI response to chat
-        const aiMsg: Message = {
-          id: `msg-${Date.now() + 1}`,
-          conversation_id: currentConversationId,
-          sender_type: 'ai',
-          content: result.message,
-          metadata: { confidence: result.data?.confidence },
-          created_at: new Date().toISOString()
-        };
+      // Record user activity for analytics
+      await ConversationMonitoringService.recordAIResponse(
+        conversationId,
+        Date.now(),
+        true
+      );
 
-        setMessages(prev => [...prev, aiMsg]);
-      } else {
-        // Add error message with helpful suggestions
-        const errorMsg: Message = {
-          id: `msg-${Date.now() + 1}`,
-          conversation_id: currentConversationId,
-          sender_type: 'ai',
-          content: 'I apologize, but I\'m having trouble processing your request right now. You can try:\n\n• Rephrasing your question\n• Asking about our products or services\n• Contacting our support team directly\n\nHow else can I help you?',
-          metadata: {},
-          created_at: new Date().toISOString()
-        };
-
-        setMessages(prev => [...prev, errorMsg]);
-      }
     } catch (error) {
       console.error('Error sending message:', error);
-      
-      const errorMsg: Message = {
-        id: `msg-${Date.now() + 1}`,
-        conversation_id: conversationId || 'temp',
-        sender_type: 'ai',
-        content: 'I\'m sorry, but I\'m experiencing some technical difficulties. Please try again in a moment, or contact our support team for immediate assistance.',
-        metadata: {},
-        created_at: new Date().toISOString()
-      };
-
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
-      setIsTyping(false);
+      // Re-add the message content if sending failed
+      setInputValue(messageContent);
+      setAttachments(messageAttachments);
     }
-  };
+  }, [inputValue, attachments, sendMessage, conversationId]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  // Handle typing indicator
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    
+    // Send typing indicator
+    if (e.target.value.trim()) {
+      setTyping(true);
+    } else {
+      setTyping(false);
+    }
+  }, [setTyping]);
+
+  // Handle key press
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      handleSendMessage();
     }
-  };
+  }, [handleSendMessage]);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle file upload
+  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    setAttachments(prev => [...prev, ...files]);
-  };
+    const validFiles = files.filter(file => {
+      // Check file size
+      if (file.size > maxFileSize * 1024 * 1024) {
+        alert(`File ${file.name} is too large. Maximum size is ${maxFileSize}MB.`);
+        return false;
+      }
+      return true;
+    });
 
-  const removeAttachment = (index: number) => {
+    setAttachments(prev => [...prev, ...validFiles]);
+    
+    // Clear the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [maxFileSize]);
+
+  // Remove attachment
+  const removeAttachment = useCallback((index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const addEmoji = (emoji: string) => {
+  // Add emoji
+  const addEmoji = useCallback((emoji: string) => {
     setInputValue(prev => prev + emoji);
     setShowEmojiPicker(false);
+    inputRef.current?.focus();
+  }, []);
+
+  // Get message status icon
+  const getMessageStatusIcon = (message: ChatMessage) => {
+    switch (message.status) {
+      case 'sending':
+        return <ClockIcon className="w-3 h-3 text-gray-400 animate-pulse" />;
+      case 'sent':
+        return <CheckIcon className="w-3 h-3 text-gray-400" />;
+      case 'delivered':
+        return <CheckIcon className="w-3 h-3 text-blue-500" />;
+      case 'read':
+        return <CheckIcon className="w-3 h-3 text-green-500" />;
+      case 'failed':
+        return (
+          <button 
+            onClick={() => retryMessage(message.id)}
+            className="text-red-500 hover:text-red-700"
+            title="Click to retry"
+          >
+            <ExclamationTriangleIcon className="w-3 h-3" />
+          </button>
+        );
+      default:
+        return null;
+    }
   };
 
   const positionClasses = {
@@ -217,42 +246,45 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     'bottom-left': 'bottom-6 left-6',
   };
 
+  const commonEmojis = ['😊', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😎', '🤔', '😢', '😡', '🤗', '👋', '💪', '🎯'];
+
   return (
     <>
       {/* Chat Toggle Button */}
       <motion.button
-        className={`fixed ${positionClasses[position]} w-14 h-14 bg-gradient-to-r from-pink-500 to-purple-600 dark:from-primary-pink dark:to-primary-purple rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50`}
+        className={`fixed ${positionClasses[position]} w-16 h-16 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50 flex items-center justify-center`}
+        style={{ backgroundColor: primaryColor }}
         onClick={() => setIsOpen(!isOpen)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        aria-label={isOpen ? 'Close chat' : 'Open chat'}
       >
+        {/* Unread message badge */}
+        {unreadCount > 0 && !isOpen && (
+          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </div>
+        )}
+        
         <AnimatePresence mode="wait">
           {isOpen ? (
-            <motion.svg
+            <motion.div
               key="close"
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
               initial={{ rotate: -90, opacity: 0 }}
               animate={{ rotate: 0, opacity: 1 }}
               exit={{ rotate: 90, opacity: 0 }}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </motion.svg>
+              <XMarkIcon className="w-6 h-6 text-white" />
+            </motion.div>
           ) : (
-            <motion.svg
+            <motion.div
               key="chat"
-              className="w-6 h-6 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
               initial={{ rotate: -90, opacity: 0 }}
               animate={{ rotate: 0, opacity: 1 }}
               exit={{ rotate: 90, opacity: 0 }}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </motion.svg>
+              <ChatBubbleLeftRightIcon className="w-6 h-6 text-white" />
+            </motion.div>
           )}
         </AnimatePresence>
       </motion.button>
@@ -261,96 +293,119 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className={`fixed ${positionClasses[position]} ${isMinimized ? 'w-80 h-16' : 'w-96 h-96'} bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl z-40 flex flex-col transition-all duration-300`}
+            className={`fixed ${positionClasses[position]} ${
+              isMinimized ? 'w-80 h-14' : 'w-96 h-[500px]'
+            } bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl z-40 flex flex-col overflow-hidden`}
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2 }}
           >
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700" style={{ backgroundColor: primaryColor }}>
               <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                <h3 className="text-gray-900 dark:text-white font-semibold">ROMASHKA AI</h3>
+                <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'} ${isConnected ? 'animate-pulse' : ''}`}></div>
+                <div className="text-white">
+                  <h3 className="font-semibold text-sm">{agentName} AI</h3>
+                  <p className="text-xs opacity-90">
+                    {isConnected ? 'Online' : 'Connecting...'} • {onlineParticipants.length} agent{onlineParticipants.length !== 1 ? 's' : ''} available
+                  </p>
+                </div>
               </div>
+              
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setIsMinimized(!isMinimized)}
-                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-1 rounded hover:bg-white/20 transition-colors"
+                  aria-label={isMinimized ? 'Maximize' : 'Minimize'}
                 >
-                  {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+                  {isMinimized ? (
+                    <ArrowsPointingOutIcon className="w-4 h-4 text-white" />
+                  ) : (
+                    <MinusIcon className="w-4 h-4 text-white" />
+                  )}
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-1 rounded hover:bg-white/20 transition-colors"
+                  aria-label="Close chat"
                 >
-                  <X size={16} />
+                  <XMarkIcon className="w-4 h-4 text-white" />
                 </button>
               </div>
             </div>
 
             {!isMinimized && (
               <>
-                {/* Messages */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-3">
-                  {messages.length === 0 ? (
-                    <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                      <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center">
-                        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                      </div>
-                      <p className="text-sm font-medium">ROMASHKA AI</p>
-                      <p className="text-xs mb-4">Your intelligent customer support assistant</p>
-                      
-                      <div className="text-left bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-xs space-y-1">
-                        <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">💡 Try asking me about:</p>
-                        <p className="text-gray-600 dark:text-gray-400">• Product information and features</p>
-                        <p className="text-gray-600 dark:text-gray-400">• Account setup and troubleshooting</p>
-                        <p className="text-gray-600 dark:text-gray-400">• Pricing and billing questions</p>
-                        <p className="text-gray-600 dark:text-gray-400">• Technical support</p>
+                {/* Messages Container */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <ExclamationTriangleIcon className="w-4 h-4" />
+                        <span>Connection error: {error}</span>
                       </div>
                     </div>
-                  ) : (
-                    messages.map((message) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
+                  )}
+
+                  {isLoading && messages.length === 0 && (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: primaryColor }}></div>
+                    </div>
+                  )}
+
+                  {messages.map((message) => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-[280px] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
                         <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            message.sender_type === 'user'
-                              ? 'bg-pink-500 text-white'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                          className={`px-4 py-2 rounded-2xl ${
+                            message.sender === 'user'
+                              ? 'text-white rounded-br-sm'
+                              : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-sm'
                           }`}
+                          style={message.sender === 'user' ? { backgroundColor: primaryColor } : {}}
                         >
-                          <p className="text-sm whitespace-pre-line">{message.content}</p>
-                          {message.metadata?.attachments && (
+                          <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                          
+                          {/* Attachments */}
+                          {message.metadata?.attachments && message.metadata.attachments.length > 0 && (
                             <div className="mt-2 space-y-1">
-                              {message.metadata.attachments.map((file: File, index: number) => (
-                                <div key={index} className="text-xs opacity-75">
-                                  📎 {file.name}
+                              {message.metadata.attachments.map((attachment: any, index: number) => (
+                                <div key={index} className="flex items-center space-x-1 text-xs opacity-75">
+                                  <PaperClipIcon className="w-3 h-3" />
+                                  <span>{attachment.name}</span>
                                 </div>
                               ))}
                             </div>
                           )}
                         </div>
-                      </motion.div>
-                    ))
-                  )}
-                  
-                  {/* Typing Indicator */}
+                        
+                        {/* Message status and timestamp */}
+                        <div className={`flex items-center space-x-1 mt-1 text-xs text-gray-500 ${
+                          message.sender === 'user' ? 'justify-end' : 'justify-start'
+                        }`}>
+                          <span>{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          {message.sender === 'user' && getMessageStatusIcon(message)}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+
+                  {/* Typing Indicators */}
                   <AnimatePresence>
-                    {isTyping && (
+                    {isAnyoneTyping && (
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
+                        exit={{ opacity: 0, y: -10 }}
                         className="flex justify-start"
                       >
-                        <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-4 py-2">
+                        <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl rounded-bl-sm px-4 py-2">
                           <div className="flex space-x-1">
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -360,95 +415,106 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  
+
                   <div ref={messagesEndRef} />
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                  {/* Attachments */}
+                <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                  {/* Attachments Preview */}
                   {attachments.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-2">
                       {attachments.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center space-x-1 bg-gray-100 dark:bg-gray-700 rounded px-2 py-1 text-xs"
+                          className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1 text-sm"
                         >
-                          <span>📎 {file.name}</span>
+                          <PaperClipIcon className="w-4 h-4 text-gray-500" />
+                          <span className="truncate max-w-[100px]">{file.name}</span>
                           <button
                             onClick={() => removeAttachment(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 ml-1"
                           >
-                            <X size={12} />
+                            <XMarkIcon className="w-3 h-3" />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                    >
-                      <Paperclip size={16} />
-                    </button>
-                    
-                    <div className="relative flex-1">
+                  <div className="flex items-end space-x-2">
+                    {/* File Upload Button */}
+                    {enableFileUpload && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                        aria-label="Attach file"
+                      >
+                        <PaperClipIcon className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    {/* Message Input */}
+                    <div className="flex-1 relative">
                       <input
+                        ref={inputRef}
                         type="text"
                         value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
+                        onChange={handleInputChange}
                         onKeyPress={handleKeyPress}
                         placeholder="Type your message..."
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500 dark:focus:ring-primary-pink"
-                        disabled={isLoading}
+                        className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-opacity-50 resize-none"
+                        style={{ focusRingColor: primaryColor }}
+                        disabled={!isConnected}
                       />
-                      
-                      {/* Emoji Picker */}
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                        >
-                          <Smile size={16} />
-                        </button>
-                        
-                        <AnimatePresence>
-                          {showEmojiPicker && (
-                            <motion.div
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.9 }}
-                              className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 shadow-lg"
-                            >
-                              <div className="grid grid-cols-8 gap-1">
-                                {['😊', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨', '😎', '🤔', '😢', '😡', '🤗', '👋', '💪', '🎯'].map((emoji) => (
-                                  <button
-                                    key={emoji}
-                                    onClick={() => addEmoji(emoji)}
-                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={sendMessage}
-                      disabled={!inputValue.trim() || isLoading}
-                      className="p-2 bg-pink-500 hover:bg-pink-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
-                    >
-                      {isLoading ? (
-                        <AnimatedSpinner size="sm" className="text-white" />
-                      ) : (
-                        <Send size={16} />
+
+                      {/* Emoji Button */}
+                      {enableEmojis && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <button
+                            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                            className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                            aria-label="Add emoji"
+                          >
+                            <FaceSmileIcon className="w-4 h-4" />
+                          </button>
+
+                          {/* Emoji Picker */}
+                          <AnimatePresence>
+                            {showEmojiPicker && (
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                                className="absolute bottom-full right-0 mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg z-10"
+                              >
+                                <div className="grid grid-cols-8 gap-1">
+                                  {commonEmojis.map((emoji) => (
+                                    <button
+                                      key={emoji}
+                                      onClick={() => addEmoji(emoji)}
+                                      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors text-lg"
+                                    >
+                                      {emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
                       )}
+                    </div>
+
+                    {/* Send Button */}
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={(!inputValue.trim() && attachments.length === 0) || !isConnected}
+                      className="p-2 rounded-full text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
+                      style={{ backgroundColor: primaryColor }}
+                      aria-label="Send message"
+                    >
+                      <PaperAirplaneIcon className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -458,14 +524,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Hidden file input */}
+      {/* Hidden File Input */}
       <input
         ref={fileInputRef}
         type="file"
         multiple
         onChange={handleFileUpload}
         className="hidden"
-        accept="image/*,.pdf,.doc,.docx,.txt"
+        accept={allowedFileTypes.join(',')}
       />
     </>
   );
