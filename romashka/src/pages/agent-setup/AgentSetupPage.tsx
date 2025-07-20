@@ -454,7 +454,7 @@ You can customize these settings in the following steps, or keep the recommended
       // Simulate AI response based on setup
       await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000)); // 1-3 second delay
       
-      const aiResponse = generateTestResponse(messageText);
+      const aiResponse = await generateTestResponse(messageText);
       
       const aiMessage = {
         id: (Date.now() + 1).toString(),
@@ -477,7 +477,7 @@ You can customize these settings in the following steps, or keep the recommended
     }
   };
 
-  const generateTestResponse = (userMessage: string): string => {
+  const generateTestResponse = async (userMessage: string): Promise<string> => {
     const lowerMessage = userMessage.toLowerCase();
     const selectedBusinessType = businessTypes.find(type => type.value === businessType);
     const tone = agentTone || 'friendly';
@@ -537,18 +537,23 @@ You can customize these settings in the following steps, or keep the recommended
     
     // Step 2: Search through extracted knowledge content for relevant answers
     if (knowledgeContent) {
-      const knowledgeMatch = findKnowledgeMatch(userMessage, knowledgeContent);
-      if (knowledgeMatch) {
-        console.log('✅ Found knowledge match:', knowledgeMatch.substring(0, 100) + '...');
-        
-        // Format the response based on tone
-        if (tone === 'professional') {
-          return `Based on our information: ${knowledgeMatch}\n\nIs there anything else I can help you with?`;
-        } else if (tone === 'casual') {
-          return `Hey! I found this for you: ${knowledgeMatch}\n\nNeed anything else? 😊`;
-        } else {
-          return `Great question! ${knowledgeMatch}\n\nHope that helps! Let me know if you need anything else! 😊`;
+      try {
+        const knowledgeMatch = await findKnowledgeMatch(userMessage, knowledgeContent);
+        if (knowledgeMatch) {
+          console.log('✅ Found knowledge match:', knowledgeMatch.substring(0, 100) + '...');
+          
+          // Format the response based on tone
+          if (tone === 'professional') {
+            return `Based on our information: ${knowledgeMatch}\n\nIs there anything else I can help you with?`;
+          } else if (tone === 'casual') {
+            return `Hey! I found this for you: ${knowledgeMatch}\n\nNeed anything else? 😊`;
+          } else {
+            return `Great question! ${knowledgeMatch}\n\nHope that helps! Let me know if you need anything else! 😊`;
+          }
         }
+      } catch (error) {
+        console.error('Error in knowledge matching:', error);
+        // Continue to fallback responses if AI matching fails
       }
     }
     
@@ -595,239 +600,52 @@ You can customize these settings in the following steps, or keep the recommended
   };
   
   // Helper function to find relevant content in knowledge base
-  const findKnowledgeMatch = (userMessage: string, knowledge: string): string | null => {
-    const lowerMessage = userMessage.toLowerCase();
-    console.log('🔍 Searching knowledge for:', userMessage);
-    console.log('📝 Knowledge content preview:', knowledge.substring(0, 200) + '...');
+  const findKnowledgeMatch = async (userMessage: string, knowledge: string): Promise<string | null> => {
+    console.log('🔍 Using AI to analyze knowledge for:', userMessage);
+    console.log('📝 Knowledge content length:', knowledge.length);
     
-    // Special cases: Direct question detection
-    if ((lowerMessage.includes('can i change') || lowerMessage.includes('change')) && 
-        (lowerMessage.includes('dimension') || lowerMessage.includes('size')) && 
-        lowerMessage.includes('furniture')) {
-      console.log('🎯 Detected furniture dimension question - returning exact answer');
-      return 'Yes, due to the fact that we make the furniture ourselves in our workshop, we can change its dimensions. Let us know and we surely get back to you - we consider every request individually.';
-    }
-    
-    // Adjustment/editing questions for photography
-    if ((lowerMessage.includes('adjust') || lowerMessage.includes('edit')) && 
-        (lowerMessage.includes('image') || lowerMessage.includes('photo'))) {
-      console.log('🎯 Detected photo adjustment question - returning exact answer');
-      return 'We generally use the following tools to replicate your style in Lightroom: exposure, highlights, shadows, whites, blacks, temperature, tint, vibrance, saturation, texture, clarity, dehaze, presence, tone curve, HSL adjustments, split toning, lens corrections, effects, detail, and color grading.';
-    }
-    
-    // Enhanced patterns for multiple FAQ types
-    const patterns = [
-      // Digital Lab / Photography FAQ
-      {
-        keywords: ['adjustments', 'adjust', 'images', 'lightroom', 'edit', 'editing', 'photo', 'style', 'replication'],
-        response: 'We generally use the following tools to replicate your style in Lightroom: Temperature / Tint, Exposure, Highlight Recovery, Shadows, White / Black Clipping, Colour Adjustments and Noise reduction.'
-      },
-      {
-        keywords: ['retouching', 'retouch', 'skin', 'blemish', 'smoothing', 'enhancement'],
-        response: 'We provide professional photo retouching services including skin smoothing, blemish removal, and color correction.'
-      },
+    try {
+      // Import the AI knowledge matching service
+      const { knowledgeMatchingService } = await import('../../services/ai/knowledgeMatchingService');
       
-      // Raw Tools Furniture FAQ
-      {
-        keywords: ['3d model', '3d', 'models available', 'download'],
-        response: 'Yes, all the downloads can be found in the PRO tab.'
-      },
-      {
-        keywords: ['complaint', 'processing', 'time', 'how long', 'process'],
-        response: 'We give ourselves 14 days to thoroughly consider the complaint, but that time is usually shorter.'
-      },
-      {
-        keywords: ['furniture', 'made', 'where', 'manufactured', 'poland'],
-        response: 'Our furniture are made in Poland, in the heart of Roztocze region. We have our own sawmill and carpentry workshop, so we make all the furniture ourselves - we do not use the services of subcontractors.'
-      },
-      {
-        keywords: ['showroom', 'see', 'person', 'visit', 'location'],
-        response: 'At the moment we do not have a showroom. The furniture can only be seen in our workshop.'
-      },
-      {
-        keywords: ['dimensions', 'change', 'custom', 'size', 'dimension', 'furniture dimensions', 'modify', 'alter', 'can i change', 'change dimensions', 'furniture dimension'],
-        response: 'Yes, due to the fact that we make the furniture ourselves in our workshop, we can change its dimensions. Let us know and we surely get back to you - we consider every request individually.'
-      },
-      {
-        keywords: ['samples', 'wood samples', 'sample box'],
-        response: 'Yes, you can order a sample box on our website. If you have any questions or doubts, feel free to contact us.'
-      },
-      {
-        keywords: ['order', 'execution time', 'processing time', 'how long'],
-        response: 'To limit overproduction, our furniture is made after you place an order. The execution time is 40 business days.'
-      },
-      {
-        keywords: ['delivery', 'delivery cost', 'shipping', 'shipping cost', 'poland', 'cost', 'delivery price'],
-        response: 'Regardless of the amount of your order, the costs of delivery within Poland are always on our side.'
-      }
-    ];
-    
-    // Try to match specific patterns first
-    console.log(`🔍 Checking user message: "${userMessage}" (lowercased: "${lowerMessage}")`);
-    
-    for (const pattern of patterns) {
-      const matchedKeywords = pattern.keywords.filter(keyword => {
-        const lowerKeyword = keyword.toLowerCase();
-        
-        // Enhanced matching: check exact match, substring, and word boundaries
-        let isMatch = false;
-        
-        // Direct substring match
-        if (lowerMessage.includes(lowerKeyword)) {
-          isMatch = true;
-        }
-        
-        // Check if all words in the keyword appear in the message (for multi-word keywords)
-        if (!isMatch && keyword.includes(' ')) {
-          const keywordWords = keyword.toLowerCase().split(' ');
-          const allWordsMatch = keywordWords.every(word => lowerMessage.includes(word));
-          if (allWordsMatch) {
-            isMatch = true;
-          }
-        }
-        
-        // Check for word boundary matches to avoid false positives
-        if (!isMatch) {
-          const words = lowerMessage.split(/\s+/);
-          const keywordWords = keyword.toLowerCase().split(/\s+/);
-          
-          // For single keywords, check if any word contains the keyword
-          if (keywordWords.length === 1) {
-            isMatch = words.some(word => word.includes(keywordWords[0]) || keywordWords[0].includes(word));
-          }
-        }
-        
-        if (isMatch) {
-          console.log(`🎯 Keyword match: "${keyword}" found in "${userMessage}"`);
-        }
-        return isMatch;
+      const result = await knowledgeMatchingService.findAnswer({
+        question: userMessage,
+        knowledgeBase: knowledge,
+        agentTone: agentTone,
+        businessType: businessType
       });
       
-      const patternName = pattern.keywords.slice(0, 2).join(', ') + (pattern.keywords.length > 2 ? '...' : '');
-      console.log(`🔍 Pattern check for [${patternName}]: ${matchedKeywords.length} matches`);
-      
-      if (matchedKeywords.length > 0) {
-        console.log(`✅ Pattern match found (${matchedKeywords.length} keywords matched: ${matchedKeywords.join(', ')}):`, pattern.response);
-        return pattern.response;
+      if (result.answer) {
+        console.log('✅ AI knowledge match found (confidence:', result.confidence, '):', result.answer.substring(0, 100) + '...');
+        return result.answer;
       }
-    }
-    
-    // Fallback to general content search
-    const sentences = knowledge.split(/[.!?]+/).filter(s => s.trim().length > 10);
-    
-    // Try to find FAQ-style Q&A pairs
-    console.log('🔍 Searching for Q&A pairs in', sentences.length, 'sentences');
-    
-    for (let i = 0; i < sentences.length; i++) {
-      const sentence = sentences[i].trim();
-      const lowerSentence = sentence.toLowerCase();
       
-      // Look for questions followed by answers
-      if (sentence.includes('?')) {
-        const questionPart = sentence.split('?')[0];
-        const lowerQuestion = questionPart.toLowerCase();
+      console.log('❌ No relevant answer found in knowledge base');
+      return null;
+    } catch (error) {
+      console.error('❌ Error in AI knowledge matching:', error);
+      
+      // Fallback: Basic keyword search for critical cases
+      const lowerMessage = userMessage.toLowerCase();
+      const lowerKnowledge = knowledge.toLowerCase();
+      
+      if (lowerMessage.includes('submit') && lowerMessage.includes('application') && 
+          lowerKnowledge.includes('application')) {
+        console.log('🔧 Using fallback for application submission question');
         
-        console.log(`🔍 Found question: "${questionPart}"`);
-        
-        // Enhanced matching for common question patterns
-        const isQuestionMatch = 
-          // Exact key phrase matching
-          (lowerMessage.includes('change') && lowerQuestion.includes('change') && lowerQuestion.includes('dimensions')) ||
-          (lowerMessage.includes('delivery') && lowerQuestion.includes('delivery') && lowerQuestion.includes('cost')) ||
-          (lowerMessage.includes('3d') && lowerQuestion.includes('3d')) ||
-          (lowerMessage.includes('samples') && lowerQuestion.includes('samples')) ||
-          // Word-based matching
-          (() => {
-            const userWords = lowerMessage.split(' ').filter(w => w.length > 2);
-            const questionWords = lowerQuestion.split(' ').filter(w => w.length > 2);
-            
-            let matchScore = 0;
-            userWords.forEach(userWord => {
-              questionWords.forEach(qWord => {
-                if (userWord === qWord || userWord.includes(qWord) || qWord.includes(userWord)) {
-                  matchScore++;
-                }
-              });
-            });
-            
-            console.log(`📊 Q&A match score for "${questionPart}": ${matchScore}`);
-            return matchScore >= 2;
-          })();
-        
-        if (isQuestionMatch) {
-          console.log(`✅ Question match found: "${questionPart}"`);
-          
-          // Look for the answer in the same sentence after '?'
-          const fullSentence = sentence;
-          if (fullSentence.includes('?')) {
-            const parts = fullSentence.split('?');
-            if (parts.length > 1 && parts[1].trim()) {
-              const answer = parts[1].trim().replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ');
-              console.log('✅ Q&A same-sentence answer found:', answer);
-              return answer;
-            }
-          }
-          
-          // Check next sentence for answer
-          if (i + 1 < sentences.length) {
-            const nextSentence = sentences[i + 1].trim().replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ');
-            if (nextSentence.length > 5) {
-              console.log('✅ Q&A next-sentence answer found:', nextSentence);
-              return nextSentence;
-            }
+        // Find the application submission section
+        const sentences = knowledge.split(/[.!?]+/).filter(s => s.trim().length > 20);
+        for (const sentence of sentences) {
+          if (sentence.toLowerCase().includes('submit') && 
+              sentence.toLowerCase().includes('application') &&
+              sentence.length > 100) {
+            return sentence.trim();
           }
         }
       }
+      
+      return null;
     }
-    
-    // Last resort: enhanced keyword matching in content
-    const searchTerms = lowerMessage.split(' ').filter(word => word.length > 3);
-    console.log('🔍 Search terms extracted:', searchTerms);
-    
-    // Score-based sentence matching
-    let bestSentence = '';
-    let bestScore = 0;
-    
-    for (const sentence of sentences) {
-      const lowerSentence = sentence.toLowerCase();
-      let score = 0;
-      
-      // Count keyword matches
-      for (const term of searchTerms) {
-        if (lowerSentence.includes(term)) {
-          score += 1;
-        }
-      }
-      
-      // Bonus for common question indicators
-      if (lowerSentence.includes('we use') || 
-          lowerSentence.includes('we generally') ||
-          lowerSentence.includes('we provide') ||
-          lowerSentence.includes('our') ||
-          lowerSentence.includes('yes') ||
-          lowerSentence.includes('no')) {
-        score += 0.5;
-      }
-      
-      // Bonus for longer, descriptive sentences
-      if (sentence.length > 50) {
-        score += 0.3;
-      }
-      
-      if (score > bestScore && score >= 1) {
-        bestScore = score;
-        bestSentence = sentence.trim();
-      }
-    }
-    
-    if (bestSentence) {
-      const cleanSentence = bestSentence.replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
-      console.log(`✅ Best keyword match found (score: ${bestScore}):`, cleanSentence);
-      return cleanSentence;
-    }
-    
-    console.log('❌ No knowledge match found');
-    return null;
   };
   
   // Helper function to detect complex queries
