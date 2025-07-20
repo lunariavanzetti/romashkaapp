@@ -385,20 +385,43 @@
       console.log('🔍 Widget: Fetching real FAQ data from database...');
       
       const supabase = createSupabaseClient();
-      const { data, error } = await supabase
+      
+      // First try to get all content, then filter for FAQ
+      const { data: allData, error: allError } = await supabase
         .from('extracted_content')
         .select('url, title, content, content_type')
-        .eq('content_type', 'faq')
         .order('created_at', { ascending: false })
-        .limit(10)
+        .limit(20)
         .execute();
       
-      if (error) {
-        throw error;
+      if (allError) {
+        console.error('❌ Widget: Error fetching all content:', allError);
+        throw allError;
       }
       
-      console.log(`✅ Widget: Found ${data?.length || 0} FAQ entries`);
-      return data || [];
+      console.log(`📊 Widget: Found ${allData?.length || 0} total content entries`);
+      console.log('📋 Widget: Content types:', allData?.map(item => item.content_type) || []);
+      
+      // Filter for FAQ content
+      const faqData = allData?.filter(item => item.content_type === 'faq') || [];
+      console.log(`✅ Widget: Found ${faqData.length} FAQ entries`);
+      
+      // If no FAQ data, try to get any content that might have FAQ-like content
+      if (faqData.length === 0 && allData?.length > 0) {
+        console.log('🔍 Widget: No FAQ content found, checking all content for FAQ-like text...');
+        const faqLikeData = allData.filter(item => 
+          item.content && (
+            item.content.toLowerCase().includes('question') ||
+            item.content.toLowerCase().includes('answer') ||
+            item.content.toLowerCase().includes('faq') ||
+            item.content.includes('?')
+          )
+        );
+        console.log(`📝 Widget: Found ${faqLikeData.length} entries with FAQ-like content`);
+        return faqLikeData;
+      }
+      
+      return faqData;
     } catch (error) {
       console.warn('⚠️ Widget: Failed to fetch real FAQ data:', error);
       return [];
@@ -452,26 +475,78 @@
     let bestScore = 0;
     
     for (const faqEntry of faqData) {
-      if (faqEntry.content_type === 'faq' && faqEntry.content) {
+      if (faqEntry.content) {
+        console.log(`🔎 Widget: Checking content from ${faqEntry.url} (${faqEntry.content_type})`);
+        
         const qaPairs = extractQAPairs(faqEntry.content);
+        console.log(`📝 Widget: Extracted ${qaPairs.length} Q&A pairs from this entry`);
         
         for (const qa of qaPairs) {
+          console.log(`❓ Widget: Checking Q: "${qa.question}"`);
+          
           const questionWords = qa.question.toLowerCase().split(' ');
           const messageWords = lowerMessage.split(' ');
           
-          // Calculate similarity score
+          // Calculate similarity score with more flexible matching
           let matches = 0;
-          for (const word of questionWords) {
-            if (word.length > 3 && messageWords.includes(word)) {
-              matches++;
+          let totalWords = 0;
+          
+          // Check for keyword matches
+          const keywords = ['ship', 'shipping', 'countries', 'country', 'deliver', 'delivery', 'send', 'international'];
+          for (const keyword of keywords) {
+            if (lowerMessage.includes(keyword) && qa.question.toLowerCase().includes(keyword)) {
+              matches += 2; // Give extra weight to keyword matches
+              totalWords += 1;
             }
           }
           
-          const score = matches / Math.max(questionWords.length, messageWords.length);
+          // Regular word matching
+          for (const word of questionWords) {
+            if (word.length > 2) {
+              totalWords += 1;
+              if (messageWords.includes(word)) {
+                matches += 1;
+              }
+            }
+          }
           
-          if (score > bestScore && score > 0.2) { // Minimum 20% match
+          const score = totalWords > 0 ? matches / totalWords : 0;
+          console.log(`📊 Widget: Match score: ${(score * 100).toFixed(1)}% (${matches}/${totalWords})`);
+          
+          if (score > bestScore && score > 0.15) { // Lower threshold for better matching
             bestMatch = qa;
             bestScore = score;
+            console.log(`🎯 Widget: New best match found!`);
+          }
+        }
+        
+        // Also check if the entire content contains relevant information
+        if (lowerMessage.includes('ship') || lowerMessage.includes('countries')) {
+          if (faqEntry.content.toLowerCase().includes('ship') && 
+              (faqEntry.content.toLowerCase().includes('countries') || 
+               faqEntry.content.toLowerCase().includes('eu') ||
+               faqEntry.content.toLowerCase().includes('international'))) {
+            console.log(`🌍 Widget: Found shipping-related content in full text`);
+            
+            // Extract shipping information from the content
+            const contentLines = faqEntry.content.split('\n').filter(line => 
+              line.toLowerCase().includes('ship') ||
+              line.toLowerCase().includes('countries') ||
+              line.toLowerCase().includes('eu') ||
+              line.toLowerCase().includes('deliver')
+            );
+            
+            if (contentLines.length > 0) {
+              const shippingInfo = contentLines.join(' ').trim();
+              if (shippingInfo.length > 20) {
+                bestMatch = { 
+                  question: "Shipping information", 
+                  answer: shippingInfo 
+                };
+                bestScore = 0.8;
+                console.log(`🚚 Widget: Using shipping content match`);
+              }
+            }
           }
         }
       }
@@ -489,6 +564,9 @@
   // Real API response using scanned data
   async function getRealAPIResponse(message) {
     try {
+      // Add some delay to simulate processing
+      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+      
       // Get real FAQ data
       const faqData = await getRealFAQData();
       
@@ -497,11 +575,13 @@
         const faqAnswer = findFAQMatch(message, faqData);
         
         if (faqAnswer) {
+          console.log(`🎉 Widget: Using real FAQ answer: "${faqAnswer.substring(0, 100)}..."`);
           // Adjust answer based on personality
           return adjustResponseForPersonality(faqAnswer, finalConfig.widget.personality);
         }
       }
       
+      console.log(`🔄 Widget: No FAQ match found, using personality response`);
       // Fall back to personality-based response if no FAQ match
       return generatePersonalityResponse(message, finalConfig.widget.personality);
       
