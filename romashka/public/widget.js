@@ -547,41 +547,75 @@
                content.includes('international'))) {
             console.log(`🌍 Widget: Found shipping-related content in full text`);
             
-            // Look for the specific answer about EU countries
+            // Look for the specific answer about countries/shipping
             const sentences = faqEntry.content.split(/[.!?]+/).map(s => s.trim());
-            const shippingSentence = sentences.find(sentence => 
-              sentence.toLowerCase().includes('ship') && 
-              (sentence.toLowerCase().includes('eu') || 
-               sentence.toLowerCase().includes('countries') ||
-               sentence.toLowerCase().includes('britain') ||
-               sentence.toLowerCase().includes('switzerland'))
-            );
             
-            if (shippingSentence && shippingSentence.length > 20) {
+            // Find the most relevant sentence about shipping countries
+            let bestSentence = null;
+            let bestSentenceScore = 0;
+            
+            for (const sentence of sentences) {
+              const lowerSentence = sentence.toLowerCase();
+              let score = 0;
+              
+              // Score based on relevance to shipping countries question
+              if (lowerSentence.includes('ship') && 
+                  (lowerSentence.includes('countries') || 
+                   lowerSentence.includes('eu') ||
+                   lowerSentence.includes('britain') ||
+                   lowerSentence.includes('switzerland') ||
+                   lowerSentence.includes('international') ||
+                   lowerSentence.includes('world'))) {
+                score = 3;
+              } else if (lowerSentence.includes('ship') && 
+                        (lowerSentence.includes('australia') || 
+                         lowerSentence.includes('within'))) {
+                score = 2;
+              } else if (lowerSentence.includes('available') && 
+                        lowerSentence.includes('countries')) {
+                score = 1;
+              }
+              
+              // Prefer shorter, more direct answers
+              if (score > 0 && sentence.length < 200) {
+                score += 1;
+              }
+              
+              if (score > bestSentenceScore) {
+                bestSentence = sentence;
+                bestSentenceScore = score;
+              }
+            }
+            
+            if (bestSentence && bestSentence.length > 20 && bestSentence.length < 300) {
               bestMatch = { 
                 question: "Shipping countries", 
-                answer: shippingSentence.trim() 
+                answer: bestSentence.trim() 
               };
               bestScore = 0.9;
-              console.log(`🎯 Widget: Found shipping sentence: "${shippingSentence}"`);
+              console.log(`🎯 Widget: Found concise shipping answer: "${bestSentence}"`);
             } else {
-              // Fallback to extracting shipping lines
+              // Fallback to extracting the most relevant short lines
               const contentLines = faqEntry.content.split('\n').filter(line => 
-                line.toLowerCase().includes('ship') ||
-                line.toLowerCase().includes('countries') ||
-                line.toLowerCase().includes('eu') ||
-                line.toLowerCase().includes('deliver')
+                line.toLowerCase().includes('ship') &&
+                (line.toLowerCase().includes('countries') ||
+                 line.toLowerCase().includes('world') ||
+                 line.toLowerCase().includes('international'))
               );
               
               if (contentLines.length > 0) {
-                const shippingInfo = contentLines.join(' ').trim();
-                if (shippingInfo.length > 20) {
+                // Take the first relevant line and keep it short
+                const shortestLine = contentLines
+                  .sort((a, b) => a.length - b.length)[0]
+                  .trim();
+                
+                if (shortestLine.length > 20 && shortestLine.length < 200) {
                   bestMatch = { 
                     question: "Shipping information", 
-                    answer: shippingInfo 
+                    answer: shortestLine 
                   };
-                  bestScore = 0.8;
-                  console.log(`🚚 Widget: Using shipping content match`);
+                  bestScore = 0.7;
+                  console.log(`🚚 Widget: Using concise shipping line: "${shortestLine}"`);
                 }
               }
             }
@@ -632,6 +666,26 @@
   // Adjust response based on personality settings
   function adjustResponseForPersonality(response, personality) {
     let adjustedResponse = response;
+    
+    // First, limit response length to keep it concise like the playground
+    if (adjustedResponse.length > 300) {
+      // Try to find a good stopping point
+      const sentences = adjustedResponse.split(/[.!?]+/);
+      let conciseResponse = '';
+      
+      for (const sentence of sentences) {
+        if (conciseResponse.length + sentence.length < 250) {
+          conciseResponse += sentence.trim() + '. ';
+        } else {
+          break;
+        }
+      }
+      
+      if (conciseResponse.length > 50) {
+        adjustedResponse = conciseResponse.trim();
+        console.log('📏 Widget: Shortened response for conciseness');
+      }
+    }
     
     // Formality adjustment
     if (personality.formality <= 30) {
