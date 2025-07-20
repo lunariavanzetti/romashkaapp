@@ -38,6 +38,7 @@ import SecurityDashboard from './pages/security/SecurityDashboard';
 import RealTimeAnalytics from './pages/analytics/RealTimeAnalytics';
 import ReportingDashboard from './pages/analytics/ReportingDashboard';
 import PredictiveAnalyticsTab from './pages/analytics/PredictiveAnalyticsTab';
+import AgentSetupPage from './pages/agent-setup/AgentSetupPage';
 import Debug from './pages/Debug';
 import DebugOnboarding from './pages/DebugOnboarding';
 
@@ -74,6 +75,7 @@ const AppContent = () => {
         <Route path="/automation" element={<ProtectedRoute><DashboardLayout><Automation /></DashboardLayout></ProtectedRoute>} />
         <Route path="/integrations" element={<ProtectedRoute><DashboardLayout><IntegrationsPage /></DashboardLayout></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SettingsPage /></DashboardLayout></ProtectedRoute>} />
+        <Route path="/agent-setup" element={<ProtectedRoute><DashboardLayout><AgentSetupPage /></DashboardLayout></ProtectedRoute>} />
         <Route path="/channels" element={<ProtectedRoute><DashboardLayout><ChannelsPage /></DashboardLayout></ProtectedRoute>} />
         <Route path="/channel" element={<ProtectedRoute><DashboardLayout><ChannelsPage /></DashboardLayout></ProtectedRoute>} />
         <Route path="/channels/whatsapp" element={<ProtectedRoute><DashboardLayout><WhatsAppPage /></DashboardLayout></ProtectedRoute>} />

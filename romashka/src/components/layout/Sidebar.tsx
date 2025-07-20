@@ -24,12 +24,10 @@ import { useAuthStore } from '../../stores/authStore';
 const navLinks = [
   { label: 'Dashboard', icon: <Home size={20} />, to: '/dashboard' },
   { label: 'Conversations', icon: <MessageCircle size={20} />, to: '/dashboard/conversations' },
+  { label: 'ROMASHKA AGENT', icon: <Brain size={20} />, to: '/agent-setup', highlight: true },
   { label: 'Analytics', icon: <BarChart2 size={20} />, to: '/dashboard/analytics' },
   { label: 'Knowledge Base', icon: <Book size={20} />, to: '/knowledge' },
-  { label: 'Automation', icon: <Zap size={20} />, to: '/automation' },
   { label: 'Integrations', icon: <Puzzle size={20} />, to: '/integrations' },
-  // Enterprise Features
-  { label: 'AI Training', icon: <Brain size={20} />, to: '/training' },
   { label: 'Personality', icon: <UserCheck size={20} />, to: '/personality' },
   { label: 'Channels', icon: <Phone size={20} />, to: '/channels' },
   { label: 'Playground', icon: <TestTube size={20} />, to: '/playground' },
@@ -106,13 +104,20 @@ const Sidebar: React.FC<{ open: boolean; onToggle: () => void }> = ({ open, onTo
                   flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium
                   ${isActive
                     ? 'bg-gradient-button text-white shadow-elevation-1'
+                    : link.highlight
+                    ? 'text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 bg-purple-25 border border-purple-200 dark:border-purple-800'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }
                   ${!open && 'justify-center'}
                 `}
               >
                 <span className="flex-shrink-0">{link.icon}</span>
-                {open && <span className="text-sm">{link.label}</span>}
+                {open && (
+                  <span className="text-sm font-semibold">
+                    {link.label}
+                    {link.highlight && <span className="ml-1 text-xs">✨</span>}
+                  </span>
+                )}
               </Link>
             );
           })}
