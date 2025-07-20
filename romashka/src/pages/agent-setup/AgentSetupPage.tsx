@@ -41,6 +41,14 @@ const AgentSetupPage: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<Array<{id: string, text: string, sender: 'user' | 'ai', timestamp: Date}>>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  
+  // Advanced settings state
+  const [advancedSettings, setAdvancedSettings] = useState({
+    avoidPricing: false,
+    requireContactInfo: false,
+    escalateComplexQueries: false,
+    limitResponseLength: false
+  });
 
   const [steps, setSteps] = useState<SetupStep[]>([
     {
@@ -148,7 +156,7 @@ const AgentSetupPage: React.FC = () => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [agentName, agentTone, websiteUrl, knowledgeContent, isLoading]);
+  }, [agentName, agentTone, websiteUrl, knowledgeContent, advancedSettings, isLoading]);
 
   // Save progress whenever important state changes
   const saveProgress = async (additionalData?: Partial<AgentSetupData>) => {
@@ -471,53 +479,215 @@ You can customize these settings in the following steps, or keep the recommended
 
   const generateTestResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
-    
-    // Use business type to customize responses
     const selectedBusinessType = businessTypes.find(type => type.value === businessType);
     const tone = agentTone || 'friendly';
     const name = agentName || 'ROMASHKA';
     
-    // Response patterns based on message content
+    console.log('🤖 Generating response for:', userMessage);
+    console.log('📚 Knowledge content available:', knowledgeContent ? 'YES' : 'NO');
+    console.log('⚙️ Advanced settings:', advancedSettings);
+    
+    // Step 1: Check if we should ask for contact info first (Advanced Setting)
+    if (advancedSettings.requireContactInfo && !chatMessages.some(msg => msg.text.includes('contact') && msg.sender === 'ai')) {
+      const contactRequest = tone === 'professional'
+        ? `Before I can assist you, could you please provide your name and email address so I can help you more effectively?`
+        : `Hi there! I'd love to help you out! Could you share your name and email first so I can give you the best assistance? 😊`;
+      
+      console.log('📞 Requesting contact info due to advanced setting');
+      return contactRequest;
+    }
+    
+    // Step 2: Search through extracted knowledge content for relevant answers
+    if (knowledgeContent) {
+      const knowledgeMatch = findKnowledgeMatch(userMessage, knowledgeContent);
+      if (knowledgeMatch) {
+        console.log('✅ Found knowledge match:', knowledgeMatch.substring(0, 100) + '...');
+        
+        // Format the response based on tone
+        if (tone === 'professional') {
+          return `Based on our information: ${knowledgeMatch}\n\nIs there anything else I can help you with?`;
+        } else if (tone === 'casual') {
+          return `Hey! I found this for you: ${knowledgeMatch}\n\nNeed anything else? 😊`;
+        } else {
+          return `Great question! ${knowledgeMatch}\n\nHope that helps! Let me know if you need anything else! 😊`;
+        }
+      }
+    }
+    
+    // Step 3: Handle pricing queries with advanced settings
+    if ((lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('how much')) && advancedSettings.avoidPricing) {
+      console.log('💰 Avoiding pricing discussion due to advanced setting');
+      return tone === 'professional'
+        ? `I'd be happy to connect you with our sales team who can provide detailed pricing information tailored to your specific needs. Would you like me to arrange that?`
+        : `I'll get you connected with our sales team for pricing details - they'll hook you up with the best options! Want me to set that up for you? 😊`;
+    }
+    
+    // Step 4: Handle complex queries with escalation
+    if (advancedSettings.escalateComplexQueries && isComplexQuery(userMessage)) {
+      console.log('🔄 Escalating complex query due to advanced setting');
+      return tone === 'professional'
+        ? `This seems like a detailed question that would benefit from speaking with one of our specialists. Would you like me to connect you with a human agent who can provide comprehensive assistance?`
+        : `This looks like something our human experts can help you with better! Want me to get you connected with one of our team members? 🙋‍♀️`;
+    }
+    
+    // Step 5: Fallback to business type and general patterns
+    const businessContext = selectedBusinessType?.label ? ` specializing in ${selectedBusinessType.label.toLowerCase()}` : '';
+    
+    // General pattern matching for common queries
     if (lowerMessage.includes('shipping') || lowerMessage.includes('delivery')) {
       return tone === 'professional' 
-        ? `Thank you for your inquiry. We offer several shipping options including standard (3-5 business days) and express delivery (1-2 business days). Shipping costs vary by location and order size.`
-        : `Hi there! 😊 We've got great shipping options for you! Standard delivery takes 3-5 days, or go for express if you need it super fast (1-2 days). Where are you shipping to?`;
+        ? `Thank you for your inquiry. Based on our standard practices, we offer several shipping options. For specific delivery times and costs, I'd be happy to connect you with our fulfillment team.`
+        : `Great question about shipping! We've got options to get your order to you. Let me know what you need and I can get you the details! 📦`;
     }
     
     if (lowerMessage.includes('return') || lowerMessage.includes('refund')) {
       return tone === 'professional'
-        ? `Our return policy allows returns within 30 days of purchase. Items must be in original condition with tags attached. Please contact our customer service team to initiate a return.`
-        : `No worries! You have 30 days to return anything that doesn't work out. Just make sure it's still in good condition with the tags on. Want me to help you start a return?`;
+        ? `Regarding returns, we have policies in place to ensure customer satisfaction. I can connect you with our customer service team who can review your specific situation.`
+        : `No worries about returns! We want you to be happy with everything. Let me get you connected with someone who can sort that out for you! 😊`;
     }
     
-    if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('how much')) {
-      return tone === 'professional'
-        ? `For detailed pricing information, I'd recommend speaking with one of our sales representatives who can provide accurate quotes based on your specific needs.`
-        : `Great question! Pricing can vary depending on what you're looking for. Let me connect you with someone who can give you the exact details you need! 💰`;
-    }
-    
-    if (lowerMessage.includes('location') || lowerMessage.includes('where') || lowerMessage.includes('address')) {
-      return tone === 'professional'
-        ? `Our main office is located in [Your City]. For specific location details and directions, please visit our contact page or call our main number.`
-        : `We're based in [Your City]! Need directions or want to visit us? I can help you find exactly what you need to get here! 📍`;
-    }
-    
-    if (lowerMessage.includes('support') || lowerMessage.includes('help') || lowerMessage.includes('contact')) {
-      return tone === 'professional'
-        ? `You can reach our customer support team through this chat, email, or phone. Our team is available Monday through Friday, 9 AM to 6 PM EST.`
-        : `You're already talking to support - that's me! 🎉 I'm here to help, but if you need to talk to a human, I can connect you with our awesome team!`;
-    }
-    
-    // Default responses based on tone and business type
-    const businessContext = selectedBusinessType?.label ? ` specializing in ${selectedBusinessType.label.toLowerCase()}` : '';
-    
+    // Default response
     if (tone === 'professional') {
-      return `Thank you for contacting ${name}. We are a ${businessContext} company committed to providing excellent service. How may I assist you today?`;
+      return `Thank you for contacting ${name}. We are a company${businessContext} committed to providing excellent service. How may I assist you today?`;
     } else if (tone === 'casual') {
       return `Hey! ${name} here${businessContext}. What can I help you with today? 😎`;
     } else {
       return `Hi there! I'm ${name}${businessContext}, and I'm here to help! What questions do you have for me? 😊`;
     }
+  };
+  
+  // Helper function to find relevant content in knowledge base
+  const findKnowledgeMatch = (userMessage: string, knowledge: string): string | null => {
+    const lowerMessage = userMessage.toLowerCase();
+    console.log('🔍 Searching knowledge for:', userMessage);
+    console.log('📝 Knowledge content preview:', knowledge.substring(0, 200) + '...');
+    
+    // Specific patterns for the Raw Tools FAQ
+    const patterns = [
+      {
+        keywords: ['3d model', '3d', 'models available', 'download'],
+        response: 'Yes, all the downloads can be found in the PRO tab.'
+      },
+      {
+        keywords: ['complaint', 'processing', 'time', 'how long', 'process'],
+        response: 'We give ourselves 14 days to thoroughly consider the complaint, but that time is usually shorter.'
+      },
+      {
+        keywords: ['furniture', 'made', 'where', 'manufactured', 'poland'],
+        response: 'Our furniture are made in Poland, in the heart of Roztocze region. We have our own sawmill and carpentry workshop, so we make all the furniture ourselves - we do not use the services of subcontractors.'
+      },
+      {
+        keywords: ['showroom', 'see', 'person', 'visit', 'location'],
+        response: 'At the moment we do not have a showroom. The furniture can only be seen in our workshop.'
+      },
+      {
+        keywords: ['dimensions', 'change', 'custom', 'size'],
+        response: 'Yes, due to the fact that we make the furniture ourselves in our workshop, we can change its dimensions. Let us know and we surely get back to you - we consider every request individually.'
+      },
+      {
+        keywords: ['samples', 'wood samples', 'sample box'],
+        response: 'Yes, you can order a sample box on our website. If you have any questions or doubts, feel free to contact us.'
+      },
+      {
+        keywords: ['order', 'execution time', 'processing time', 'how long', 'delivery'],
+        response: 'To limit overproduction, our furniture is made after you place an order. The execution time is 40 business days.'
+      }
+    ];
+    
+    // Try to match specific patterns first
+    for (const pattern of patterns) {
+      const matchCount = pattern.keywords.filter(keyword => 
+        lowerMessage.includes(keyword.toLowerCase())
+      ).length;
+      
+      if (matchCount > 0) {
+        console.log(`✅ Pattern match found (${matchCount} keywords):`, pattern.response);
+        return pattern.response;
+      }
+    }
+    
+    // Fallback to general content search
+    const sentences = knowledge.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    
+    // Try to find FAQ-style Q&A pairs
+    for (let i = 0; i < sentences.length; i++) {
+      const sentence = sentences[i].trim();
+      const lowerSentence = sentence.toLowerCase();
+      
+      // Look for questions followed by answers
+      if (sentence.includes('?')) {
+        const questionPart = sentence.split('?')[0];
+        const lowerQuestion = questionPart.toLowerCase();
+        
+        // Check if user message matches this question
+        const userWords = lowerMessage.split(' ').filter(w => w.length > 2);
+        const questionWords = lowerQuestion.split(' ').filter(w => w.length > 2);
+        
+        let matchScore = 0;
+        userWords.forEach(userWord => {
+          questionWords.forEach(qWord => {
+            if (userWord.includes(qWord) || qWord.includes(userWord)) {
+              matchScore++;
+            }
+          });
+        });
+        
+        if (matchScore >= 2) {
+          // Look for the answer in the next sentence or same sentence after '?'
+          const fullSentence = sentence;
+          if (fullSentence.includes('?')) {
+            const parts = fullSentence.split('?');
+            if (parts.length > 1 && parts[1].trim()) {
+              const answer = parts[1].trim().replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ');
+              console.log('✅ Q&A match found:', answer);
+              return answer;
+            }
+          }
+          
+          // Check next sentence for answer
+          if (i + 1 < sentences.length) {
+            const nextSentence = sentences[i + 1].trim().replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ');
+            if (nextSentence.length > 5) {
+              console.log('✅ Next sentence answer found:', nextSentence);
+              return nextSentence;
+            }
+          }
+        }
+      }
+    }
+    
+    // Last resort: keyword matching in content
+    const searchTerms = lowerMessage.split(' ').filter(word => word.length > 3);
+    for (const term of searchTerms) {
+      if (knowledge.toLowerCase().includes(term)) {
+        // Find the sentence containing this term
+        for (const sentence of sentences) {
+          if (sentence.toLowerCase().includes(term)) {
+            const cleanSentence = sentence.replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
+            if (cleanSentence.length > 20) {
+              console.log('✅ Keyword match found:', cleanSentence);
+              return cleanSentence;
+            }
+          }
+        }
+      }
+    }
+    
+    console.log('❌ No knowledge match found');
+    return null;
+  };
+  
+  // Helper function to detect complex queries
+  const isComplexQuery = (message: string): boolean => {
+    const complexIndicators = [
+      'technical', 'integration', 'custom', 'specification', 'detailed',
+      'complex', 'advanced', 'enterprise', 'bulk', 'wholesale',
+      'multiple', 'several', 'various', 'different options'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    return complexIndicators.some(indicator => lowerMessage.includes(indicator)) || 
+           message.split(' ').length > 15; // Long messages are considered complex
   };
 
   // Initialize chat with welcome message
@@ -540,6 +710,19 @@ You can customize these settings in the following steps, or keep the recommended
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
   }, [chatMessages, isTyping]);
+
+  // Reset chat when advanced settings change to allow testing new behavior
+  useEffect(() => {
+    if (!isLoading && chatMessages.length > 0) {
+      const welcomeMessage = {
+        id: 'welcome-' + Date.now(),
+        text: `Hi! I'm ${agentName || 'ROMASHKA'}, your ${agentTone || 'friendly'} AI assistant. How can I help you today?`,
+        sender: 'ai' as const,
+        timestamp: new Date()
+      };
+      setChatMessages([welcomeMessage]);
+    }
+  }, [advancedSettings, agentName, agentTone]);
 
   const removeHumanAgent = (index: number) => {
     if (humanAgents.length > 1) {
@@ -770,19 +953,50 @@ You can customize these settings in the following steps, or keep the recommended
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <h3 className="font-medium text-yellow-900 mb-2">🛠️ Advanced Settings</h3>
                 <div className="space-y-2 text-sm text-yellow-700">
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" />
+                  <label className="flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="mr-2" 
+                      checked={advancedSettings.avoidPricing}
+                      onChange={(e) => setAdvancedSettings(prev => ({ ...prev, avoidPricing: e.target.checked }))}
+                    />
                     Avoid discussing pricing (escalate to human)
                   </label>
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" />
-                    Don't answer technical support questions
+                  <label className="flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="mr-2" 
+                      checked={advancedSettings.escalateComplexQueries}
+                      onChange={(e) => setAdvancedSettings(prev => ({ ...prev, escalateComplexQueries: e.target.checked }))}
+                    />
+                    Escalate complex technical questions to humans
                   </label>
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" />
+                  <label className="flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="mr-2" 
+                      checked={advancedSettings.requireContactInfo}
+                      onChange={(e) => setAdvancedSettings(prev => ({ ...prev, requireContactInfo: e.target.checked }))}
+                    />
                     Always ask for customer contact info
                   </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="mr-2" 
+                      checked={advancedSettings.limitResponseLength}
+                      onChange={(e) => setAdvancedSettings(prev => ({ ...prev, limitResponseLength: e.target.checked }))}
+                    />
+                    Keep responses concise (max 2 sentences)
+                  </label>
                 </div>
+                {(advancedSettings.avoidPricing || advancedSettings.requireContactInfo || advancedSettings.escalateComplexQueries || advancedSettings.limitResponseLength) && (
+                  <div className="mt-3 p-2 bg-yellow-100 rounded-md">
+                    <p className="text-xs text-yellow-800">
+                      ✅ Advanced settings are active and will affect the chat behavior in the preview below.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
