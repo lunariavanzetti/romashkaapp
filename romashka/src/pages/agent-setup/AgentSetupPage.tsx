@@ -487,53 +487,16 @@ You can customize these settings in the following steps, or keep the recommended
     console.log('📚 Knowledge content available:', knowledgeContent ? 'YES' : 'NO');
     console.log('⚙️ Advanced settings:', advancedSettings);
     
-    // Step 1: Check if we should ask for contact info first (Advanced Setting)
-    if (advancedSettings.requireContactInfo) {
-      // Check if we've already asked for contact info or if user has provided it
-      const hasAskedForContact = chatMessages.some(msg => 
-        msg.sender === 'ai' && (
-          msg.text.includes('name and email') || 
-          msg.text.includes('contact') ||
-          msg.text.includes('share your name')
-        )
-      );
-      
-      const hasProvidedContact = chatMessages.some(msg => 
-        msg.sender === 'user' && (
-          msg.text.includes('@') || // Email pattern
-          (msg.text.toLowerCase().includes('name') && msg.text.length > 10) ||
-          /\b[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(msg.text) // Name pattern
-        )
-      );
-      
-      console.log('📞 Contact info check:', { hasAskedForContact, hasProvidedContact });
-      
-      if (!hasAskedForContact && !hasProvidedContact) {
-        const contactRequest = tone === 'professional'
-          ? `Before I can assist you, could you please provide your name and email address so I can help you more effectively?`
-          : `Hi there! I'd love to help you out! Could you share your name and email first so I can give you the best assistance? 😊`;
-        
-        console.log('📞 Requesting contact info due to advanced setting');
-        return contactRequest;
-      }
-      
-      // If we've asked but user hasn't provided contact info yet, continue asking
-      if (hasAskedForContact && !hasProvidedContact && lowerMessage.length > 3) {
-        // Check if current message has contact info
-        if (lowerMessage.includes('@') || /\b[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(userMessage)) {
-          // User just provided contact info, acknowledge and continue
-          console.log('📞 Contact info received, continuing with query');
-        } else {
-          // Still need contact info
-          const followUpRequest = tone === 'professional'
-            ? `I'd still need your name and email address to assist you properly. Could you please provide them?`
-            : `I still need your name and email to help you out! Could you share them with me? 😊`;
-          
-          console.log('📞 Following up for contact info');
-          return followUpRequest;
-        }
-      }
-    }
+    // Check if we need to collect contact info (but don't block answering questions)
+    const hasProvidedContact = chatMessages.some(msg => 
+      msg.sender === 'user' && (
+        msg.text.includes('@') || // Email pattern
+        /\b[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(msg.text) // Name pattern
+      )
+    );
+    
+    const shouldRequestContact = advancedSettings.requireContactInfo && !hasProvidedContact;
+    console.log('📞 Contact info needed:', shouldRequestContact);
     
     // Step 2: Search through extracted knowledge content for relevant answers
     if (knowledgeContent) {
@@ -542,14 +505,29 @@ You can customize these settings in the following steps, or keep the recommended
         if (knowledgeMatch) {
           console.log('✅ Found knowledge match:', knowledgeMatch.substring(0, 100) + '...');
           
-          // Format the response based on tone
-          if (tone === 'professional') {
-            return `Based on our information: ${knowledgeMatch}\n\nIs there anything else I can help you with?`;
-          } else if (tone === 'casual') {
-            return `Hey! I found this for you: ${knowledgeMatch}\n\nNeed anything else? 😊`;
+          // Add contact info request naturally after the answer
+          let response = knowledgeMatch;
+          
+          if (shouldRequestContact) {
+            if (tone === 'professional') {
+              response += '\n\nCould you please provide your name and email address so I can assist you further?';
+            } else if (tone === 'casual') {
+              response += '\n\nBtw, could you share your name and email? Would love to help you out more! 😊';
+            } else {
+              response += '\n\nAlso, could you share your name and email? Want to make sure I can help you with everything! 😊';
+            }
           } else {
-            return `Great question! ${knowledgeMatch}\n\nHope that helps! Let me know if you need anything else! 😊`;
+            // Add natural closing based on tone
+            if (tone === 'professional') {
+              response += '\n\nIs there anything else I can help you with?';
+            } else if (tone === 'casual') {
+              response += '\n\nAnything else? 😊';
+            } else {
+              response += '\n\nAnything else I can help with? 😊';
+            }
           }
+          
+          return response;
         }
       } catch (error) {
         console.error('Error in knowledge matching:', error);
