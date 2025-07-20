@@ -416,11 +416,25 @@
             item.content.toLowerCase().includes('question') ||
             item.content.toLowerCase().includes('answer') ||
             item.content.toLowerCase().includes('faq') ||
+            item.content.toLowerCase().includes('ship') ||
+            item.content.toLowerCase().includes('countries') ||
+            item.content.toLowerCase().includes('eu') ||
             item.content.includes('?')
           )
         );
         console.log(`📝 Widget: Found ${faqLikeData.length} entries with FAQ-like content`);
-        return faqLikeData;
+        
+        // Also try any content that mentions shipping/countries regardless of type
+        const shippingData = allData.filter(item =>
+          item.content && (
+            item.content.toLowerCase().includes('ship') ||
+            item.content.toLowerCase().includes('countries') ||
+            item.content.toLowerCase().includes('eu')
+          )
+        );
+        console.log(`🚚 Widget: Found ${shippingData.length} entries with shipping content`);
+        
+        return [...faqLikeData, ...shippingData];
       }
       
       return faqData;
@@ -524,29 +538,51 @@
         
         // Also check if the entire content contains relevant information
         if (lowerMessage.includes('ship') || lowerMessage.includes('countries')) {
-          if (faqEntry.content.toLowerCase().includes('ship') && 
-              (faqEntry.content.toLowerCase().includes('countries') || 
-               faqEntry.content.toLowerCase().includes('eu') ||
-               faqEntry.content.toLowerCase().includes('international'))) {
+          const content = faqEntry.content.toLowerCase();
+          if (content.includes('ship') && 
+              (content.includes('countries') || 
+               content.includes('eu') ||
+               content.includes('britain') ||
+               content.includes('switzerland') ||
+               content.includes('international'))) {
             console.log(`🌍 Widget: Found shipping-related content in full text`);
             
-            // Extract shipping information from the content
-            const contentLines = faqEntry.content.split('\n').filter(line => 
-              line.toLowerCase().includes('ship') ||
-              line.toLowerCase().includes('countries') ||
-              line.toLowerCase().includes('eu') ||
-              line.toLowerCase().includes('deliver')
+            // Look for the specific answer about EU countries
+            const sentences = faqEntry.content.split(/[.!?]+/).map(s => s.trim());
+            const shippingSentence = sentences.find(sentence => 
+              sentence.toLowerCase().includes('ship') && 
+              (sentence.toLowerCase().includes('eu') || 
+               sentence.toLowerCase().includes('countries') ||
+               sentence.toLowerCase().includes('britain') ||
+               sentence.toLowerCase().includes('switzerland'))
             );
             
-            if (contentLines.length > 0) {
-              const shippingInfo = contentLines.join(' ').trim();
-              if (shippingInfo.length > 20) {
-                bestMatch = { 
-                  question: "Shipping information", 
-                  answer: shippingInfo 
-                };
-                bestScore = 0.8;
-                console.log(`🚚 Widget: Using shipping content match`);
+            if (shippingSentence && shippingSentence.length > 20) {
+              bestMatch = { 
+                question: "Shipping countries", 
+                answer: shippingSentence.trim() 
+              };
+              bestScore = 0.9;
+              console.log(`🎯 Widget: Found shipping sentence: "${shippingSentence}"`);
+            } else {
+              // Fallback to extracting shipping lines
+              const contentLines = faqEntry.content.split('\n').filter(line => 
+                line.toLowerCase().includes('ship') ||
+                line.toLowerCase().includes('countries') ||
+                line.toLowerCase().includes('eu') ||
+                line.toLowerCase().includes('deliver')
+              );
+              
+              if (contentLines.length > 0) {
+                const shippingInfo = contentLines.join(' ').trim();
+                if (shippingInfo.length > 20) {
+                  bestMatch = { 
+                    question: "Shipping information", 
+                    answer: shippingInfo 
+                  };
+                  bestScore = 0.8;
+                  console.log(`🚚 Widget: Using shipping content match`);
+                }
               }
             }
           }
