@@ -162,36 +162,58 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ onScanComplete }) => {
 
   const loadExtractedContent = async (jobId: string) => {
     try {
-      // Load real extracted content from your website scan
-      const mockContent: ExtractedContent[] = [
-        {
-          id: '1',
-          scan_job_id: jobId,
-          url: 'https://madewithlovebridal.com/pages/faqs',
-          title: 'FAQs About Our Wedding Dresses',
-          content: 'WHERE CAN I TRY ON MWL DRESSES? We have exclusive MWL boutiques in Brisbane, Gold Coast, Sydney, Melbourne, Perth, Manchester, London and Utrecht. Our MWL boutiques run by appointment only. MWL is also stocked through independent retailers worldwide. You can find your nearest retailer here. HOW DO I TAKE MY MEASUREMENTS? WHICH SAMPLES DOES MY NEAREST MWL BOUTIQUE OR RETAILER CARRY?',
-          content_type: 'faq',
-          word_count: 68,
-          processing_quality: 0.95,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          scan_job_id: jobId,
-          url: 'https://madewithlovebridal.com/pages/sizing',
-          title: 'Made With Love Bridal Sizing Guide',
-          content: 'Our wedding dresses are made to order and available in a wide range of sizes. We recommend booking an appointment at one of our boutiques for professional fitting and measurements.',
-          content_type: 'about',
-          word_count: 32,
-          processing_quality: 0.92,
-          created_at: new Date().toISOString()
+      console.log('🔍 Loading REAL extracted content for job:', jobId);
+      
+      // Get the actual URLs that were scanned
+      const validUrls = validateUrls();
+      const normalizedUrls = normalizeUrls(validUrls);
+      
+      console.log('📡 Scanning URLs:', normalizedUrls);
+      
+      // Actually scan each URL and extract real content
+      const extractedContentPromises = normalizedUrls.map(async (url, index) => {
+        try {
+          console.log(`🌐 [${index + 1}/${normalizedUrls.length}] Scanning: ${url}`);
+          
+          // Use the real website scanner service
+          const extractedContent = await websiteScanner.scanUrl(url);
+          extractedContent.id = `extracted-${index + 1}`;
+          extractedContent.scan_job_id = jobId;
+          
+          console.log(`✅ [${index + 1}/${normalizedUrls.length}] Extracted from ${url}:`, {
+            title: extractedContent.title,
+            content_type: extractedContent.content_type,
+            word_count: extractedContent.word_count,
+            contentPreview: extractedContent.content.substring(0, 100) + '...'
+          });
+          
+          return extractedContent;
+        } catch (error) {
+          console.error(`❌ [${index + 1}/${normalizedUrls.length}] Failed to scan ${url}:`, error);
+          
+          // Return a fallback content item
+          return {
+            id: `extracted-${index + 1}`,
+            scan_job_id: jobId,
+            url,
+            title: 'Failed to Extract Content',
+            content: `Unable to extract content from ${url}. This may be due to website restrictions or connectivity issues.`,
+            content_type: 'general',
+            word_count: 20,
+            processing_quality: 0.1,
+            created_at: new Date().toISOString()
+          } as ExtractedContent;
         }
-      ];
-
-      setExtractedContent(mockContent);
+      });
+      
+      // Wait for all URLs to be processed
+      const realExtractedContent = await Promise.all(extractedContentPromises);
+      
+      console.log('🎉 Real content extraction complete:', realExtractedContent);
+      setExtractedContent(realExtractedContent);
 
       // Process the content
-      const result = await contentProcessor.processExtractedContent(mockContent);
+      const result = await contentProcessor.processExtractedContent(realExtractedContent);
       setProcessingResult(result);
       
       if (onScanComplete) {
