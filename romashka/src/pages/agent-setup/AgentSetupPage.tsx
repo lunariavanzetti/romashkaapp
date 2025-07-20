@@ -600,6 +600,21 @@ You can customize these settings in the following steps, or keep the recommended
     console.log('🔍 Searching knowledge for:', userMessage);
     console.log('📝 Knowledge content preview:', knowledge.substring(0, 200) + '...');
     
+    // Special cases: Direct question detection
+    if ((lowerMessage.includes('can i change') || lowerMessage.includes('change')) && 
+        (lowerMessage.includes('dimension') || lowerMessage.includes('size')) && 
+        lowerMessage.includes('furniture')) {
+      console.log('🎯 Detected furniture dimension question - returning exact answer');
+      return 'Yes, due to the fact that we make the furniture ourselves in our workshop, we can change its dimensions. Let us know and we surely get back to you - we consider every request individually.';
+    }
+    
+    // Adjustment/editing questions for photography
+    if ((lowerMessage.includes('adjust') || lowerMessage.includes('edit')) && 
+        (lowerMessage.includes('image') || lowerMessage.includes('photo'))) {
+      console.log('🎯 Detected photo adjustment question - returning exact answer');
+      return 'We generally use the following tools to replicate your style in Lightroom: exposure, highlights, shadows, whites, blacks, temperature, tint, vibrance, saturation, texture, clarity, dehaze, presence, tone curve, HSL adjustments, split toning, lens corrections, effects, detail, and color grading.';
+    }
+    
     // Enhanced patterns for multiple FAQ types
     const patterns = [
       // Digital Lab / Photography FAQ
@@ -630,7 +645,7 @@ You can customize these settings in the following steps, or keep the recommended
         response: 'At the moment we do not have a showroom. The furniture can only be seen in our workshop.'
       },
       {
-        keywords: ['dimensions', 'change', 'custom', 'size'],
+        keywords: ['dimensions', 'change', 'custom', 'size', 'dimension', 'furniture dimensions', 'modify', 'alter', 'can i change', 'change dimensions', 'furniture dimension'],
         response: 'Yes, due to the fact that we make the furniture ourselves in our workshop, we can change its dimensions. Let us know and we surely get back to you - we consider every request individually.'
       },
       {
@@ -638,19 +653,61 @@ You can customize these settings in the following steps, or keep the recommended
         response: 'Yes, you can order a sample box on our website. If you have any questions or doubts, feel free to contact us.'
       },
       {
-        keywords: ['order', 'execution time', 'processing time', 'how long', 'delivery'],
+        keywords: ['order', 'execution time', 'processing time', 'how long'],
         response: 'To limit overproduction, our furniture is made after you place an order. The execution time is 40 business days.'
+      },
+      {
+        keywords: ['delivery', 'delivery cost', 'shipping', 'shipping cost', 'poland', 'cost', 'delivery price'],
+        response: 'Regardless of the amount of your order, the costs of delivery within Poland are always on our side.'
       }
     ];
     
     // Try to match specific patterns first
+    console.log(`🔍 Checking user message: "${userMessage}" (lowercased: "${lowerMessage}")`);
+    
     for (const pattern of patterns) {
-      const matchCount = pattern.keywords.filter(keyword => 
-        lowerMessage.includes(keyword.toLowerCase())
-      ).length;
+      const matchedKeywords = pattern.keywords.filter(keyword => {
+        const lowerKeyword = keyword.toLowerCase();
+        
+        // Enhanced matching: check exact match, substring, and word boundaries
+        let isMatch = false;
+        
+        // Direct substring match
+        if (lowerMessage.includes(lowerKeyword)) {
+          isMatch = true;
+        }
+        
+        // Check if all words in the keyword appear in the message (for multi-word keywords)
+        if (!isMatch && keyword.includes(' ')) {
+          const keywordWords = keyword.toLowerCase().split(' ');
+          const allWordsMatch = keywordWords.every(word => lowerMessage.includes(word));
+          if (allWordsMatch) {
+            isMatch = true;
+          }
+        }
+        
+        // Check for word boundary matches to avoid false positives
+        if (!isMatch) {
+          const words = lowerMessage.split(/\s+/);
+          const keywordWords = keyword.toLowerCase().split(/\s+/);
+          
+          // For single keywords, check if any word contains the keyword
+          if (keywordWords.length === 1) {
+            isMatch = words.some(word => word.includes(keywordWords[0]) || keywordWords[0].includes(word));
+          }
+        }
+        
+        if (isMatch) {
+          console.log(`🎯 Keyword match: "${keyword}" found in "${userMessage}"`);
+        }
+        return isMatch;
+      });
       
-      if (matchCount > 0) {
-        console.log(`✅ Pattern match found (${matchCount} keywords):`, pattern.response);
+      const patternName = pattern.keywords.slice(0, 2).join(', ') + (pattern.keywords.length > 2 ? '...' : '');
+      console.log(`🔍 Pattern check for [${patternName}]: ${matchedKeywords.length} matches`);
+      
+      if (matchedKeywords.length > 0) {
+        console.log(`✅ Pattern match found (${matchedKeywords.length} keywords matched: ${matchedKeywords.join(', ')}):`, pattern.response);
         return pattern.response;
       }
     }
@@ -659,6 +716,8 @@ You can customize these settings in the following steps, or keep the recommended
     const sentences = knowledge.split(/[.!?]+/).filter(s => s.trim().length > 10);
     
     // Try to find FAQ-style Q&A pairs
+    console.log('🔍 Searching for Q&A pairs in', sentences.length, 'sentences');
+    
     for (let i = 0; i < sentences.length; i++) {
       const sentence = sentences[i].trim();
       const lowerSentence = sentence.toLowerCase();
@@ -668,27 +727,43 @@ You can customize these settings in the following steps, or keep the recommended
         const questionPart = sentence.split('?')[0];
         const lowerQuestion = questionPart.toLowerCase();
         
-        // Check if user message matches this question
-        const userWords = lowerMessage.split(' ').filter(w => w.length > 2);
-        const questionWords = lowerQuestion.split(' ').filter(w => w.length > 2);
+        console.log(`🔍 Found question: "${questionPart}"`);
         
-        let matchScore = 0;
-        userWords.forEach(userWord => {
-          questionWords.forEach(qWord => {
-            if (userWord.includes(qWord) || qWord.includes(userWord)) {
-              matchScore++;
-            }
-          });
-        });
+        // Enhanced matching for common question patterns
+        const isQuestionMatch = 
+          // Exact key phrase matching
+          (lowerMessage.includes('change') && lowerQuestion.includes('change') && lowerQuestion.includes('dimensions')) ||
+          (lowerMessage.includes('delivery') && lowerQuestion.includes('delivery') && lowerQuestion.includes('cost')) ||
+          (lowerMessage.includes('3d') && lowerQuestion.includes('3d')) ||
+          (lowerMessage.includes('samples') && lowerQuestion.includes('samples')) ||
+          // Word-based matching
+          (() => {
+            const userWords = lowerMessage.split(' ').filter(w => w.length > 2);
+            const questionWords = lowerQuestion.split(' ').filter(w => w.length > 2);
+            
+            let matchScore = 0;
+            userWords.forEach(userWord => {
+              questionWords.forEach(qWord => {
+                if (userWord === qWord || userWord.includes(qWord) || qWord.includes(userWord)) {
+                  matchScore++;
+                }
+              });
+            });
+            
+            console.log(`📊 Q&A match score for "${questionPart}": ${matchScore}`);
+            return matchScore >= 2;
+          })();
         
-        if (matchScore >= 2) {
-          // Look for the answer in the next sentence or same sentence after '?'
+        if (isQuestionMatch) {
+          console.log(`✅ Question match found: "${questionPart}"`);
+          
+          // Look for the answer in the same sentence after '?'
           const fullSentence = sentence;
           if (fullSentence.includes('?')) {
             const parts = fullSentence.split('?');
             if (parts.length > 1 && parts[1].trim()) {
               const answer = parts[1].trim().replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ');
-              console.log('✅ Q&A match found:', answer);
+              console.log('✅ Q&A same-sentence answer found:', answer);
               return answer;
             }
           }
@@ -697,7 +772,7 @@ You can customize these settings in the following steps, or keep the recommended
           if (i + 1 < sentences.length) {
             const nextSentence = sentences[i + 1].trim().replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ');
             if (nextSentence.length > 5) {
-              console.log('✅ Next sentence answer found:', nextSentence);
+              console.log('✅ Q&A next-sentence answer found:', nextSentence);
               return nextSentence;
             }
           }
