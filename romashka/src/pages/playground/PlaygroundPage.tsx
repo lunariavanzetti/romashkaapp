@@ -193,8 +193,9 @@ export default function PlaygroundPage() {
     
     setIsLoading(true);
     try {
-      // Generate real AI response
-      const knowledgeContext = playgroundAIService.getDefaultKnowledgeContext();
+      // Generate real AI response with actual scanned data
+      console.log('🤖 Using real scanned data for bot response...');
+      const knowledgeContext = await playgroundAIService.getRealKnowledgeContext();
       const response = await playgroundAIService.generateTestResponse(
         testMessage,
         botConfig,

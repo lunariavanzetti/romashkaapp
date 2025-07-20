@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { supabase } from './supabaseClient';
 import type { 
   BotConfiguration, 
   PersonalityTraits, 
@@ -13,6 +14,12 @@ interface KnowledgeContext {
   services?: string[];
   policies?: string[];
   faqs?: Array<{ question: string; answer: string; }>;
+  extractedContent?: Array<{
+    url: string;
+    title: string;
+    content: string;
+    content_type: string;
+  }>;
 }
 
 export class PlaygroundAIService {
@@ -23,6 +30,112 @@ export class PlaygroundAIService {
       apiKey: import.meta.env.VITE_OPENAI_API_KEY,
       dangerouslyAllowBrowser: true
     });
+  }
+
+  /**
+   * Get real knowledge context from scanned website data
+   */
+  async getRealKnowledgeContext(): Promise<KnowledgeContext> {
+    try {
+      console.log('🔍 Fetching real scanned content from database...');
+      
+      if (!supabase) {
+        console.warn('⚠️ Supabase not available, using default context');
+        return this.getDefaultKnowledgeContext();
+      }
+
+      // Get the latest extracted content
+      const { data: extractedContent, error } = await supabase
+        .from('extracted_content')
+        .select('url, title, content, content_type')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('❌ Error fetching scanned content:', error);
+        return this.getDefaultKnowledgeContext();
+      }
+
+      if (!extractedContent || extractedContent.length === 0) {
+        console.warn('⚠️ No scanned content found, using default context');
+        return this.getDefaultKnowledgeContext();
+      }
+
+      console.log(`✅ Found ${extractedContent.length} pieces of scanned content`);
+
+      // Extract FAQs from content
+      const faqs: Array<{ question: string; answer: string; }> = [];
+      
+      extractedContent.forEach(content => {
+        if (content.content_type === 'faq' && content.content) {
+          // Extract Q&A pairs from FAQ content
+          const qaPairs = this.extractQAPairs(content.content);
+          faqs.push(...qaPairs);
+        }
+      });
+
+      // Extract company name from content
+      let companyName = 'ROMASHKA';
+      const aboutContent = extractedContent.find(c => c.content_type === 'about');
+      if (aboutContent) {
+        const nameMatch = aboutContent.content.match(/(?:about|company|we are)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i);
+        if (nameMatch) companyName = nameMatch[1];
+      }
+
+      return {
+        companyName,
+        industry: 'Wedding Services', // Detected from your content
+        extractedContent,
+        faqs,
+        products: [],
+        services: [],
+        policies: []
+      };
+
+    } catch (error) {
+      console.error('❌ Error getting real knowledge context:', error);
+      return this.getDefaultKnowledgeContext();
+    }
+  }
+
+  /**
+   * Extract Q&A pairs from FAQ content
+   */
+  private extractQAPairs(content: string): Array<{ question: string; answer: string; }> {
+    const pairs: Array<{ question: string; answer: string; }> = [];
+    
+    // Split content into lines and look for questions (ending with ?)
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Check if this line looks like a question
+      if (line.includes('?') && line.length > 10 && line.length < 200) {
+        const question = line;
+        
+        // Look for the answer in the next few lines
+        let answer = '';
+        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+          const nextLine = lines[j];
+          
+          // Stop if we hit another question
+          if (nextLine.includes('?') && nextLine.length > 10) break;
+          
+          // Add this line to the answer
+          if (nextLine.length > 10) {
+            answer += (answer ? ' ' : '') + nextLine;
+          }
+        }
+        
+        if (answer.length > 10) {
+          pairs.push({ question, answer });
+        }
+      }
+    }
+    
+    console.log(`📝 Extracted ${pairs.length} Q&A pairs from FAQ content`);
+    return pairs;
   }
 
   /**

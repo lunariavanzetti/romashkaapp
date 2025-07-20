@@ -91,12 +91,45 @@ export class WebsiteScannerService implements WebsiteScanner {
 
   async scanUrl(url: string): Promise<ExtractedContent> {
     try {
-      // For now, simulate the scan with mock content since CORS prevents direct fetching
-      console.log(`Mock scanning URL: ${url}`);
+      console.log(`🌐 Attempting to fetch real content from: ${url}`);
       
-      // Generate mock content based on URL
-      const mockContent = this.generateMockContent(url);
-      const pageContent = await this.extractPageContent(mockContent.html, url);
+      let html = '';
+      let title = '';
+      
+      try {
+        // Try to fetch real content using a CORS proxy
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        console.log(`📡 Using CORS proxy: ${proxyUrl}`);
+        
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+        
+        if (data.contents) {
+          html = data.contents;
+          console.log(`✅ Successfully fetched real content (${html.length} chars)`);
+          
+          // Extract title from HTML
+          const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+          title = titleMatch ? titleMatch[1].trim() : url;
+        } else {
+          throw new Error('No content received from proxy');
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to fetch real content: ${error.message}`);
+        console.log(`🎭 Falling back to mock content for: ${url}`);
+        
+        // Fallback to mock content
+        const mockContent = this.generateMockContent(url);
+        html = mockContent.html;
+        title = mockContent.title;
+      }
+      
+      const pageContent = await this.extractPageContent(html, url);
+      
+      // Use real title if we got one
+      if (title && title !== url) {
+        pageContent.title = title;
+      }
       
       // Classify content type
       const contentType = await this.classifyContentType(pageContent.content, url);
@@ -111,7 +144,7 @@ export class WebsiteScannerService implements WebsiteScanner {
         id: '', // Will be set when saved to database
         scan_job_id: '', // Will be set when saved to database
         url,
-        title: mockContent.title,
+        title: pageContent.title,
         content: pageContent.content,
         content_type: contentType,
         headings: this.extractHeadings(pageContent.headings),
