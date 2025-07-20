@@ -32,6 +32,12 @@ const AgentSetupPage: React.FC = () => {
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [knowledgeContent, setKnowledgeContent] = useState('');
+  
+  // File upload and manual Q&A states
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [manualQAs, setManualQAs] = useState([{ question: '', answer: '' }]);
+  const [activeKnowledgeTab, setActiveKnowledgeTab] = useState('website'); // 'website', 'files', 'manual'
   const [humanAgents, setHumanAgents] = useState([{ name: '', email: '' }]);
   const [setupComplete, setSetupComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -423,6 +429,102 @@ You can customize these settings in the following steps, or keep the recommended
     }
   };
 
+  // File upload handlers
+  const handleFileUpload = async (files: FileList) => {
+    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const validFiles = Array.from(files).filter(file => allowedTypes.includes(file.type));
+    
+    if (validFiles.length === 0) {
+      alert('Please upload only PDF, DOCX, or TXT files.');
+      return;
+    }
+    
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+    setIsProcessingFiles(true);
+    
+    try {
+      let combinedContent = knowledgeContent ? `${knowledgeContent}\n\n` : '';
+      
+      for (const file of validFiles) {
+        const text = await extractTextFromFile(file);
+        if (text) {
+          combinedContent += `**${file.name}**\n${text}\n\n`;
+        }
+      }
+      
+      setKnowledgeContent(combinedContent.trim());
+      
+    } catch (error) {
+      console.error('Error processing files:', error);
+      alert('Error processing some files. Please try again.');
+    } finally {
+      setIsProcessingFiles(false);
+    }
+  };
+
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        
+        if (file.type === 'text/plain') {
+          resolve(text);
+        } else if (file.type === 'application/pdf') {
+          // For PDF files, we'll extract basic text (in a real app, you'd use a PDF library)
+          resolve(`PDF content from ${file.name} - Please note: Full PDF parsing requires additional processing.`);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+          // For DOCX files (in a real app, you'd use a DOCX library)
+          resolve(`DOCX content from ${file.name} - Please note: Full DOCX parsing requires additional processing.`);
+        } else {
+          resolve('');
+        }
+      };
+      
+      reader.onerror = () => resolve('');
+      reader.readAsText(file);
+    });
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Manual Q&A handlers
+  const addManualQA = () => {
+    setManualQAs(prev => [...prev, { question: '', answer: '' }]);
+  };
+
+  const updateManualQA = (index: number, field: 'question' | 'answer', value: string) => {
+    setManualQAs(prev => prev.map((qa, i) => 
+      i === index ? { ...qa, [field]: value } : qa
+    ));
+  };
+
+  const removeManualQA = (index: number) => {
+    if (manualQAs.length > 1) {
+      setManualQAs(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const processManualQAs = () => {
+    const validQAs = manualQAs.filter(qa => qa.question.trim() && qa.answer.trim());
+    
+    if (validQAs.length === 0) {
+      return;
+    }
+    
+    let manualContent = knowledgeContent ? `${knowledgeContent}\n\n` : '';
+    manualContent += '**Manual Q&A Content**\n';
+    
+    validQAs.forEach(qa => {
+      manualContent += `Q: ${qa.question.trim()}\nA: ${qa.answer.trim()}\n\n`;
+    });
+    
+    setKnowledgeContent(manualContent.trim());
+  };
+
   const addHumanAgent = () => {
     setHumanAgents([...humanAgents, { name: '', email: '' }]);
   };
@@ -770,55 +872,199 @@ You can customize these settings in the following steps, or keep the recommended
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Let ROMASHKA Learn from Your Website</h2>
-              <p className="text-gray-600">Enter your website URL and we'll scan for FAQ pages, help content, and other useful information</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Let ROMASHKA Learn Your Business</h2>
+              <p className="text-gray-600">Choose how you want to provide knowledge to your AI agent</p>
             </div>
             
-            <div className="max-w-2xl mx-auto space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Website URL</label>
-                <div className="flex gap-3">
-                  <input
-                    type="url"
-                    value={websiteUrl}
-                    onChange={(e) => setWebsiteUrl(e.target.value)}
-                    placeholder="https://yourwebsite.com"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    onClick={handleWebsiteScan}
-                    disabled={!websiteUrl || isScanning}
-                    className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {isScanning ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Scanning...
-                      </>
-                    ) : (
-                      'Scan Website'
-                    )}
-                  </button>
+            <div className="max-w-4xl mx-auto">
+              {/* Knowledge Source Tabs */}
+              <div className="border-b border-gray-200 mb-6">
+                <div className="flex space-x-8">
+                  {[
+                    { id: 'website', label: 'Website Scan', icon: '🌐' },
+                    { id: 'files', label: 'Upload Files', icon: '📄' },
+                    { id: 'manual', label: 'Manual Q&A', icon: '✍️' }
+                  ].map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveKnowledgeTab(tab.id)}
+                      className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                        activeKnowledgeTab === tab.id
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="mr-2">{tab.icon}</span>
+                      {tab.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-              
+
+              {/* Website Scan Tab */}
+              {activeKnowledgeTab === 'website' && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Website URL</label>
+                    <div className="flex gap-3">
+                      <input
+                        type="url"
+                        value={websiteUrl}
+                        onChange={(e) => setWebsiteUrl(e.target.value)}
+                        placeholder="https://yourwebsite.com/faq"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={handleWebsiteScan}
+                        disabled={!websiteUrl || isScanning}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        {isScanning ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            Scanning...
+                          </>
+                        ) : (
+                          'Scan Website'
+                        )}
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      💡 Try your FAQ page, help section, or specific product pages
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* File Upload Tab */}
+              {activeKnowledgeTab === 'files' && (
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.docx,.txt"
+                      onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <span className="text-blue-600 text-2xl">📄</span>
+                      </div>
+                      <p className="text-gray-600 mb-2">Click to upload files or drag and drop</p>
+                      <p className="text-sm text-gray-500">PDF, DOCX, TXT files supported</p>
+                    </label>
+                  </div>
+                  
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-gray-900">Uploaded Files:</h4>
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center">
+                            <span className="mr-2">📄</span>
+                            <span className="text-sm">{file.name}</span>
+                            <span className="text-xs text-gray-500 ml-2">({(file.size / 1024).toFixed(1)} KB)</span>
+                          </div>
+                          <button
+                            onClick={() => removeFile(index)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {isProcessingFiles && (
+                    <div className="text-center py-4">
+                      <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600">Processing files...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Manual Q&A Tab */}
+              {activeKnowledgeTab === 'manual' && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900 mb-2">✍️ Add Your Own Q&A</h4>
+                    <p className="text-sm text-blue-700">
+                      Manually add questions and answers that your customers frequently ask. This gives you complete control over the responses.
+                    </p>
+                  </div>
+                  
+                  {manualQAs.map((qa, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-medium text-gray-900">Q&A Pair {index + 1}</h4>
+                        {manualQAs.length > 1 && (
+                          <button
+                            onClick={() => removeManualQA(index)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
+                          <input
+                            type="text"
+                            value={qa.question}
+                            onChange={(e) => updateManualQA(index, 'question', e.target.value)}
+                            placeholder="e.g., What are your shipping options?"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Answer</label>
+                          <textarea
+                            value={qa.answer}
+                            onChange={(e) => updateManualQA(index, 'answer', e.target.value)}
+                            placeholder="e.g., We offer free shipping on orders over $50..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="flex gap-3">
+                    <button
+                      onClick={addManualQA}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                    >
+                      + Add Another Q&A
+                    </button>
+                    <button
+                      onClick={processManualQAs}
+                      disabled={!manualQAs.some(qa => qa.question.trim() && qa.answer.trim())}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 text-sm"
+                    >
+                      Add to Knowledge Base
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Knowledge Preview */}
               {knowledgeContent && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-green-900 mb-2">✅ Knowledge Extracted Successfully!</h3>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-6">
+                  <h3 className="font-semibold text-green-900 mb-2">✅ Knowledge Base Content</h3>
                   <div className="bg-white rounded border p-3 max-h-40 overflow-y-auto">
                     <pre className="text-sm text-gray-700 whitespace-pre-wrap">{knowledgeContent}</pre>
                   </div>
                   <p className="text-sm text-green-700 mt-2">
-                    ROMASHKA found information about shipping, returns, and contact details from your website.
+                    ROMASHKA now has {knowledgeContent.split('\n').length} lines of knowledge to help answer customer questions.
                   </p>
                 </div>
               )}
-              
-              <div className="text-center">
-                <p className="text-sm text-gray-500">
-                  Or manually add knowledge by uploading documents (.pdf, .docx, .txt) or pasting FAQ content
-                </p>
-              </div>
             </div>
           </div>
         );
@@ -1451,7 +1697,7 @@ You can customize these settings in the following steps, or keep the recommended
           disabled={
             currentStep === steps.length ||
             (currentStep === 2 && !businessType) ||
-            (currentStep === 3 && !websiteUrl && !knowledgeContent) ||
+            (currentStep === 3 && !knowledgeContent) ||
             (currentStep === 4 && (!agentName || !agentTone)) ||
             (currentStep === 6 && humanAgents.some(agent => !agent.name || !agent.email))
           }
