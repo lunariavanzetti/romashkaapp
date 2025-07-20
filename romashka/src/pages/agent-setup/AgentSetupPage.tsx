@@ -13,6 +13,7 @@ import {
   AcademicCapIcon
 } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
+import { agentSetupService, type AgentSetupData } from '../../services/agentSetupService';
 
 interface SetupStep {
   id: number;
@@ -33,6 +34,13 @@ const AgentSetupPage: React.FC = () => {
   const [knowledgeContent, setKnowledgeContent] = useState('');
   const [humanAgents, setHumanAgents] = useState([{ name: '', email: '' }]);
   const [setupComplete, setSetupComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Chat widget testing state
+  const [chatMessages, setChatMessages] = useState<Array<{id: string, text: string, sender: 'user' | 'ai', timestamp: Date}>>([]);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
 
   const [steps, setSteps] = useState<SetupStep[]>([
     {
@@ -93,35 +101,194 @@ const AgentSetupPage: React.FC = () => {
     }
   ]);
 
+  // Load existing progress on component mount
+  useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const result = await agentSetupService.loadProgress();
+        if (result.success && result.data) {
+          const data = result.data;
+          setCurrentStep(data.currentStep);
+          setBusinessType(data.businessType);
+          setAgentName(data.agentName);
+          setAgentTone(data.agentTone);
+          setWebsiteUrl(data.websiteUrl);
+          setKnowledgeContent(data.knowledgeContent);
+          setSetupComplete(data.setupCompleted);
+          
+          // Update steps status based on completed steps
+          setSteps(prevSteps => 
+            prevSteps.map(step => ({
+              ...step,
+              status: data.completedSteps.includes(step.id) 
+                ? 'completed' 
+                : step.id === data.currentStep 
+                ? 'in_progress' 
+                : 'pending'
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error loading setup progress:', error);
+        setSaveError('Failed to load previous progress');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProgress();
+  }, []);
+
+  // Auto-save when key fields change (debounced to avoid too many saves)
+  useEffect(() => {
+    if (!isLoading) { // Only save after initial load is complete
+      const timeoutId = setTimeout(() => {
+        saveProgress();
+      }, 1000); // Debounce by 1 second
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [agentName, agentTone, websiteUrl, knowledgeContent, isLoading]);
+
+  // Save progress whenever important state changes
+  const saveProgress = async (additionalData?: Partial<AgentSetupData>) => {
+    try {
+      setSaveError(null);
+      const data: Partial<AgentSetupData> = {
+        currentStep,
+        businessType,
+        agentName,
+        agentTone,
+        websiteUrl,
+        knowledgeContent,
+        setupCompleted: setupComplete,
+        completedSteps: steps.filter(step => step.status === 'completed').map(step => step.id),
+        ...additionalData
+      };
+
+      const result = await agentSetupService.saveProgress(data);
+      if (!result.success) {
+        setSaveError(result.error || 'Failed to save progress');
+      }
+    } catch (error) {
+      console.error('Error saving progress:', error);
+      setSaveError('Failed to save progress');
+    }
+  };
+
   const updateStepStatus = (stepId: number, status: 'pending' | 'in_progress' | 'completed') => {
     setSteps(prev => prev.map(step => 
       step.id === stepId ? { ...step, status } : step
     ));
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep < steps.length) {
       updateStepStatus(currentStep, 'completed');
-      setCurrentStep(currentStep + 1);
-      updateStepStatus(currentStep + 1, 'in_progress');
+      const newStep = currentStep + 1;
+      setCurrentStep(newStep);
+      updateStepStatus(newStep, 'in_progress');
+      
+      // Save progress with the new step
+      await saveProgress({ currentStep: newStep });
     }
   };
 
-  const prevStep = () => {
+  const prevStep = async () => {
     if (currentStep > 1) {
       updateStepStatus(currentStep, 'pending');
-      setCurrentStep(currentStep - 1);
-      updateStepStatus(currentStep - 1, 'in_progress');
+      const newStep = currentStep - 1;
+      setCurrentStep(newStep);
+      updateStepStatus(newStep, 'in_progress');
+      
+      // Save progress with the new step
+      await saveProgress({ currentStep: newStep });
     }
   };
 
   const businessTypes = [
-    { value: 'ecommerce', label: 'E-commerce Store', description: 'Selling products online' },
-    { value: 'service', label: 'Service Provider', description: 'Consulting, agencies, professional services' },
-    { value: 'saas', label: 'SaaS/Software', description: 'Software as a Service, tech products' },
-    { value: 'education', label: 'Education', description: 'Schools, courses, training' },
-    { value: 'healthcare', label: 'Healthcare', description: 'Medical services, clinics, hospitals' },
-    { value: 'other', label: 'Other', description: 'Tell us more about your business' }
+    { 
+      value: 'ecommerce', 
+      label: 'E-commerce Store', 
+      description: 'Selling products online',
+      defaultQuestions: [
+        "Where is my order?",
+        "What is your return policy?",
+        "Do you offer free shipping?",
+        "How long does delivery take?",
+        "What payment methods do you accept?"
+      ],
+      defaultTone: 'friendly',
+      suggestedName: 'Shopping Assistant'
+    },
+    { 
+      value: 'service', 
+      label: 'Service Provider', 
+      description: 'Consulting, agencies, professional services',
+      defaultQuestions: [
+        "What services do you offer?",
+        "How much do your services cost?",
+        "What is your availability?",
+        "Do you offer consultations?",
+        "What is your project timeline?"
+      ],
+      defaultTone: 'professional',
+      suggestedName: 'Service Assistant'
+    },
+    { 
+      value: 'saas', 
+      label: 'SaaS/Software', 
+      description: 'Software as a Service, tech products',
+      defaultQuestions: [
+        "How do I get started?",
+        "What features are included?",
+        "Do you offer a free trial?",
+        "How does billing work?",
+        "Where can I find documentation?"
+      ],
+      defaultTone: 'professional',
+      suggestedName: 'Support Assistant'
+    },
+    { 
+      value: 'education', 
+      label: 'Education', 
+      description: 'Schools, courses, training',
+      defaultQuestions: [
+        "How do I enroll in courses?",
+        "What are the course requirements?",
+        "When do classes start?",
+        "How much does it cost?",
+        "Do you offer certificates?"
+      ],
+      defaultTone: 'friendly',
+      suggestedName: 'Learning Assistant'
+    },
+    { 
+      value: 'healthcare', 
+      label: 'Healthcare', 
+      description: 'Medical services, clinics, hospitals',
+      defaultQuestions: [
+        "How do I schedule an appointment?",
+        "What insurance do you accept?",
+        "What are your hours?",
+        "Where are you located?",
+        "Do you offer telehealth?"
+      ],
+      defaultTone: 'professional',
+      suggestedName: 'Care Assistant'
+    },
+    { 
+      value: 'other', 
+      label: 'Other', 
+      description: 'Tell us more about your business',
+      defaultQuestions: [
+        "How can I help you today?",
+        "What information do you need?",
+        "Would you like to speak with someone?"
+      ],
+      defaultTone: 'friendly',
+      suggestedName: 'Assistant'
+    }
   ];
 
   const toneOptions = [
@@ -131,27 +298,121 @@ const AgentSetupPage: React.FC = () => {
   ];
 
   const handleWebsiteScan = async () => {
+    if (!websiteUrl) return;
+    
     setIsScanning(true);
-    // Simulate website scanning
-    setTimeout(() => {
-      setIsScanning(false);
+    
+    try {
+      // Use the existing website scanner service
+      const { websiteScanner } = await import('../../services/websiteScanner');
+      
+      const result = await websiteScanner.scanUrl(websiteUrl);
+      
+      if (result && result.content) {
+        // Extract and format the content
+        const title = result.title || 'Website Content';
+        const content = result.content || '';
+        
+        // Clean and format the content
+        const cleanContent = content
+          .replace(/<[^>]*>/g, '') // Remove HTML tags
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .trim();
+        
+        if (cleanContent.length > 100) {
+          const formattedContent = `**${title}**\n${cleanContent.substring(0, 1000)}${cleanContent.length > 1000 ? '...' : ''}`;
+          setKnowledgeContent(formattedContent);
+        } else {
+          // Fallback if content is too short
+          setKnowledgeContent(`
+**Website Content Extracted**
+- Successfully scanned ${websiteUrl}
+- Content extracted: "${cleanContent}"
+- You may want to scan additional pages or add more content manually
+
+**Manual Review Needed**
+The automatic extraction found limited content. Consider adding more specific information about your business.
+          `.trim());
+        }
+      } else {
+        // Fallback for scanning errors
+        setKnowledgeContent(`
+**Scanning Notice**
+We weren't able to automatically extract content from ${websiteUrl}.
+
+**Next Steps:**
+- Check if the URL is accessible publicly
+- Try scanning a specific FAQ or help page
+- Or manually paste your FAQ content below
+
+**Manual Input:**
+You can paste your FAQ content directly or upload documents (.pdf, .docx, .txt)
+        `.trim());
+      }
+    } catch (error) {
+      console.error('Website scanning error:', error);
       setKnowledgeContent(`
-**Shipping Information**
-- Free shipping on orders over $50
-- 2-3 business days delivery
-- International shipping available
+**Scanning Error**
+Unable to scan ${websiteUrl} at this time.
 
-**Return Policy**
-- 30-day return policy
-- Items must be in original condition
-- Free returns for defective items
+**Possible Issues:**
+- Website may be password protected
+- CORS restrictions may prevent access
+- URL may not be accessible
 
-**Contact Information**
-- Email: support@example.com
-- Phone: 1-800-123-4567
-- Live chat available 24/7
+**Alternative Options:**
+- Try a different URL (like yoursite.com/faq)
+- Manually paste your FAQ content
+- Upload documents instead
       `.trim());
-    }, 3000);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleBusinessTypeSelection = async (typeValue: string) => {
+    setBusinessType(typeValue);
+    
+    // Apply business type defaults
+    const selectedType = businessTypes.find(type => type.value === typeValue);
+    if (selectedType) {
+      // Auto-populate agent name if not already set
+      const newAgentName = !agentName && selectedType.suggestedName ? selectedType.suggestedName : agentName;
+      if (newAgentName !== agentName) {
+        setAgentName(newAgentName);
+      }
+      
+      // Auto-populate tone if not already set
+      const newAgentTone = !agentTone && selectedType.defaultTone ? selectedType.defaultTone : agentTone;
+      if (newAgentTone !== agentTone) {
+        setAgentTone(newAgentTone);
+      }
+      
+      // Save progress with the selected business type and defaults
+      await saveProgress({
+        businessType: typeValue,
+        agentName: newAgentName,
+        agentTone: newAgentTone
+      });
+      
+      // Show success message with business type impact
+      setTimeout(() => {
+        const impactMessage = `
+✅ Great! ROMASHKA will be optimized for ${selectedType.label.toLowerCase()}.
+
+**Automatic Configuration Applied:**
+• Agent Name: ${selectedType.suggestedName}
+• Communication Tone: ${selectedType.defaultTone.charAt(0).toUpperCase() + selectedType.defaultTone.slice(1)}
+• Pre-configured Common Questions: ${selectedType.defaultQuestions.length} questions ready
+
+**Next Steps:**
+You can customize these settings in the following steps, or keep the recommended defaults.
+        `.trim();
+        
+        // You could show this in a toast or update the UI to show the impact
+        console.log('Business Type Impact:', impactMessage);
+      }, 100);
+    }
   };
 
   const addHumanAgent = () => {
@@ -164,6 +425,121 @@ const AgentSetupPage: React.FC = () => {
     );
     setHumanAgents(updated);
   };
+
+  // Chat widget functions
+  const sendTestMessage = async (message?: string) => {
+    const messageText = message || currentMessage.trim();
+    if (!messageText) return;
+
+    // Add user message
+    const userMessage = {
+      id: Date.now().toString(),
+      text: messageText,
+      sender: 'user' as const,
+      timestamp: new Date()
+    };
+    setChatMessages(prev => [...prev, userMessage]);
+    setCurrentMessage('');
+    setIsTyping(true);
+
+    try {
+      // Simulate AI response based on setup
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000)); // 1-3 second delay
+      
+      const aiResponse = generateTestResponse(messageText);
+      
+      const aiMessage = {
+        id: (Date.now() + 1).toString(),
+        text: aiResponse,
+        sender: 'ai' as const,
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        text: "I'm sorry, I'm having trouble responding right now. Please try again.",
+        sender: 'ai' as const,
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const generateTestResponse = (userMessage: string): string => {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Use business type to customize responses
+    const selectedBusinessType = businessTypes.find(type => type.value === businessType);
+    const tone = agentTone || 'friendly';
+    const name = agentName || 'ROMASHKA';
+    
+    // Response patterns based on message content
+    if (lowerMessage.includes('shipping') || lowerMessage.includes('delivery')) {
+      return tone === 'professional' 
+        ? `Thank you for your inquiry. We offer several shipping options including standard (3-5 business days) and express delivery (1-2 business days). Shipping costs vary by location and order size.`
+        : `Hi there! 😊 We've got great shipping options for you! Standard delivery takes 3-5 days, or go for express if you need it super fast (1-2 days). Where are you shipping to?`;
+    }
+    
+    if (lowerMessage.includes('return') || lowerMessage.includes('refund')) {
+      return tone === 'professional'
+        ? `Our return policy allows returns within 30 days of purchase. Items must be in original condition with tags attached. Please contact our customer service team to initiate a return.`
+        : `No worries! You have 30 days to return anything that doesn't work out. Just make sure it's still in good condition with the tags on. Want me to help you start a return?`;
+    }
+    
+    if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('how much')) {
+      return tone === 'professional'
+        ? `For detailed pricing information, I'd recommend speaking with one of our sales representatives who can provide accurate quotes based on your specific needs.`
+        : `Great question! Pricing can vary depending on what you're looking for. Let me connect you with someone who can give you the exact details you need! 💰`;
+    }
+    
+    if (lowerMessage.includes('location') || lowerMessage.includes('where') || lowerMessage.includes('address')) {
+      return tone === 'professional'
+        ? `Our main office is located in [Your City]. For specific location details and directions, please visit our contact page or call our main number.`
+        : `We're based in [Your City]! Need directions or want to visit us? I can help you find exactly what you need to get here! 📍`;
+    }
+    
+    if (lowerMessage.includes('support') || lowerMessage.includes('help') || lowerMessage.includes('contact')) {
+      return tone === 'professional'
+        ? `You can reach our customer support team through this chat, email, or phone. Our team is available Monday through Friday, 9 AM to 6 PM EST.`
+        : `You're already talking to support - that's me! 🎉 I'm here to help, but if you need to talk to a human, I can connect you with our awesome team!`;
+    }
+    
+    // Default responses based on tone and business type
+    const businessContext = selectedBusinessType?.label ? ` specializing in ${selectedBusinessType.label.toLowerCase()}` : '';
+    
+    if (tone === 'professional') {
+      return `Thank you for contacting ${name}. We are a ${businessContext} company committed to providing excellent service. How may I assist you today?`;
+    } else if (tone === 'casual') {
+      return `Hey! ${name} here${businessContext}. What can I help you with today? 😎`;
+    } else {
+      return `Hi there! I'm ${name}${businessContext}, and I'm here to help! What questions do you have for me? 😊`;
+    }
+  };
+
+  // Initialize chat with welcome message
+  useEffect(() => {
+    if (chatMessages.length === 0 && !isLoading) {
+      const welcomeMessage = {
+        id: 'welcome',
+        text: `Hi! I'm ${agentName || 'ROMASHKA'}, your ${agentTone || 'friendly'} AI assistant. How can I help you today?`,
+        sender: 'ai' as const,
+        timestamp: new Date()
+      };
+      setChatMessages([welcomeMessage]);
+    }
+  }, [agentName, agentTone, isLoading]);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    const chatContainer = document.getElementById('chat-messages');
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  }, [chatMessages, isTyping]);
 
   const removeHumanAgent = (index: number) => {
     if (humanAgents.length > 1) {
@@ -208,7 +584,7 @@ const AgentSetupPage: React.FC = () => {
               {businessTypes.map(type => (
                 <div
                   key={type.value}
-                  onClick={() => setBusinessType(type.value)}
+                  onClick={() => handleBusinessTypeSelection(type.value)}
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
                     businessType === type.value
                       ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
@@ -225,10 +601,34 @@ const AgentSetupPage: React.FC = () => {
             </div>
             
             {businessType && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
-                <p className="text-sm text-green-700">
-                  ✅ Great! ROMASHKA will be optimized for {businessTypes.find(t => t.value === businessType)?.label.toLowerCase()}.
-                </p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 max-w-2xl mx-auto">
+                <div className="text-center">
+                  <div className="text-green-600 mb-2">
+                    <CheckIcon className="w-8 h-8 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-green-800 mb-3">
+                    ✅ Configuration Applied for {businessTypes.find(t => t.value === businessType)?.label}
+                  </h3>
+                  <div className="text-sm text-green-700 space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                      <div className="bg-white rounded-lg p-3 border border-green-100">
+                        <div className="font-medium">Agent Name</div>
+                        <div className="text-green-600">{businessTypes.find(t => t.value === businessType)?.suggestedName}</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-green-100">
+                        <div className="font-medium">Tone</div>
+                        <div className="text-green-600 capitalize">{businessTypes.find(t => t.value === businessType)?.defaultTone}</div>
+                      </div>
+                      <div className="bg-white rounded-lg p-3 border border-green-100">
+                        <div className="font-medium">Common Questions</div>
+                        <div className="text-green-600">{businessTypes.find(t => t.value === businessType)?.defaultQuestions.length} questions</div>
+                      </div>
+                    </div>
+                    <p className="text-xs mt-3">
+                      💡 These defaults will be applied in the next steps. You can customize them anytime.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -300,8 +700,27 @@ const AgentSetupPage: React.FC = () => {
             </div>
             
             <div className="max-w-2xl mx-auto space-y-6">
+              {businessType && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <CheckIcon className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      Pre-configured for {businessTypes.find(t => t.value === businessType)?.label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Settings have been automatically optimized. You can still customize them below.
+                  </p>
+                </div>
+              )}
+              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">AI Agent Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  AI Agent Name
+                  {agentName && businessType && businessTypes.find(t => t.value === businessType)?.suggestedName === agentName && (
+                    <span className="ml-2 text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Auto-filled</span>
+                  )}
+                </label>
                 <input
                   type="text"
                   value={agentName}
@@ -312,24 +731,34 @@ const AgentSetupPage: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Conversation Tone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Conversation Tone
+                  {agentTone && businessType && businessTypes.find(t => t.value === businessType)?.defaultTone === agentTone && (
+                    <span className="ml-2 text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Auto-filled</span>
+                  )}
+                </label>
                 <div className="space-y-3">
-                  {toneOptions.map(tone => (
+                  {toneOptions.map(toneOption => (
                     <div
-                      key={tone.value}
-                      onClick={() => setAgentTone(tone.value)}
+                      key={toneOption.value}
+                      onClick={() => setAgentTone(toneOption.value)}
                       className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                        agentTone === tone.value
+                        agentTone === toneOption.value
                           ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-medium text-gray-900">{tone.label}</h3>
-                          <p className="text-sm text-gray-600">{tone.description}</p>
+                          <h3 className="font-medium text-gray-900">
+                            {toneOption.label}
+                            {agentTone === toneOption.value && businessType && businessTypes.find(t => t.value === businessType)?.defaultTone === toneOption.value && (
+                              <span className="ml-2 text-xs bg-green-100 text-green-600 px-2 py-1 rounded">Recommended</span>
+                            )}
+                          </h3>
+                          <p className="text-sm text-gray-600">{toneOption.description}</p>
                         </div>
-                        {agentTone === tone.value && (
+                        {agentTone === toneOption.value && (
                           <CheckIcon className="w-5 h-5 text-blue-500" />
                         )}
                       </div>
@@ -375,26 +804,67 @@ const AgentSetupPage: React.FC = () => {
                     <h4 className="font-medium">Chat with {agentName || 'ROMASHKA'}</h4>
                     <p className="text-sm opacity-90">Online • Typically responds in a few minutes</p>
                   </div>
-                  <div className="p-4 h-64 overflow-y-auto space-y-3">
-                    <div className="flex gap-2">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                        R
+                  <div className="p-4 h-64 overflow-y-auto space-y-3" id="chat-messages">
+                    {chatMessages.map((message) => (
+                      <div key={message.id} className={`flex gap-2 ${message.sender === 'user' ? 'justify-end' : ''}`}>
+                        {message.sender === 'ai' && (
+                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                            {(agentName || 'ROMASHKA')[0].toUpperCase()}
+                          </div>
+                        )}
+                        <div className={`rounded-lg px-3 py-2 max-w-xs ${
+                          message.sender === 'user' 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-100'
+                        }`}>
+                          <p className="text-sm">{message.text}</p>
+                          <p className={`text-xs mt-1 ${
+                            message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                          }`}>
+                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        {message.sender === 'user' && (
+                          <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                            U
+                          </div>
+                        )}
                       </div>
-                      <div className="bg-gray-100 rounded-lg px-3 py-2 max-w-xs">
-                        <p className="text-sm">
-                          Hi! I'm {agentName || 'ROMASHKA'}, your {agentTone} AI assistant. How can I help you today?
-                        </p>
+                    ))}
+                    
+                    {isTyping && (
+                      <div className="flex gap-2">
+                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                          {(agentName || 'ROMASHKA')[0].toUpperCase()}
+                        </div>
+                        <div className="bg-gray-100 rounded-lg px-3 py-2">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                   <div className="p-3 border-t">
                     <div className="flex gap-2">
                       <input
                         type="text"
+                        value={currentMessage}
+                        onChange={(e) => setCurrentMessage(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && sendTestMessage()}
                         placeholder="Type your message..."
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        disabled={isTyping}
                       />
-                      <button className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">Send</button>
+                      <button 
+                        onClick={() => sendTestMessage()}
+                        disabled={isTyping || !currentMessage.trim()}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Send
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -403,23 +873,41 @@ const AgentSetupPage: React.FC = () => {
               <div className="space-y-3">
                 <h4 className="font-medium text-gray-900">Try these sample questions:</h4>
                 <div className="space-y-2">
-                  {[
+                  {(businessTypes.find(t => t.value === businessType)?.defaultQuestions || [
                     "What are your shipping options?",
                     "Do you accept returns?",
                     "Where are you located?",
                     "How can I contact support?"
-                  ].map((question, index) => (
+                  ]).slice(0, 4).map((question, index) => (
                     <button
                       key={index}
-                      className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm"
-                      onClick={() => {
-                        // Simulate AI response
-                        alert(`ROMASHKA would respond based on your knowledge base and ${agentTone} tone.`);
-                      }}
+                      className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm transition-colors disabled:opacity-50"
+                      disabled={isTyping}
+                      onClick={() => sendTestMessage(question)}
                     >
                       "{question}"
                     </button>
                   ))}
+                </div>
+                
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-blue-900 mb-1">Testing Your Configuration</h5>
+                      <p className="text-sm text-blue-700">
+                        This preview shows how your AI agent will respond based on:
+                      </p>
+                      <ul className="text-sm text-blue-600 mt-2 space-y-1">
+                        <li>• Business type: <span className="font-medium">{businessTypes.find(t => t.value === businessType)?.label || 'General'}</span></li>
+                        <li>• Agent name: <span className="font-medium">{agentName || 'ROMASHKA'}</span></li>
+                        <li>• Communication tone: <span className="font-medium capitalize">{agentTone || 'friendly'}</span></li>
+                        <li>• Knowledge base: <span className="font-medium">{knowledgeContent ? 'Custom content' : 'Default responses'}</span></li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -636,7 +1124,13 @@ const AgentSetupPage: React.FC = () => {
                 </div>
                 
                 <button
-                  onClick={() => setSetupComplete(true)}
+                  onClick={async () => {
+                    await saveProgress({ 
+                      setupCompleted: true,
+                      completedSteps: [1, 2, 3, 4, 5, 6, 7, 8]
+                    });
+                    setSetupComplete(true);
+                  }}
                   className="px-8 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 font-semibold"
                 >
                   Complete Setup & Start Using ROMASHKA
@@ -650,6 +1144,19 @@ const AgentSetupPage: React.FC = () => {
         return null;
     }
   };
+
+  // Show loading screen while loading data
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-700">Loading your agent setup...</h2>
+          <p className="text-gray-500 mt-2">Restoring your previous progress</p>
+        </div>
+      </div>
+    );
+  }
 
   if (setupComplete) {
     return (
@@ -695,6 +1202,24 @@ const AgentSetupPage: React.FC = () => {
         <p className="text-gray-600 mt-2">
           Set up your AI-powered customer service agent in just a few simple steps
         </p>
+        
+        {/* Save Error Alert */}
+        {saveError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <ExclamationCircleIcon className="w-5 h-5 text-red-400 mr-2" />
+              <p className="text-sm text-red-700">
+                Failed to save progress: {saveError}
+              </p>
+              <button
+                onClick={() => setSaveError(null)}
+                className="ml-auto text-red-400 hover:text-red-600"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Progress Steps */}
