@@ -55,6 +55,7 @@ const ChannelsPage: React.FC = () => {
   const [metrics, setMetrics] = useState<any>(null);
   const [showGuidedSetup, setShowGuidedSetup] = useState<ChannelType | null>(null);
   const [oauthPopup, setOauthPopup] = useState<Window | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
 
   // Channel configurations
   const [whatsappConfig, setWhatsappConfig] = useState({
@@ -350,49 +351,139 @@ const ChannelsPage: React.FC = () => {
   };
 
   const handleOAuthFlow = (channelType: ChannelType, provider: string) => {
-    const baseUrl = 'https://api.romashka.ai/oauth';
-    const redirectUri = `${window.location.origin}/channels/oauth-callback`;
-    const fallbackRedirectUri = `${window.location.origin}/channels`;
-    // Using a realistic app ID for demo (this would be your actual Facebook App ID)
-    const facebookAppId = '1543092569299627';
-    
-    let authUrl = '';
-    
-    switch (provider) {
-      case 'facebook':
-        // Instagram integration using Facebook OAuth with comprehensive scopes like Lyro.ai
-        authUrl = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${facebookAppId}&display=popup&domain=${window.location.hostname}&redirect_uri=${encodeURIComponent(redirectUri)}&fallback_redirect_uri=${encodeURIComponent(fallbackRedirectUri)}&scope=instagram_manage_comments,instagram_basic,pages_show_list,pages_manage_metadata,instagram_manage_messages,pages_messaging,pages_read_engagement,business_management,pages_manage_engagement&response_type=token,signed_request,graph_domain&return_scopes=true&state=${channelType}`;
-        break;
-      case 'instagram':
-        // Same as Facebook since Instagram uses Facebook OAuth
-        authUrl = `https://www.facebook.com/v16.0/dialog/oauth?client_id=${facebookAppId}&display=popup&domain=${window.location.hostname}&redirect_uri=${encodeURIComponent(redirectUri)}&fallback_redirect_uri=${encodeURIComponent(fallbackRedirectUri)}&scope=instagram_manage_comments,instagram_basic,pages_show_list,pages_manage_metadata,instagram_manage_messages,pages_messaging,pages_read_engagement,business_management,pages_manage_engagement&response_type=token,signed_request,graph_domain&return_scopes=true&state=${channelType}`;
-        break;
-      case 'whatsapp':
-        // WhatsApp embedded signup using Facebook OAuth like Lyro.ai
-        authUrl = `https://www.facebook.com/v16.0/dialog/oauth?app_id=${facebookAppId}&client_id=${facebookAppId}&display=popup&domain=${window.location.hostname}&extras={"feature":"whatsapp_embedded_signup","sessionInfoVersion":2,"setup":{}}&fallback_redirect_uri=${encodeURIComponent(fallbackRedirectUri)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token,signed_request,graph_domain&return_scopes=true&scope=whatsapp_business_management,whatsapp_business_messaging&state=${channelType}`;
-        break;
-      default:
-        alert('OAuth flow not configured for this provider');
-        return;
-    }
-
-    const popup = window.open(
-      authUrl,
-      'oauth_popup',
-      'width=600,height=700,scrollbars=yes,resizable=yes'
-    );
-    
-    setOauthPopup(popup);
-    
-    // Listen for OAuth completion
-    const checkClosed = setInterval(() => {
-      if (popup?.closed) {
-        clearInterval(checkClosed);
-        setOauthPopup(null);
-        // Refresh channel status after OAuth
-        loadChannelStatus();
+    // Show OAuth setup instructions instead of trying to use external app ID
+    const setupInstructions = {
+      whatsapp: {
+        title: 'WhatsApp Business API Setup Required',
+        steps: [
+          '1. Create a Facebook Developer Account at developers.facebook.com',
+          '2. Create a new Facebook App with WhatsApp Business API',
+          '3. Add your domain (romashkaai.vercel.app) to App Domains',
+          '4. Configure WhatsApp Business API with your phone number',
+          '5. Get your App ID and replace it in the ROMASHKA configuration',
+          '6. Set up webhook URL: https://api.romashka.ai/webhooks/whatsapp'
+        ]
+      },
+      instagram: {
+        title: 'Instagram Business API Setup Required',
+        steps: [
+          '1. Create a Facebook Developer Account at developers.facebook.com',
+          '2. Create a new Facebook App with Instagram Basic Display API',
+          '3. Add your domain (romashkaai.vercel.app) to App Domains',
+          '4. Connect your Instagram Business Account',
+          '5. Get your App ID and replace it in the ROMASHKA configuration',
+          '6. Configure Instagram messaging permissions'
+        ]
+      },
+      facebook: {
+        title: 'Facebook Messenger API Setup Required',
+        steps: [
+          '1. Create a Facebook Developer Account at developers.facebook.com',
+          '2. Create a new Facebook App with Messenger Platform',
+          '3. Add your domain (romashkaai.vercel.app) to App Domains',
+          '4. Connect your Facebook Page',
+          '5. Get your App ID and replace it in the ROMASHKA configuration',
+          '6. Set up webhook URL: https://api.romashka.ai/webhooks/messenger'
+        ]
       }
-    }, 1000);
+    };
+
+    const config = setupInstructions[provider] || setupInstructions[channelType];
+    
+    if (config) {
+      const instructionsHTML = `
+        <div style="max-width: 500px; text-align: left;">
+          <h3 style="color: #1f2937; margin-bottom: 16px;">${config.title}</h3>
+          <p style="color: #6b7280; margin-bottom: 16px;">To connect ${channelType.toUpperCase()} to ROMASHKA, you need to set up your own Facebook App:</p>
+          <ol style="color: #374151; line-height: 1.6;">
+            ${config.steps.map(step => `<li style="margin-bottom: 8px;">${step}</li>`).join('')}
+          </ol>
+          <p style="color: #6b7280; margin-top: 16px; font-size: 14px;">
+            <strong>Need help?</strong> Check our documentation or contact support for detailed setup instructions.
+          </p>
+        </div>
+      `;
+      
+      // Create a custom modal instead of basic alert
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      `;
+      
+      const modalContent = document.createElement('div');
+      modalContent.style.cssText = `
+        background: white;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+      `;
+      
+      modalContent.innerHTML = instructionsHTML + `
+        <div style="text-align: center; margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+          <button onclick="this.closest('[style*=\"position: fixed\"]').remove()" 
+                  style="background: #6b7280; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 500;">
+            Got it, thanks!
+          </button>
+          <button onclick="
+            this.closest('[style*=\"position: fixed\"]').remove();
+            window.dispatchEvent(new CustomEvent('enableDemoMode', { detail: { channelType: '${channelType}' } }));
+          " 
+                  style="background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 500;">
+            🎭 Enable Demo Mode
+          </button>
+        </div>
+      `;
+      
+      // Listen for demo mode event
+      window.addEventListener('enableDemoMode', (e: any) => {
+        const { channelType } = e.detail;
+        setDemoMode(true);
+        
+        // Simulate successful connection
+        setChannels(prev => prev.map(ch => 
+          ch.type === channelType 
+            ? { ...ch, status: 'active' as const }
+            : ch
+        ));
+        
+        setWebhooks(prev => ({
+          ...prev,
+          [channelType]: {
+            ...prev[channelType],
+            status: 'active',
+            url: `https://api.romashka.ai/webhooks/${channelType}`,
+            lastTriggered: new Date(),
+            errorCount: 0
+          }
+        }));
+        
+        alert(`✅ Demo mode enabled for ${channelType.toUpperCase()}! This is a simulation for testing the UI.`);
+      }, { once: true });
+      
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+      
+      // Close modal when clicking outside
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      return;
+    }
   };
 
   const handleWebhookTest = async (channelType: ChannelType) => {
@@ -1480,10 +1571,20 @@ const ChannelsPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Multi-Channel Hub</h1>
-        <p className="text-gray-600 mt-2">
-          Manage all your communication channels in one place
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Multi-Channel Hub</h1>
+            <p className="text-gray-600 mt-2">
+              Manage all your communication channels in one place
+            </p>
+          </div>
+          {demoMode && (
+            <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-2 rounded-lg flex items-center space-x-2">
+              <span className="text-lg">🎭</span>
+              <span className="font-medium">Demo Mode Active</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Navigation Tabs */}
