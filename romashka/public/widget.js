@@ -266,8 +266,8 @@
       messagesContainer.appendChild(typingDiv);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-      // Simulate API call (replace with actual API)
-      const response = await simulateAPIResponse(message);
+      // Get real API response using scanned data
+      const response = await getRealAPIResponse(message);
 
       // Remove typing indicator
       const typingIndicator = document.getElementById('typing-indicator');
@@ -295,14 +295,254 @@
     }
   }
 
-  // Simulate API response (replace with actual API call)
-  async function simulateAPIResponse(message) {
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+  // Initialize Supabase client for widget
+  function createSupabaseClient() {
+    // Use the same Supabase config as the main app
+    const supabaseUrl = 'https://ztcnqxswlbevqmuzudpw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Y25xeHN3bGJldnFtdXp1ZHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4NzQ4MTEsImV4cCI6MjA0NzQ1MDgxMX0.iKw3LBnXaEd_9Q2yyE5H3gj1FHV-LnTPDbcIjZYmqAE';
+    
+    // Create a simple Supabase client without importing the full library
+    return {
+      from: function(table) {
+        return {
+          select: function(columns = '*') {
+            const query = {
+              table,
+              columns,
+              filters: []
+            };
+            
+            return {
+              eq: function(column, value) {
+                query.filters.push({ type: 'eq', column, value });
+                return this;
+              },
+              order: function(column, options = {}) {
+                query.order = { column, ...options };
+                return this;
+              },
+              limit: function(count) {
+                query.limit = count;
+                return this;
+              },
+              execute: async function() {
+                try {
+                  let url = `${supabaseUrl}/rest/v1/${table}`;
+                  const params = new URLSearchParams();
+                  
+                  if (query.columns !== '*') {
+                    params.append('select', query.columns);
+                  }
+                  
+                  query.filters.forEach(filter => {
+                    if (filter.type === 'eq') {
+                      params.append(filter.column, `eq.${filter.value}`);
+                    }
+                  });
+                  
+                  if (query.order) {
+                    params.append('order', `${query.order.column}.${query.order.ascending === false ? 'desc' : 'asc'}`);
+                  }
+                  
+                  if (query.limit) {
+                    params.append('limit', query.limit.toString());
+                  }
+                  
+                  if (params.toString()) {
+                    url += '?' + params.toString();
+                  }
+                  
+                  console.log('🔍 Widget: Querying Supabase:', url);
+                  
+                  const response = await fetch(url, {
+                    headers: {
+                      'apikey': supabaseKey,
+                      'Authorization': `Bearer ${supabaseKey}`,
+                      'Content-Type': 'application/json'
+                    }
+                  });
+                  
+                  if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                  }
+                  
+                  const data = await response.json();
+                  return { data, error: null };
+                } catch (error) {
+                  return { data: null, error };
+                }
+              }
+            };
+          }
+        };
+      }
+    };
+  }
 
-    const personality = finalConfig.widget.personality;
+  // Get real FAQ data from scanned content
+  async function getRealFAQData() {
+    try {
+      console.log('🔍 Widget: Fetching real FAQ data from database...');
+      
+      const supabase = createSupabaseClient();
+      const { data, error } = await supabase
+        .from('extracted_content')
+        .select('url, title, content, content_type')
+        .eq('content_type', 'faq')
+        .order('created_at', { ascending: false })
+        .limit(10)
+        .execute();
+      
+      if (error) {
+        throw error;
+      }
+      
+      console.log(`✅ Widget: Found ${data?.length || 0} FAQ entries`);
+      return data || [];
+    } catch (error) {
+      console.warn('⚠️ Widget: Failed to fetch real FAQ data:', error);
+      return [];
+    }
+  }
+
+  // Extract Q&A pairs from FAQ content
+  function extractQAPairs(content) {
+    const pairs = [];
+    
+    // Split content into lines and look for questions (ending with ?)
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Check if this line looks like a question
+      if (line.includes('?') && line.length > 10 && line.length < 200) {
+        const question = line;
+        
+        // Look for the answer in the next few lines
+        let answer = '';
+        for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+          const nextLine = lines[j];
+          
+          // Stop if we hit another question
+          if (nextLine.includes('?') && nextLine.length > 10) break;
+          
+          // Add this line to the answer
+          if (nextLine.length > 10) {
+            answer += (answer ? ' ' : '') + nextLine;
+          }
+        }
+        
+        if (answer.length > 10) {
+          pairs.push({ question, answer });
+        }
+      }
+    }
+    
+    console.log(`📝 Widget: Extracted ${pairs.length} Q&A pairs from FAQ content`);
+    return pairs;
+  }
+
+  // Find matching FAQ answer for user message
+  function findFAQMatch(message, faqData) {
+    console.log(`🔍 Widget: Searching for FAQ match for: "${message}"`);
+    
     const lowerMessage = message.toLowerCase();
+    let bestMatch = null;
+    let bestScore = 0;
+    
+    for (const faqEntry of faqData) {
+      if (faqEntry.content_type === 'faq' && faqEntry.content) {
+        const qaPairs = extractQAPairs(faqEntry.content);
+        
+        for (const qa of qaPairs) {
+          const questionWords = qa.question.toLowerCase().split(' ');
+          const messageWords = lowerMessage.split(' ');
+          
+          // Calculate similarity score
+          let matches = 0;
+          for (const word of questionWords) {
+            if (word.length > 3 && messageWords.includes(word)) {
+              matches++;
+            }
+          }
+          
+          const score = matches / Math.max(questionWords.length, messageWords.length);
+          
+          if (score > bestScore && score > 0.2) { // Minimum 20% match
+            bestMatch = qa;
+            bestScore = score;
+          }
+        }
+      }
+    }
+    
+    if (bestMatch) {
+      console.log(`✅ Widget: Found FAQ match (${(bestScore * 100).toFixed(1)}% confidence):`, bestMatch.question);
+      return bestMatch.answer;
+    }
+    
+    console.log('❌ Widget: No FAQ match found');
+    return null;
+  }
 
-    // Generate personality-appropriate response
+  // Real API response using scanned data
+  async function getRealAPIResponse(message) {
+    try {
+      // Get real FAQ data
+      const faqData = await getRealFAQData();
+      
+      if (faqData.length > 0) {
+        // Try to find a matching FAQ answer
+        const faqAnswer = findFAQMatch(message, faqData);
+        
+        if (faqAnswer) {
+          // Adjust answer based on personality
+          return adjustResponseForPersonality(faqAnswer, finalConfig.widget.personality);
+        }
+      }
+      
+      // Fall back to personality-based response if no FAQ match
+      return generatePersonalityResponse(message, finalConfig.widget.personality);
+      
+    } catch (error) {
+      console.error('Widget: Error getting real API response:', error);
+      return generatePersonalityResponse(message, finalConfig.widget.personality);
+    }
+  }
+
+  // Adjust response based on personality settings
+  function adjustResponseForPersonality(response, personality) {
+    let adjustedResponse = response;
+    
+    // Formality adjustment
+    if (personality.formality <= 30) {
+      adjustedResponse = adjustedResponse.replace(/I am/g, 'I\'m').replace(/I will/g, 'I\'ll');
+      adjustedResponse = adjustedResponse.replace(/\./g, '!');
+    } else if (personality.formality >= 80) {
+      adjustedResponse = adjustedResponse.replace(/I'm/g, 'I am').replace(/I'll/g, 'I will');
+      adjustedResponse += ' Please let me know if you need any additional assistance.';
+    }
+    
+    // Enthusiasm adjustment
+    if (personality.enthusiasm >= 70) {
+      adjustedResponse = adjustedResponse.replace(/\./g, '!');
+      adjustedResponse = adjustedResponse.replace(/help/g, 'love to help');
+    } else if (personality.enthusiasm <= 30) {
+      adjustedResponse = adjustedResponse.replace(/!/g, '.');
+    }
+    
+    // Empathy adjustment
+    if (personality.empathy >= 70) {
+      adjustedResponse = 'I understand this is important to you. ' + adjustedResponse;
+    }
+    
+    return adjustedResponse;
+  }
+
+  // Generate personality-based fallback response
+  function generatePersonalityResponse(message, personality) {
+    const lowerMessage = message.toLowerCase();
     let response = '';
 
     if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('pricing')) {
