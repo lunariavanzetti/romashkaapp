@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   CheckCircleIcon, 
   ExclamationCircleIcon,
@@ -44,6 +44,10 @@ const AgentSetupPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [manualQASuccess, setManualQASuccess] = useState(false);
+  
+  // Widget preview state
+  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Chat widget testing state
   const [chatMessages, setChatMessages] = useState<Array<{id: string, text: string, sender: 'user' | 'ai', timestamp: Date}>>([]);
@@ -154,6 +158,11 @@ const AgentSetupPage: React.FC = () => {
 
     loadProgress();
   }, []);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   // Auto-save when key fields change (debounced to avoid too many saves)
   useEffect(() => {
@@ -1232,96 +1241,8 @@ You can customize these settings in the following steps, or keep the recommended
                   The AI will analyze your scanned content and provide intelligent responses.
                 </p>
                 
-                {/* Widget-style preview that matches the actual widget design */}
+                {/* Widget-style preview with open/close functionality */}
                 <div className="relative h-[500px] bg-gray-100 rounded-lg border shadow-sm p-4 flex items-end justify-end">
-                  {/* Simulated widget environment */}
-                  <div className="w-80 h-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
-                    {/* Widget header */}
-                    <div className="bg-blue-500 text-white p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-sm">Chat with {agentName || 'ROMASHKA'}</h4>
-                          <p className="text-xs opacity-90">Online • Typically responds instantly</p>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                          <span className="text-xs">1 agent available</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Messages area */}
-                    <div className="flex-1 p-4 space-y-3 bg-gray-50 h-64 overflow-y-auto">
-                      {chatMessages.length === 0 && (
-                        <div className="flex justify-start">
-                          <div className="max-w-xs">
-                            <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-2">
-                              <p className="text-sm text-gray-900">
-                                Hi! I'm {agentName || 'ROMASHKA'}, your AI assistant. I can help answer questions about our {businessType} business. What would you like to know?
-                              </p>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">Just now</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {chatMessages.map((message) => (
-                        <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className="max-w-xs">
-                            <div className={`rounded-2xl px-4 py-2 ${
-                              message.sender === 'user' 
-                                ? 'bg-blue-500 text-white rounded-br-sm' 
-                                : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
-                            }`}>
-                              <p className="text-sm">{message.text}</p>
-                            </div>
-                            <p className={`text-xs mt-1 ${
-                              message.sender === 'user' ? 'text-gray-500 text-right' : 'text-gray-500'
-                            }`}>
-                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {isTyping && (
-                        <div className="flex justify-start">
-                          <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-2">
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Input area */}
-                    <div className="border-t border-gray-200 p-3 bg-white">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="text"
-                          value={currentMessage}
-                          onChange={(e) => setCurrentMessage(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && sendTestMessage()}
-                          placeholder="Type your message..."
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={isTyping}
-                        />
-                        <button 
-                          onClick={() => sendTestMessage()}
-                          disabled={isTyping || !currentMessage.trim()}
-                          className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
                   {/* Background effect to show it's in a website context */}
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-purple-50 -z-10 rounded-lg"></div>
                   <div className="absolute top-4 left-4 text-sm text-gray-500">
@@ -1329,6 +1250,125 @@ You can customize these settings in the following steps, or keep the recommended
                       Preview: Your website with ROMASHKA widget
                     </div>
                   </div>
+
+                  {/* Chat Widget Toggle Button */}
+                  {!isWidgetOpen && (
+                    <button
+                      onClick={() => setIsWidgetOpen(true)}
+                      className="w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center relative"
+                    >
+                      {/* Unread message badge */}
+                      <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                        1
+                      </div>
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    </button>
+                  )}
+                  
+                  {/* Opened Widget */}
+                  {isWidgetOpen && (
+                    <div className="w-80 h-96 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden flex flex-col">
+                      {/* Widget header */}
+                      <div className="bg-blue-500 text-white p-3 flex-shrink-0">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-sm">Chat with {agentName || 'ROMASHKA'}</h4>
+                            <p className="text-xs opacity-90">Online • Typically responds instantly</p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-1">
+                              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                              <span className="text-xs">1 agent</span>
+                            </div>
+                            <button
+                              onClick={() => setIsWidgetOpen(false)}
+                              className="p-1 hover:bg-white/20 rounded transition-colors"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Messages area */}
+                      <div className="flex-1 p-4 space-y-3 bg-gray-50 overflow-y-auto min-h-0">
+                        {chatMessages.length === 0 && (
+                          <div className="flex justify-start">
+                            <div className="max-w-xs">
+                              <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-2">
+                                <p className="text-sm text-gray-900">
+                                  Hi! I'm {agentName || 'ROMASHKA'}, your AI assistant. I can help answer questions about our {businessType} business. What would you like to know?
+                                </p>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">Just now</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {chatMessages.map((message) => (
+                          <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className="max-w-xs">
+                              <div className={`rounded-2xl px-4 py-2 ${
+                                message.sender === 'user' 
+                                  ? 'bg-blue-500 text-white rounded-br-sm' 
+                                  : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
+                              }`}>
+                                <p className="text-sm">{message.text}</p>
+                              </div>
+                              <p className={`text-xs mt-1 ${
+                                message.sender === 'user' ? 'text-gray-500 text-right' : 'text-gray-500'
+                              }`}>
+                                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {isTyping && (
+                          <div className="flex justify-start">
+                            <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-2">
+                              <div className="flex space-x-1">
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Auto-scroll target */}
+                        <div ref={messagesEndRef} />
+                      </div>
+                      
+                      {/* Input area - Fixed height and better visibility */}
+                      <div className="border-t border-gray-200 p-3 bg-white flex-shrink-0">
+                        <div className="flex items-end space-x-2">
+                          <input
+                            type="text"
+                            value={currentMessage}
+                            onChange={(e) => setCurrentMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && sendTestMessage()}
+                            placeholder="Type your message..."
+                            className="flex-1 px-4 py-3 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            disabled={isTyping}
+                          />
+                          <button 
+                            onClick={() => sendTestMessage()}
+                            disabled={isTyping || !currentMessage.trim()}
+                            className="p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               
