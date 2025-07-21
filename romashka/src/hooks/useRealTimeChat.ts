@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
-import ConversationMonitoringService from '../services/conversationMonitoringService';
+import { ConversationMonitoringService } from '../services/conversationMonitoringService';
 import { knowledgeMatchingService } from '../services/ai/knowledgeMatchingService';
 
 export interface ChatMessage {
@@ -239,13 +239,14 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
                   newTypingIndicators.push(typingData);
                 }
                 
+                // Call the callback with the new indicators
+                onTypingChange?.(newTypingIndicators);
+                
                 return {
                   ...prev,
                   typingIndicators: newTypingIndicators
                 };
               });
-
-              onTypingChange?.(state.typingIndicators);
             }
           }
         )
@@ -261,14 +262,19 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
             if (payload.eventType === 'UPDATE') {
               const updatedParticipant = payload.new as ChatParticipant;
               
-              setState(prev => ({
-                ...prev,
-                participants: prev.participants.map(p =>
+              setState(prev => {
+                const newParticipants = prev.participants.map(p =>
                   p.id === updatedParticipant.id ? updatedParticipant : p
-                )
-              }));
-
-              onParticipantChange?.(state.participants);
+                );
+                
+                // Call the callback with the new participants
+                onParticipantChange?.(newParticipants);
+                
+                return {
+                  ...prev,
+                  participants: newParticipants
+                };
+              });
             }
           }
         )
@@ -611,7 +617,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
     } catch (error) {
       console.error('Error ending conversation:', error);
     }
-  }, [conversationId, enableAnalytics, state.messages.length]);
+  }, [conversationId, enableAnalytics]);
 
   return {
     // State

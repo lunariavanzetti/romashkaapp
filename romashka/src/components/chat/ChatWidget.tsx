@@ -13,7 +13,7 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 import { useRealTimeChat, type ChatMessage } from '../../hooks/useRealTimeChat';
-import ConversationMonitoringService from '../../services/conversationMonitoringService';
+import { ConversationMonitoringService } from '../../services/conversationMonitoringService';
 
 interface ChatWidgetProps {
   agentName?: string;
@@ -117,11 +117,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         if (!conversationId) {
           await startConversation();
         }
-        await sendMessage(welcome, []);
+        await sendMessage(welcome, 'text');
         setShowWelcome(false);
       }, 500);
     }
-  }, [isOpen, showWelcome, messages.length, welcomeMessage, conversationId, startConversation, sendMessage, generateWelcomeMessage]);
+  }, [isOpen, showWelcome, messages.length, welcomeMessage, conversationId, startConversation, sendMessage]);
 
   // Generate contextual welcome message
   const generateWelcomeMessage = useCallback(() => {
@@ -167,7 +167,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       // Send message with attachments if any
       await sendMessage(
         messageContent || '📎 File attachment',
-        uploadedFiles
+        'text',
+        uploadedFiles.length > 0 ? { attachments: uploadedFiles } : undefined
       );
 
       // Record user activity for analytics
