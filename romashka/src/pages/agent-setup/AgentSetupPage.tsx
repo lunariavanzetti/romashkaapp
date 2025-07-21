@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
 import { agentSetupService, type AgentSetupData } from '../../services/agentSetupService';
+import { ChatWidget } from '../../components/chat/ChatWidget';
 
 interface SetupStep {
   id: number;
@@ -1202,127 +1203,84 @@ You can customize these settings in the following steps, or keep the recommended
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Test ROMASHKA</h2>
-              <p className="text-gray-600">Try asking some questions to see how your AI agent responds</p>
+              <p className="text-gray-600">Try asking some questions to see how your AI agent responds with real AI-powered knowledge matching</p>
             </div>
             
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <h3 className="font-medium text-gray-900 mb-3">Preview Chat Widget</h3>
-                <div className="bg-white rounded-lg border shadow-sm">
-                  <div className="bg-blue-500 text-white p-3 rounded-t-lg">
-                    <h4 className="font-medium">Chat with {agentName || 'ROMASHKA'}</h4>
-                    <p className="text-sm opacity-90">Online • Typically responds in a few minutes</p>
-                  </div>
-                  <div className="p-4 h-64 overflow-y-auto space-y-3" id="chat-messages">
-                    {chatMessages.map((message) => (
-                      <div key={message.id} className={`flex gap-2 ${message.sender === 'user' ? 'justify-end' : ''}`}>
-                        {message.sender === 'ai' && (
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                            {(agentName || 'ROMASHKA')[0].toUpperCase()}
-                          </div>
-                        )}
-                        <div className={`rounded-lg px-3 py-2 max-w-xs ${
-                          message.sender === 'user' 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-gray-100'
-                        }`}>
-                          <p className="text-sm">{message.text}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
-                          }`}>
-                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                        {message.sender === 'user' && (
-                          <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                            U
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    
-                    {isTyping && (
-                      <div className="flex gap-2">
-                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                          {(agentName || 'ROMASHKA')[0].toUpperCase()}
-                        </div>
-                        <div className="bg-gray-100 rounded-lg px-3 py-2">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 border-t">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={currentMessage}
-                        onChange={(e) => setCurrentMessage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && sendTestMessage()}
-                        placeholder="Type your message..."
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        disabled={isTyping}
-                      />
-                      <button 
-                        onClick={() => sendTestMessage()}
-                        disabled={isTyping || !currentMessage.trim()}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Send
-                      </button>
-                    </div>
-                  </div>
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <h3 className="font-medium text-gray-900 mb-4">Live Chat Widget Preview</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  This is a fully functional preview using your actual configuration and knowledge base. 
+                  The AI will analyze your scanned content and provide intelligent responses.
+                </p>
+                
+                {/* Enhanced ChatWidget with real functionality */}
+                <div className="relative h-[500px] bg-white rounded-lg border shadow-sm">
+                  <ChatWidget
+                    agentName={agentName || 'ROMASHKA'}
+                    agentTone={agentTone as 'friendly' | 'professional' | 'casual'}
+                    businessType={businessType}
+                    primaryColor="#3b82f6"
+                    knowledgeBase={knowledgeContent || 'General business knowledge base.'}
+                    enableFileUpload={true}
+                    enableEmojis={true}
+                    welcomeMessage={`Hi! I'm ${agentName || 'ROMASHKA'}, your AI assistant. I can help answer questions about our ${businessType} business. What would you like to know?`}
+                  />
                 </div>
               </div>
               
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Try these sample questions:</h4>
-                <div className="space-y-2">
-                  {(businessTypes.find(t => t.value === businessType)?.defaultQuestions || [
-                    "What are your shipping options?",
-                    "Do you accept returns?",
-                    "Where are you located?",
-                    "How can I contact support?"
-                  ]).slice(0, 4).map((question, index) => (
-                    <button
-                      key={index}
-                      className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm transition-colors disabled:opacity-50"
-                      disabled={isTyping}
-                      onClick={() => sendTestMessage(question)}
-                    >
-                      "{question}"
-                    </button>
-                  ))}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Try these sample questions:</h4>
+                  <div className="space-y-2">
+                    {(businessTypes.find(t => t.value === businessType)?.defaultQuestions || [
+                      "What are your shipping options?",
+                      "Do you accept returns?", 
+                      "Where are you located?",
+                      "How can I contact support?"
+                    ]).slice(0, 4).map((question, index) => (
+                      <div key={index} className="p-3 border border-gray-200 rounded-lg text-sm">
+                        <strong>Try asking:</strong> "{question}"
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckIcon className="w-4 h-4 text-white" />
                     </div>
                     <div>
-                      <h5 className="font-medium text-blue-900 mb-1">Testing Your Configuration</h5>
-                      <p className="text-sm text-blue-700">
-                        This preview shows how your AI agent will respond based on:
-                      </p>
-                      <ul className="text-sm text-blue-600 mt-2 space-y-1">
-                        <li>• Business type: <span className="font-medium">{businessTypes.find(t => t.value === businessType)?.label || 'General'}</span></li>
-                        <li>• Agent name: <span className="font-medium">{agentName || 'ROMASHKA'}</span></li>
-                        <li>• Communication tone: <span className="font-medium capitalize">{agentTone || 'friendly'}</span></li>
-                        <li>• Knowledge base: <span className="font-medium">{knowledgeContent ? 'Custom content' : 'Default responses'}</span></li>
+                      <h5 className="font-medium text-blue-900 mb-2">AI-Powered Testing</h5>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• <strong>Real AI responses</strong> using GPT-4o-mini</li>
+                        <li>• <strong>Your knowledge base:</strong> {knowledgeContent ? `${Math.round(knowledgeContent.length / 1000)}k characters scanned` : 'No content scanned yet'}</li>
+                        <li>• <strong>Agent tone:</strong> {agentTone || 'friendly'}</li>
+                        <li>• <strong>Business context:</strong> {businessType}</li>
+                        <li>• <strong>File upload:</strong> Enabled</li>
+                        <li>• <strong>Analytics:</strong> Real-time tracking</li>
                       </ul>
                     </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <SparklesIcon className="w-5 h-5 text-green-600 mt-0.5" />
+                  <div>
+                    <h5 className="font-medium text-green-900 mb-1">What's New in This Preview</h5>
+                    <p className="text-sm text-green-700">
+                      This enhanced chat widget now features real AI-powered knowledge matching, natural conversation flow, 
+                      file upload capabilities, message status tracking, and conversation analytics - everything your customers will experience.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         );
-
       case 6:
         return (
           <div className="space-y-6">
@@ -1372,21 +1330,11 @@ You can customize these settings in the following steps, or keep the recommended
                 ))}
                 
                 <button
-                  onClick={addHumanAgent}
-                  className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                  onClick={() => addHumanAgent()}
+                  className="w-full p-3 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   + Add Another Human Agent
                 </button>
-              </div>
-              
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                <h3 className="font-medium text-blue-900 mb-2">🤝 How Human Fallback Works</h3>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• ROMASHKA will try to answer questions using your knowledge base</li>
-                  <li>• If it's unsure, it will offer to connect the customer to a human agent</li>
-                  <li>• Your team will be notified via email and dashboard notifications</li>
-                  <li>• Seamless handoff with full conversation context</li>
-                </ul>
               </div>
             </div>
           </div>
