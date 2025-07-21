@@ -9,6 +9,7 @@ import { X, ExternalLink, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-
 import { Button } from '../ui';
 import { unifiedIntegrationService } from '../../services/integrations/unifiedIntegrationService';
 import { useAuth } from '../../hooks/useAuth';
+import OAuthSetupGuide from './OAuthSetupGuide';
 
 interface IntegrationSetupModalProps {
   isOpen: boolean;
@@ -53,12 +54,37 @@ export default function IntegrationSetupModal({
   provider,
   onSuccess
 }: IntegrationSetupModalProps) {
-  const [step, setStep] = useState<'info' | 'connecting' | 'success' | 'error'>('info');
+  const [step, setStep] = useState<'info' | 'connecting' | 'success' | 'error' | 'setup-guide'>('info');
   const [shopDomain, setShopDomain] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const { user } = useAuth();
 
   const config = provider ? providerConfig[provider] : null;
+
+  // Check for missing credentials when modal opens
+  React.useEffect(() => {
+    const checkCredentials = async () => {
+      if (!provider) return;
+      
+      try {
+        const response = await fetch('/api/integrations/check-credentials');
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.configured[provider]) {
+            setShowSetupGuide(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking credentials:', error);
+        // If the check fails, let the user try connecting and catch the error later
+      }
+    };
+    
+    if (isOpen && provider) {
+      checkCredentials();
+    }
+  }, [isOpen, provider]);
 
   const handleConnect = async () => {
     if (!provider || !user) return;
@@ -93,6 +119,13 @@ export default function IntegrationSetupModal({
         provider,
         provider === 'shopify' ? shopDomain.replace(/^https?:\/\//, '').replace(/\.myshopify\.com.*$/, '').replace(/\/$/, '') : undefined
       );
+
+      // Check if OAuth credentials are configured
+      if (authUrl.includes('client_id=&') || authUrl.includes('client_id=""') || !authUrl.includes('client_id=') || authUrl.match(/client_id=(?:&|$)/)) {
+        setShowSetupGuide(true);
+        setStep('info');
+        return;
+      }
 
       // Add user ID to state for callback
       const urlWithState = authUrl.includes('state=') 
@@ -148,6 +181,11 @@ export default function IntegrationSetupModal({
   };
 
   if (!isOpen || !config) return null;
+
+  // Show setup guide if OAuth credentials are missing
+  if (showSetupGuide) {
+    return <OAuthSetupGuide provider={provider!} onClose={() => setShowSetupGuide(false)} />;
+  }
 
   return (
     <AnimatePresence>
@@ -242,16 +280,26 @@ export default function IntegrationSetupModal({
                   </div>
                 )}
 
-                <Button 
-                  variant="primary" 
-                  className="w-full"
-                  onClick={handleConnect}
-                  disabled={config.needsShopDomain && !shopDomain.trim()}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Connect to {config.name}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                <div className="space-y-3">
+                  <Button 
+                    variant="primary" 
+                    className="w-full"
+                    onClick={handleConnect}
+                    disabled={config.needsShopDomain && !shopDomain.trim()}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Connect to {config.name}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    className="w-full text-sm"
+                    onClick={() => setShowSetupGuide(true)}
+                  >
+                    Need help setting up OAuth credentials?
+                  </Button>
+                </div>
               </motion.div>
             )}
 
