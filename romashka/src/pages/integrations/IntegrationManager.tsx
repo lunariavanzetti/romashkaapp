@@ -21,6 +21,9 @@ import {
 import { Button, Badge, AnimatedSpinner } from '../../components/ui';
 import { Integration, IntegrationStatusInfo, SyncJob } from '../../types/integrations';
 import { integrationManager } from '../../services/integrations/integrationManager';
+import { unifiedIntegrationService, ConnectedIntegration, SyncStats, IntegrationLog } from '../../services/integrations/unifiedIntegrationService';
+import OAuthIntegrationCard from '../../components/integrations/OAuthIntegrationCard';
+import IntegrationSetupModal from '../../components/integrations/IntegrationSetupModal';
 
 interface IntegrationManagerProps {
   onCreateNew: () => void;
@@ -52,6 +55,9 @@ const typeLabels = {
 
 export default function IntegrationManager({ onCreateNew, onEditIntegration }: IntegrationManagerProps) {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [oauthIntegrations, setOauthIntegrations] = useState<ConnectedIntegration[]>([]);
+  const [syncStats, setSyncStats] = useState<{ [provider: string]: SyncStats }>({});
+  const [integrationLogs, setIntegrationLogs] = useState<IntegrationLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -60,6 +66,10 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
   const [showDetails, setShowDetails] = useState(false);
   const [syncJobs, setSyncJobs] = useState<SyncJob[]>([]);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
+  
+  // OAuth Integration Modal
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<'shopify' | 'salesforce' | 'hubspot' | null>(null);
 
   useEffect(() => {
     fetchIntegrations();
@@ -68,8 +78,19 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
   const fetchIntegrations = async () => {
     try {
       setLoading(true);
-      const data = await integrationManager.getIntegrations();
-      setIntegrations(data);
+      
+      // Fetch both traditional and OAuth integrations
+      const [traditionalIntegrations, oauthIntegrations, syncStatsData, logs] = await Promise.all([
+        integrationManager.getIntegrations(),
+        unifiedIntegrationService.getConnectedIntegrations(),
+        unifiedIntegrationService.getSyncStats(),
+        unifiedIntegrationService.getIntegrationLogs(undefined, 50)
+      ]);
+      
+      setIntegrations(traditionalIntegrations);
+      setOauthIntegrations(oauthIntegrations);
+      setSyncStats(syncStatsData);
+      setIntegrationLogs(logs);
     } catch (error) {
       console.error('Error fetching integrations:', error);
     } finally {
@@ -128,6 +149,45 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
     } catch (error) {
       console.error('Error fetching sync jobs:', error);
     }
+  };
+
+  // OAuth Integration Handlers
+  const handleOAuthSync = async (integrationId: string): Promise<void> => {
+    try {
+      await unifiedIntegrationService.syncIntegration(integrationId);
+      await fetchIntegrations(); // Refresh data
+    } catch (error) {
+      console.error('OAuth sync failed:', error);
+      throw error;
+    }
+  };
+
+  const handleOAuthDisconnect = async (integrationId: string): Promise<void> => {
+    try {
+      await unifiedIntegrationService.disconnectIntegration(integrationId);
+      await fetchIntegrations(); // Refresh data
+    } catch (error) {
+      console.error('OAuth disconnect failed:', error);
+      throw error;
+    }
+  };
+
+  const handleOAuthTest = async (integrationId: string): Promise<boolean> => {
+    try {
+      return await unifiedIntegrationService.testConnection(integrationId);
+    } catch (error) {
+      console.error('OAuth test failed:', error);
+      return false;
+    }
+  };
+
+  const handleAddOAuthIntegration = (provider: 'shopify' | 'salesforce' | 'hubspot') => {
+    setSelectedProvider(provider);
+    setShowSetupModal(true);
+  };
+
+  const handleSetupSuccess = () => {
+    fetchIntegrations(); // Refresh data after successful setup
   };
 
   const filteredIntegrations = integrations.filter(integration => {
@@ -263,14 +323,93 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
         </div>
       </motion.div>
 
-      {/* Integrations Grid */}
+      {/* Quick Add OAuth Integrations */}
+      {oauthIntegrations.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Popular Integrations</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { provider: 'shopify' as const, name: 'Shopify', description: 'E-commerce platform', color: 'bg-green-500' },
+              { provider: 'salesforce' as const, name: 'Salesforce', description: 'CRM platform', color: 'bg-blue-500' },
+              { provider: 'hubspot' as const, name: 'HubSpot', description: 'Marketing & CRM', color: 'bg-orange-500' }
+            ].map((integration) => (
+              <button
+                key={integration.provider}
+                onClick={() => handleAddOAuthIntegration(integration.provider)}
+                className="p-4 text-left border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 ${integration.color} rounded-lg flex items-center justify-center`}>
+                    <img
+                      src={`https://cdn.jsdelivr.net/gh/simple-icons/simple-icons@v9/icons/${integration.provider}.svg`}
+                      alt={integration.name}
+                      className="w-6 h-6 filter brightness-0 invert"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900">{integration.name}</h4>
+                    <p className="text-sm text-gray-600">{integration.description}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* OAuth Integrations */}
+      {oauthIntegrations.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Connected Integrations</h3>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={() => handleAddOAuthIntegration('shopify')}>
+                + Shopify
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleAddOAuthIntegration('salesforce')}>
+                + Salesforce
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleAddOAuthIntegration('hubspot')}>
+                + HubSpot
+              </Button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {oauthIntegrations.map((integration) => (
+              <OAuthIntegrationCard
+                key={integration.id}
+                integration={integration}
+                syncStats={syncStats[integration.provider]}
+                onSync={handleOAuthSync}
+                onDisconnect={handleOAuthDisconnect}
+                onTest={handleOAuthTest}
+              />
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Traditional Integrations Grid */}
       {filteredIntegrations.length > 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+          className="mb-8"
         >
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Other Integrations</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredIntegrations.map((integration, index) => (
             <motion.div
               key={integration.id}
@@ -386,9 +525,12 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
               </div>
             </motion.div>
           ))}
+          </div>
         </motion.div>
-      ) : (
-        /* Empty State */
+      ) : null}
+
+      {/* Empty State */}
+      {oauthIntegrations.length === 0 && filteredIntegrations.length === 0 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -398,23 +540,35 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
             <Activity className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' 
-              ? 'No integrations found' 
-              : 'No integrations yet'
-            }
+            No integrations connected yet
           </h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
-            {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-              ? 'Try adjusting your search criteria or filters.'
-              : 'Connect your first integration to start syncing data with ROMASHKA.'
-            }
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Connect your first integration to start syncing data with ROMASHKA.
           </p>
-          <Button variant="primary" onClick={onCreateNew}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Your First Integration
-          </Button>
+          <div className="flex justify-center space-x-4">
+            <Button variant="primary" onClick={() => handleAddOAuthIntegration('shopify')}>
+              Connect Shopify
+            </Button>
+            <Button variant="outline" onClick={() => handleAddOAuthIntegration('salesforce')}>
+              Connect Salesforce
+            </Button>
+            <Button variant="outline" onClick={() => handleAddOAuthIntegration('hubspot')}>
+              Connect HubSpot
+            </Button>
+          </div>
         </motion.div>
       )}
+
+      {/* Integration Setup Modal */}
+      <IntegrationSetupModal
+        isOpen={showSetupModal}
+        onClose={() => {
+          setShowSetupModal(false);
+          setSelectedProvider(null);
+        }}
+        provider={selectedProvider}
+        onSuccess={handleSetupSuccess}
+      />
     </div>
   );
 }
