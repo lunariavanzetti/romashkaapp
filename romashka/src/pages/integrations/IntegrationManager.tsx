@@ -16,7 +16,8 @@ import {
   Activity,
   BarChart3,
   Calendar,
-  Users
+  Users,
+  FileText
 } from 'lucide-react';
 import { Button, Badge, AnimatedSpinner } from '../../components/ui';
 import { Integration, IntegrationStatusInfo, SyncJob } from '../../types/integrations';
@@ -24,6 +25,7 @@ import { integrationManager } from '../../services/integrations/integrationManag
 import { unifiedIntegrationService, ConnectedIntegration, SyncStats, IntegrationLog } from '../../services/integrations/unifiedIntegrationService';
 import OAuthIntegrationCard from '../../components/integrations/OAuthIntegrationCard';
 import IntegrationSetupModal from '../../components/integrations/IntegrationSetupModal';
+import IntegrationLogsPage from '../../components/integrations/IntegrationLogsPage';
 
 interface IntegrationManagerProps {
   onCreateNew: () => void;
@@ -64,6 +66,7 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showLogsPage, setShowLogsPage] = useState(false);
   const [syncJobs, setSyncJobs] = useState<SyncJob[]>([]);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   
@@ -230,6 +233,14 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
     );
   }
 
+  if (showLogsPage) {
+    return (
+      <IntegrationLogsPage
+        onBack={() => setShowLogsPage(false)}
+      />
+    );
+  }
+
   if (showDetails && selectedIntegration) {
     return (
       <IntegrationDetails
@@ -267,10 +278,16 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
               </p>
             </div>
           </div>
-          <Button variant="primary" onClick={onCreateNew}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Integration
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setShowLogsPage(true)}>
+              <FileText className="w-4 h-4 mr-2" />
+              View Logs
+            </Button>
+            <Button variant="primary" onClick={onCreateNew}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Integration
+            </Button>
+          </div>
         </div>
       </motion.div>
 
