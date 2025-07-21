@@ -615,10 +615,30 @@ You can customize these settings in the following steps, or keep the recommended
     const shouldRequestContact = advancedSettings.requireContactInfo && !hasProvidedContact;
     console.log('📞 Contact info needed:', shouldRequestContact);
     
-    // Step 2: Search through extracted knowledge content for relevant answers
-    if (knowledgeContent) {
+    // Step 1: Build complete knowledge base including manual Q&A pairs
+    let completeKnowledgeBase = knowledgeContent || '';
+    
+    // Add all manual Q&A pairs to knowledge base (even if not formally added)
+    const validQAs = manualQAs.filter(qa => qa.question.trim() && qa.answer.trim());
+    if (validQAs.length > 0) {
+      if (completeKnowledgeBase) {
+        completeKnowledgeBase += '\n\n';
+      }
+      completeKnowledgeBase += '**Manual Q&A Content**\n';
+      
+      validQAs.forEach(qa => {
+        completeKnowledgeBase += `Q: ${qa.question.trim()}\nA: ${qa.answer.trim()}\n\n`;
+      });
+      
+      console.log('📝 Added', validQAs.length, 'manual Q&A pairs to knowledge base');
+    }
+    
+    console.log('📚 Complete knowledge base length:', completeKnowledgeBase.length);
+    
+    // Step 2: Search through complete knowledge base for relevant answers
+    if (completeKnowledgeBase) {
       try {
-        const knowledgeMatch = await findKnowledgeMatch(userMessage, knowledgeContent);
+        const knowledgeMatch = await findKnowledgeMatch(userMessage, completeKnowledgeBase);
         if (knowledgeMatch) {
           console.log('✅ Found knowledge match:', knowledgeMatch.substring(0, 100) + '...');
           
