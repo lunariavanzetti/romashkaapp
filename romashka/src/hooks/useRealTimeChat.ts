@@ -6,7 +6,7 @@ import { knowledgeMatchingService } from '../services/ai/knowledgeMatchingServic
 export interface ChatMessage {
   id: string;
   conversation_id: string;
-  sender: 'user' | 'ai' | 'agent';
+  sender_type: 'user' | 'ai' | 'agent';
   content: string;
   message_type: 'text' | 'image' | 'file' | 'system';
   metadata?: Record<string, any>;
@@ -109,7 +109,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
           .select(`
             id,
             conversation_id,
-            sender,
+            sender_type,
             content,
             message_type,
             metadata,
@@ -194,7 +194,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
             onMessageReceived?.(newMessage);
 
             // Auto-mark as read if enabled and message is not from current user
-            if (autoMarkAsRead && newMessage.sender !== 'user' && userId) {
+            if (autoMarkAsRead && newMessage.sender_type !== 'user' && userId) {
               markMessageAsRead(newMessage.id);
             }
           }
@@ -313,7 +313,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
     const tempMessage: ChatMessage = {
       id: tempId,
       conversation_id: conversationId,
-      sender: 'user',
+      sender_type: 'user',
       content,
       message_type: messageType,
       metadata,
@@ -336,7 +336,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
         .from('messages')
         .insert([{
           conversation_id: conversationId,
-          sender: 'user',
+          sender_type: 'user',
           content,
           message_type: messageType,
           metadata,
@@ -422,7 +422,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
         .from('messages')
         .insert([{
           conversation_id: convId,
-          sender: 'ai',
+          sender_type: 'ai',
           content: aiResponseContent,
           message_type: 'text',
           metadata: {
@@ -639,7 +639,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
 
     // Computed values
     unreadCount: state.messages.filter(msg => 
-      msg.sender !== 'user' && msg.status !== 'read'
+      msg.sender_type !== 'user' && msg.status !== 'read'
     ).length,
     isAnyoneTyping: state.typingIndicators.length > 0,
     onlineParticipants: state.participants.filter(p => p.is_online)
