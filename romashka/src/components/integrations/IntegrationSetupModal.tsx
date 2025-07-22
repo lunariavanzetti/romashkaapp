@@ -68,12 +68,33 @@ export default function IntegrationSetupModal({
       if (!provider) return;
       
       try {
+        console.log('[DEBUG] Checking credentials for provider:', provider);
         const response = await fetch('/api/integrations/check-credentials');
+        console.log('[DEBUG] Response status:', response.status, response.statusText);
+        
         if (response.ok) {
-          const data = await response.json();
-          if (!data.configured[provider]) {
+          const text = await response.text();
+          console.log('[DEBUG] Response text:', text);
+          
+          try {
+            const data = JSON.parse(text);
+            console.log('[DEBUG] Parsed credentials data:', data);
+            
+            if (!data.configured[provider]) {
+              console.log('[DEBUG] Provider not configured, showing setup guide');
+              setShowSetupGuide(true);
+            }
+          } catch (parseError) {
+            console.error('Error parsing JSON response:', parseError);
+            console.error('Response was:', text);
+            // If JSON parsing fails, assume credentials need setup
             setShowSetupGuide(true);
           }
+        } else {
+          console.error('API request failed:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          // If the API fails, let the user try connecting
         }
       } catch (error) {
         console.error('Error checking credentials:', error);

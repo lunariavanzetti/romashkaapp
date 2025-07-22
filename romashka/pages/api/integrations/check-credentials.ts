@@ -3,9 +3,9 @@
  * Returns whether OAuth credentials are configured for each provider
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log(`[DEBUG] check-credentials called - Method: ${req.method}, URL: ${req.url}`);
   
   // Set CORS headers
