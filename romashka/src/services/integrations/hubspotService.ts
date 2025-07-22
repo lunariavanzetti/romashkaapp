@@ -603,10 +603,10 @@ export class HubSpotIntegrationService {
 
 // HubSpot configuration (will be moved to environment variables)
 const hubspotConfig: HubSpotConfig = {
-  clientId: process.env.HUBSPOT_CLIENT_ID || '',
-  clientSecret: process.env.HUBSPOT_CLIENT_SECRET || '',
+  clientId: import.meta.env.VITE_HUBSPOT_CLIENT_ID || '',
+  clientSecret: import.meta.env.VITE_HUBSPOT_CLIENT_SECRET || '',
   scopes: ['contacts', 'crm.objects.deals.read', 'crm.objects.companies.read'],
-  redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'https://romashkaai.vercel.app'}/api/integrations/hubspot/callback`,
+  redirectUri: `${import.meta.env.VITE_APP_URL || 'https://romashkaai.vercel.app'}/api/integrations/hubspot/callback`,
 };
 
 export const hubspotService = new HubSpotIntegrationService(hubspotConfig);

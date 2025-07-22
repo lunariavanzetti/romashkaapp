@@ -560,9 +560,9 @@ export class SalesforceIntegrationService {
 
 // Salesforce configuration (will be moved to environment variables)
 const salesforceConfig: SalesforceConfig = {
-  clientId: process.env.SALESFORCE_CLIENT_ID || '',
-  clientSecret: process.env.SALESFORCE_CLIENT_SECRET || '',
-  redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'https://romashkaai.vercel.app'}/api/integrations/salesforce/callback`,
+  clientId: import.meta.env.VITE_SALESFORCE_CLIENT_ID || '',
+  clientSecret: import.meta.env.VITE_SALESFORCE_CLIENT_SECRET || '',
+  redirectUri: `${import.meta.env.VITE_APP_URL || 'https://romashkaai.vercel.app'}/api/integrations/salesforce/callback`,
 };
 
 export const salesforceService = new SalesforceIntegrationService(salesforceConfig);

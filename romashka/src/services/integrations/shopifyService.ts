@@ -550,10 +550,10 @@ export class ShopifyIntegrationService {
 
 // Shopify configuration (will be moved to environment variables)
 const shopifyConfig: ShopifyConfig = {
-  clientId: process.env.SHOPIFY_CLIENT_ID || '',
-  clientSecret: process.env.SHOPIFY_CLIENT_SECRET || '',
+  clientId: import.meta.env.VITE_SHOPIFY_CLIENT_ID || '',
+  clientSecret: import.meta.env.VITE_SHOPIFY_CLIENT_SECRET || '',
   scopes: ['read_customers', 'read_orders', 'read_products'],
-  redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'https://romashkaai.vercel.app'}/api/integrations/shopify/callback`,
+  redirectUri: `${import.meta.env.VITE_APP_URL || 'https://romashkaai.vercel.app'}/api/integrations/shopify/callback`,
 };
 
 export const shopifyService = new ShopifyIntegrationService(shopifyConfig);
