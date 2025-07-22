@@ -1,17 +1,19 @@
 /**
  * Check OAuth Credentials API Endpoint
  * Returns whether OAuth credentials are configured for each provider
+ * Vercel Serverless Function
  */
 
-import type { NextApiRequest, NextApiResponse } from 'next';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log(`[DEBUG] check-credentials called - Method: ${req.method}, URL: ${req.url}`);
   
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json');
   
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -63,7 +65,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('[DEBUG] Credentials check result:', { configured, credentials });
 
-    return res.status(200).json({
+    // Force JSON response
+    const response = {
       success: true,
       configured,
       details: credentials, // For debugging (remove in production)
@@ -72,14 +75,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         method: req.method,
         envDebug
       }
-    });
+    };
+
+    return res.status(200).json(response);
 
   } catch (error) {
     console.error('Error checking OAuth credentials:', error);
-    return res.status(500).json({ 
+    const errorResponse = { 
       success: false, 
       error: 'Failed to check credentials',
       details: error instanceof Error ? error.message : 'Unknown error'
-    });
+    };
+    
+    return res.status(500).json(errorResponse);
   }
 }
