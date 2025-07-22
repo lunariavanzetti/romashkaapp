@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, Paper, Grid, Button, Tooltip, Switch, FormControlLabel } from '@mui/material';
-import { InfoOutlined } from '@mui/icons-material';
+import { Button, Switch, Card, CardContent } from '../components/ui';
+import { Info } from 'lucide-react';
 import { PaddleService } from '../services/paddleService';
 
 const pricingPlans = [
@@ -58,50 +58,67 @@ export default function Pricing() {
     return `Save $${(plan.price * 2).toFixed(0)}/yr`;
   };
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" fontWeight={700} mb={3}>Pricing Plans</Typography>
-      <FormControlLabel
-        control={<Switch checked={annual} onChange={() => setAnnual(a => !a)} />}
-        label={<span>Annual billing <span style={{ color: '#4ECDC4', fontWeight: 600 }}>(save 2 months)</span></span>}
-        sx={{ mb: 3 }}
-      />
-      {/* Temporarily commented out for build fix
-      <Grid container spacing={3}>
+    <div className="p-6 max-w-7xl mx-auto">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Pricing Plans</h1>
+      
+      <div className="flex items-center gap-2 mb-6">
+        <Switch checked={annual} onCheckedChange={setAnnual} />
+        <span className="text-gray-700 dark:text-gray-300">
+          Annual billing <span className="text-primary-teal font-semibold">(save 2 months)</span>
+        </span>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {pricingPlans.map(plan => (
-          <Grid item xs={12} md={3} key={plan.id}>
-            <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center', position: 'relative' }}>
-              <Typography variant="h6" fontWeight={700} mb={1}>{plan.name}</Typography>
-              <Typography variant="h4" color="primary" mb={1}>{getPrice(plan)}</Typography>
-              {annual && plan.price > 0 && <Typography variant="body2" color="success.main">{getSavings(plan)}</Typography>}
-              <Typography variant="body2" mb={2}>{plan.conversations} conversations/mo</Typography>
-              <Box sx={{ mb: 2 }}>
+          <Card key={plan.id} className="text-center relative">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{plan.name}</h3>
+              <div className="text-3xl font-bold text-primary-teal mb-2">{getPrice(plan)}</div>
+              {annual && plan.price > 0 && (
+                <p className="text-green-600 text-sm mb-2">{getSavings(plan)}</p>
+              )}
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                {plan.conversations} conversations/mo
+              </p>
+              
+              <div className="space-y-2 mb-6">
                 {plan.features.map(f => (
-                  <Box key={f} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}>
-                    <span>{f}</span>
+                  <div key={f} className="flex items-center justify-center gap-1">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{f}</span>
                     {featureExplanations[f] && (
-                      <Tooltip title={featureExplanations[f]}><InfoOutlined fontSize="small" sx={{ ml: 0.5 }} /></Tooltip>
+                      <div className="group relative">
+                        <Info className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" />
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                          {featureExplanations[f]}
+                        </div>
+                      </div>
                     )}
-                  </Box>
+                  </div>
                 ))}
-              </Box>
+              </div>
+              
               <Button
-                variant={plan.price === 0 ? 'outlined' : 'contained'}
-                color="primary"
-                fullWidth
+                variant={plan.price === 0 ? 'outline' : 'primary'}
+                className="w-full mb-2"
                 onClick={() => PaddleService.openCheckout(plan.id)}
                 disabled={plan.price === 0}
               >
                 {plan.price === 0 ? 'Start Free Trial' : 'Choose Plan'}
               </Button>
-              {plan.id === 'enterprise' && <Button variant="text" color="secondary" fullWidth sx={{ mt: 1 }}>Contact Sales</Button>}
-            </Paper>
-          </Grid>
+              
+              {plan.id === 'enterprise' && (
+                <Button variant="ghost" className="w-full text-sm">
+                  Contact Sales
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         ))}
-      </Grid>
-      */}
-      <Typography variant="body1" sx={{ textAlign: 'center', mt: 3 }}>
-        Pricing plans temporarily unavailable during deployment
-      </Typography>
-    </Box>
+      </div>
+      
+      <p className="text-center text-gray-600 dark:text-gray-300">
+        Pricing plans available for all features
+      </p>
+    </div>
   );
 } 
