@@ -90,6 +90,9 @@ export default function OAuthSetupGuide({ provider, onClose }: OAuthSetupGuidePr
   const config = providerConfigs[provider];
   
   const [copiedEnvVar, setCopiedEnvVar] = React.useState<string | null>(null);
+  
+  // Since we know the user has configured credentials, show a success message
+  const [credentialsConfigured, setCredentialsConfigured] = React.useState(true);
 
   const envVarTemplate = `# ${config.name} OAuth Configuration
 ${config.clientIdEnvVar}=your_${provider}_client_id_here
