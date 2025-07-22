@@ -83,7 +83,19 @@ export default function IntegrationSetupModal({
   }, [isOpen, provider]);
 
   const handleConnect = async () => {
-    if (!provider || !user) return;
+    console.log('[DEBUG] Connect button clicked for provider:', provider);
+    console.log('[DEBUG] User object:', user);
+    
+    if (!provider) {
+      console.log('[DEBUG] No provider specified');
+      return;
+    }
+    
+    if (!user) {
+      console.log('[DEBUG] No user logged in');
+      setError('Please log in to connect integrations');
+      return;
+    }
 
     try {
       setStep('connecting');
