@@ -81,19 +81,52 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
   const fetchIntegrations = async () => {
     try {
       setLoading(true);
+      console.log('[DEBUG] Starting to fetch integrations...');
       
-      // Fetch both traditional and OAuth integrations
-      const [traditionalIntegrations, oauthIntegrations, syncStatsData, logs] = await Promise.all([
-        integrationManager.getIntegrations(),
-        unifiedIntegrationService.getConnectedIntegrations(),
-        unifiedIntegrationService.getSyncStats(),
-        unifiedIntegrationService.getIntegrationLogs(undefined, 50)
-      ]);
+      // Fetch each integration type with individual error handling
+      let traditionalIntegrations = [];
+      let oauthIntegrations = [];
+      let syncStatsData = {};
+      let logs = [];
+      
+      try {
+        console.log('[DEBUG] Fetching traditional integrations...');
+        traditionalIntegrations = await integrationManager.getIntegrations();
+        console.log('[DEBUG] Traditional integrations loaded:', traditionalIntegrations.length);
+      } catch (error) {
+        console.error('Error fetching traditional integrations:', error);
+      }
+      
+      try {
+        console.log('[DEBUG] Fetching OAuth connected integrations...');
+        oauthIntegrations = await unifiedIntegrationService.getConnectedIntegrations();
+        console.log('[DEBUG] OAuth integrations loaded:', oauthIntegrations.length);
+      } catch (error) {
+        console.error('Error getting connected integrations:', error);
+      }
+      
+      try {
+        console.log('[DEBUG] Fetching sync stats...');
+        syncStatsData = await unifiedIntegrationService.getSyncStats();
+        console.log('[DEBUG] Sync stats loaded');
+      } catch (error) {
+        console.error('Error fetching sync stats:', error);
+      }
+      
+      try {
+        console.log('[DEBUG] Fetching integration logs...');
+        logs = await unifiedIntegrationService.getIntegrationLogs(undefined, 50);
+        console.log('[DEBUG] Integration logs loaded:', logs.length);
+      } catch (error) {
+        console.error('Error getting integration logs:', error);
+      }
       
       setIntegrations(traditionalIntegrations);
       setOauthIntegrations(oauthIntegrations);
       setSyncStats(syncStatsData);
       setIntegrationLogs(logs);
+      
+      console.log('[DEBUG] All integrations fetched successfully');
     } catch (error) {
       console.error('Error fetching integrations:', error);
     } finally {
