@@ -99,24 +99,30 @@ export default function IntegrationManager({ onCreateNew, onEditIntegration }: I
       
       try {
         console.log('[DEBUG] Fetching OAuth connected integrations...');
-        oauthIntegrations = await unifiedIntegrationService.getConnectedIntegrations();
-        console.log('[DEBUG] OAuth integrations loaded:', oauthIntegrations.length);
+        // Temporarily disable to avoid 406 errors
+        // oauthIntegrations = await unifiedIntegrationService.getConnectedIntegrations();
+        oauthIntegrations = []; // Empty array to prevent errors
+        console.log('[DEBUG] OAuth integrations loaded (temporarily disabled):', oauthIntegrations.length);
       } catch (error) {
         console.error('Error getting connected integrations:', error);
       }
       
       try {
         console.log('[DEBUG] Fetching sync stats...');
-        syncStatsData = await unifiedIntegrationService.getSyncStats();
-        console.log('[DEBUG] Sync stats loaded');
+        // Temporarily disable to avoid database errors
+        // syncStatsData = await unifiedIntegrationService.getSyncStats();
+        syncStatsData = {}; // Empty object to prevent errors
+        console.log('[DEBUG] Sync stats loaded (temporarily disabled)');
       } catch (error) {
         console.error('Error fetching sync stats:', error);
       }
       
       try {
         console.log('[DEBUG] Fetching integration logs...');
-        logs = await unifiedIntegrationService.getIntegrationLogs(undefined, 50);
-        console.log('[DEBUG] Integration logs loaded:', logs.length);
+        // Temporarily disable to avoid database errors
+        // logs = await unifiedIntegrationService.getIntegrationLogs(undefined, 50);
+        logs = []; // Empty array to prevent errors
+        console.log('[DEBUG] Integration logs loaded (temporarily disabled):', logs.length);
       } catch (error) {
         console.error('Error getting integration logs:', error);
       }

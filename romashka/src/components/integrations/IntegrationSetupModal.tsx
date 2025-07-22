@@ -190,10 +190,10 @@ export default function IntegrationSetupModal({
 
   if (!isOpen || !config) return null;
 
-  // Show setup guide if OAuth credentials are missing
-  if (showSetupGuide) {
-    return <OAuthSetupGuide provider={provider!} onClose={() => setShowSetupGuide(false)} />;
-  }
+  // Temporarily disable setup guide - proceed directly to OAuth
+  // if (showSetupGuide) {
+  //   return <OAuthSetupGuide provider={provider!} onClose={() => setShowSetupGuide(false)} />;
+  // }
 
   return (
     <AnimatePresence>
