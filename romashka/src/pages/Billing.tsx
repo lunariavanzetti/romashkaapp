@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Typography, Paper, Grid, Button, LinearProgress, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Button, Badge, Card, CardContent, Progress } from '../components/ui';
+import { Download } from 'lucide-react';
 import { PaddleService } from '../services/paddleService';
 
 const currentPlan = {
@@ -20,57 +21,104 @@ const invoices = [
 export default function Billing() {
   const usagePercent = Math.round((currentPlan.used / currentPlan.conversations) * 100);
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" fontWeight={700} mb={3}>Billing & Subscription</Typography>
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
-        {/* Temporarily commented out for build fix
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" mb={1}>Current Plan</Typography>
-            <Chip label={currentPlan.name} color="primary" sx={{ mb: 1 }} />
-            <Typography variant="body2" mb={1}>${currentPlan.price}/mo • {currentPlan.conversations} conversations/mo</Typography>
-            <Typography variant="body2" mb={1}>Renews: {currentPlan.renews}</Typography>
-            <Box sx={{ mb: 2 }}>
-              {currentPlan.features.map(f => <Chip key={f} label={f} size="small" sx={{ mr: 0.5, mb: 0.5 }} />)}
-            </Box>
-            <Button variant="contained" color="primary" sx={{ mr: 2 }} onClick={() => PaddleService.openCheckout('professional')}>Upgrade</Button>
-            <Button variant="outlined" color="secondary" onClick={() => PaddleService.openCheckout('free')}>Downgrade</Button>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" mb={1}>Usage</Typography>
-            <Typography variant="body2" mb={1}>{currentPlan.used} / {currentPlan.conversations} conversations used</Typography>
-            <LinearProgress variant="determinate" value={usagePercent} sx={{ height: 10, borderRadius: 5, mb: 1 }} />
-            {usagePercent > 90 && <Typography color="error">You are nearing your conversation limit!</Typography>}
-            <Button variant="text" color="primary" sx={{ mt: 2 }} onClick={() => PaddleService.openCustomerPortal('user@email.com')}>Manage Payment Methods</Button>
-          </Grid>
-        </Grid>
-        */}
-      </Paper>
-      <Paper sx={{ p: 3, borderRadius: 3 }}>
-        <Typography variant="h6" mb={2}>Invoice History</Typography>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Download</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {invoices.map(inv => (
-                <TableRow key={inv.id}>
-                  <TableCell>{inv.date}</TableCell>
-                  <TableCell>{inv.amount}</TableCell>
-                  <TableCell>{inv.status}</TableCell>
-                  <TableCell><Button href={inv.url} target="_blank" size="small">Download</Button></TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-    </Box>
+    <div className="p-6 max-w-7xl mx-auto">
+      <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-6">Billing & Subscription</h1>
+      
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Current Plan */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Current Plan</h3>
+              <Badge variant="secondary" className="mb-2">{currentPlan.name}</Badge>
+              <p className="text-gray-600 dark:text-gray-300 mb-2">
+                ${currentPlan.price}/mo • {currentPlan.conversations} conversations/mo
+              </p>
+              <p className="text-gray-600 dark:text-gray-300 mb-3">Renews: {currentPlan.renews}</p>
+              
+              <div className="flex flex-wrap gap-2 mb-4">
+                {currentPlan.features.map(f => (
+                  <Badge key={f} variant="outline" className="text-xs">{f}</Badge>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="primary" 
+                  onClick={() => PaddleService.openCheckout('professional')}
+                >
+                  Upgrade
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => PaddleService.openCheckout('free')}
+                >
+                  Downgrade
+                </Button>
+              </div>
+            </div>
+
+            {/* Usage */}
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Usage</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-2">
+                {currentPlan.used} / {currentPlan.conversations} conversations used
+              </p>
+              <Progress value={usagePercent} className="mb-2" />
+              {usagePercent > 90 && (
+                <p className="text-red-600 text-sm">You are nearing your conversation limit!</p>
+              )}
+              <Button 
+                variant="ghost" 
+                className="mt-4"
+                onClick={() => PaddleService.openCustomerPortal('user@email.com')}
+              >
+                Manage Payment Methods
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Invoice History */}
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Invoice History</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="pb-3 text-sm font-medium text-gray-600 dark:text-gray-300">Date</th>
+                  <th className="pb-3 text-sm font-medium text-gray-600 dark:text-gray-300">Amount</th>
+                  <th className="pb-3 text-sm font-medium text-gray-600 dark:text-gray-300">Status</th>
+                  <th className="pb-3 text-sm font-medium text-gray-600 dark:text-gray-300">Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map(inv => (
+                  <tr key={inv.id} className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="py-3 text-gray-900 dark:text-white">{inv.date}</td>
+                    <td className="py-3 text-gray-900 dark:text-white">{inv.amount}</td>
+                    <td className="py-3">
+                      <Badge variant={inv.status === 'Paid' ? 'default' : 'secondary'}>
+                        {inv.status}
+                      </Badge>
+                    </td>
+                    <td className="py-3">
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={inv.url} target="_blank" rel="noopener noreferrer">
+                          <Download className="w-4 h-4 mr-1" />
+                          Download
+                        </a>
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 } 
