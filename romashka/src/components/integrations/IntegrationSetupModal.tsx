@@ -167,22 +167,36 @@ export default function IntegrationSetupModal({
 
       console.log('[DEBUG] Popup opened successfully');
 
-      // Listen for popup closure or message
+      // Listen for messages from popup window
+      const handleMessage = (event: MessageEvent) => {
+        console.log('[DEBUG] Received message from popup:', event.data);
+        
+        if (event.data.type === `${provider.toUpperCase()}_OAUTH_SUCCESS`) {
+          console.log('[DEBUG] OAuth success message received');
+          window.removeEventListener('message', handleMessage);
+          setStep('success');
+          setTimeout(() => {
+            onSuccess();
+            handleClose();
+          }, 2000);
+        } else if (event.data.type === `${provider.toUpperCase()}_OAUTH_ERROR`) {
+          console.log('[DEBUG] OAuth error message received:', event.data.error);
+          window.removeEventListener('message', handleMessage);
+          setError(event.data.error || 'OAuth connection failed');
+          setStep('error');
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+
+      // Also check for popup closure (fallback)
       const checkClosed = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkClosed);
-          // Check if integration was successful by listening for URL params
-          const urlParams = new URLSearchParams(window.location.search);
-          if (urlParams.get('success') === 'connected' && urlParams.get('provider') === provider) {
-            setStep('success');
-            setTimeout(() => {
-              onSuccess();
-              handleClose();
-            }, 2000);
-          } else if (urlParams.get('error')) {
-            setError(urlParams.get('details') || 'OAuth connection failed');
-            setStep('error');
-          } else {
+          window.removeEventListener('message', handleMessage);
+          // If we reach here without receiving a message, user likely cancelled
+          if (step === 'connecting') {
+            console.log('[DEBUG] Popup closed without OAuth completion');
             setStep('info'); // User closed popup without completing
           }
         }

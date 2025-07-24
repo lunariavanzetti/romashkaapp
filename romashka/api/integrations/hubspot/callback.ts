@@ -133,11 +133,89 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
-    // Redirect to success page
-    return res.redirect(`${process.env.FRONTEND_URL}/integrations?success=connected&provider=hubspot&portal=${tokenInfo.hub_id}`);
+    // Return HTML page that posts message to parent window and closes popup
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>HubSpot Connected</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .success { color: #10b981; }
+            .loading { color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <div class="success">
+            <h2>✅ HubSpot Connected Successfully!</h2>
+            <p class="loading">Closing window...</p>
+          </div>
+          <script>
+            try {
+              // Post success message to parent window
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'HUBSPOT_OAUTH_SUCCESS',
+                  provider: 'hubspot',
+                  portal_id: '${tokenInfo.hub_id}',
+                  hub_domain: '${tokenInfo.hub_domain}'
+                }, '*');
+              }
+            } catch (error) {
+              console.error('Error posting message to parent:', error);
+            }
+            
+            // Close popup after a short delay
+            setTimeout(() => {
+              window.close();
+            }, 1500);
+          </script>
+        </body>
+      </html>
+    `);
 
   } catch (error) {
     console.error('HubSpot OAuth callback error:', error);
-    return res.redirect(`${process.env.FRONTEND_URL}/integrations?error=callback_failed&provider=hubspot`);
+    
+    // Return error HTML page that posts message to parent window
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>HubSpot Connection Error</title>
+          <style>
+            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+            .error { color: #ef4444; }
+            .loading { color: #6b7280; }
+          </style>
+        </head>
+        <body>
+          <div class="error">
+            <h2>❌ HubSpot Connection Failed</h2>
+            <p>${error instanceof Error ? error.message : 'Unknown error occurred'}</p>
+            <p class="loading">Closing window...</p>
+          </div>
+          <script>
+            try {
+              // Post error message to parent window
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'HUBSPOT_OAUTH_ERROR',
+                  provider: 'hubspot',
+                  error: '${error instanceof Error ? error.message.replace(/'/g, "\\'") : 'Connection failed'}'
+                }, '*');
+              }
+            } catch (error) {
+              console.error('Error posting message to parent:', error);
+            }
+            
+            // Close popup after a short delay
+            setTimeout(() => {
+              window.close();
+            }, 2000);
+          </script>
+        </body>
+      </html>
+    `);
   }
 }
