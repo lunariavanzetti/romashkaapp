@@ -1,0 +1,305 @@
+import sgMail from '@sendgrid/mail';
+
+interface EmailOptions {
+  to: string | string[];
+  from?: string;
+  subject: string;
+  text?: string;
+  html?: string;
+  template_id?: string;
+  dynamic_template_data?: any;
+  attachments?: Array<{
+    content: string;
+    filename: string;
+    type?: string;
+    disposition?: string;
+  }>;
+}
+
+class EmailService {
+  private initialized = false;
+
+  constructor() {
+    this.initialize();
+  }
+
+  private initialize(): void {
+    const apiKey = process.env.SENDGRID_API_KEY;
+    if (!apiKey) {
+      console.warn('SendGrid API key not found. Email functionality will be disabled.');
+      return;
+    }
+
+    sgMail.setApiKey(apiKey);
+    this.initialized = true;
+  }
+
+  async sendEmail(options: EmailOptions): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Email service not initialized. Please check your SendGrid API key.');
+    }
+
+    const {
+      to,
+      from = process.env.DEFAULT_FROM_EMAIL || 'noreply@romashka.com',
+      subject,
+      text,
+      html,
+      template_id,
+      dynamic_template_data,
+      attachments
+    } = options;
+
+    try {
+      const msg: any = {
+        to,
+        from,
+        subject,
+        text,
+        html,
+        attachments
+      };
+
+      // Use dynamic template if provided
+      if (template_id) {
+        msg.templateId = template_id;
+        msg.dynamicTemplateData = dynamic_template_data || {};
+        // Remove text/html when using templates
+        delete msg.text;
+        delete msg.html;
+      }
+
+      await sgMail.send(msg);
+      console.log(`Email sent successfully to ${Array.isArray(to) ? to.join(', ') : to}`);
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  }
+
+  async sendBulkEmail(emails: EmailOptions[]): Promise<void> {
+    if (!this.initialized) {
+      throw new Error('Email service not initialized. Please check your SendGrid API key.');
+    }
+
+    try {
+      const messages = emails.map(email => ({
+        to: email.to,
+        from: email.from || process.env.DEFAULT_FROM_EMAIL || 'noreply@romashka.com',
+        subject: email.subject,
+        text: email.text,
+        html: email.html,
+        templateId: email.template_id,
+        dynamicTemplateData: email.dynamic_template_data,
+        attachments: email.attachments
+      }));
+
+      await sgMail.send(messages);
+      console.log(`Bulk email sent successfully to ${emails.length} recipients`);
+    } catch (error) {
+      console.error('Error sending bulk email:', error);
+      throw error;
+    }
+  }
+
+  async sendTemplateEmail(
+    to: string | string[],
+    templateId: string,
+    dynamicData: any,
+    from?: string
+  ): Promise<void> {
+    return this.sendEmail({
+      to,
+      from,
+      subject: '', // Will be set by template
+      template_id: templateId,
+      dynamic_template_data: dynamicData
+    });
+  }
+
+  // Pre-defined email templates for common workflow scenarios
+  async sendEscalationEmail(
+    to: string,
+    customerInfo: any,
+    issueDetails: any
+  ): Promise<void> {
+    const subject = `Escalation Required: ${issueDetails.title || 'Customer Issue'}`;
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #d32f2f;">Escalation Required</h2>
+        
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>Customer Information</h3>
+          <p><strong>Name:</strong> ${customerInfo.name || 'N/A'}</p>
+          <p><strong>Email:</strong> ${customerInfo.email || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${customerInfo.phone || 'N/A'}</p>
+          <p><strong>Tier:</strong> ${customerInfo.tier || 'N/A'}</p>
+        </div>
+
+        <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>Issue Details</h3>
+          <p><strong>Priority:</strong> ${issueDetails.priority || 'Medium'}</p>
+          <p><strong>Category:</strong> ${issueDetails.category || 'General'}</p>
+          <p><strong>Description:</strong></p>
+          <p>${issueDetails.description || 'No description provided'}</p>
+          
+          ${issueDetails.sentiment_score ? `
+            <p><strong>Sentiment Score:</strong> ${issueDetails.sentiment_score}</p>
+          ` : ''}
+        </div>
+
+        <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>Recommended Actions</h3>
+          <ul>
+            <li>Contact customer within 15 minutes</li>
+            <li>Assign to appropriate specialist</li>
+            <li>Update customer on resolution timeline</li>
+            <li>Follow up within 24 hours</li>
+          </ul>
+        </div>
+
+        <p style="margin-top: 30px; font-size: 12px; color: #666;">
+          This escalation was automatically generated by the ROMASHKA workflow system.
+        </p>
+      </div>
+    `;
+
+    return this.sendEmail({
+      to,
+      subject,
+      html
+    });
+  }
+
+  async sendCustomerNotificationEmail(
+    to: string,
+    templateType: 'order_delay' | 'follow_up' | 'satisfaction_survey',
+    data: any
+  ): Promise<void> {
+    let subject: string;
+    let html: string;
+
+    switch (templateType) {
+      case 'order_delay':
+        subject = `Update on Your Order #${data.order_id}`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1976d2;">Order Update</h2>
+            
+            <p>Dear ${data.customer_name},</p>
+            
+            <p>We wanted to update you on your recent order #${data.order_id}.</p>
+            
+            <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p><strong>Status:</strong> ${data.status}</p>
+              <p><strong>Expected Delivery:</strong> ${data.expected_delivery}</p>
+              ${data.delay_reason ? `<p><strong>Reason for Delay:</strong> ${data.delay_reason}</p>` : ''}
+            </div>
+
+            ${data.compensation ? `
+              <div style="background: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>As an Apology</h3>
+                <p>We've applied a discount to your account: <strong>${data.compensation}</strong></p>
+                <p>Use code: <strong>${data.discount_code}</strong></p>
+              </div>
+            ` : ''}
+
+            <p>Thank you for your patience and continued business.</p>
+            
+            <p>Best regards,<br>The ROMASHKA Team</p>
+          </div>
+        `;
+        break;
+
+      case 'follow_up':
+        subject = `Following up on your recent inquiry`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1976d2;">Following Up</h2>
+            
+            <p>Dear ${data.customer_name},</p>
+            
+            <p>We wanted to follow up on your recent inquiry about ${data.topic}.</p>
+            
+            <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <p>Our team has been working on your request and we wanted to provide you with an update:</p>
+              <p>${data.update_message}</p>
+            </div>
+
+            <p>If you have any additional questions or concerns, please don't hesitate to reach out.</p>
+            
+            <p>Best regards,<br>The ROMASHKA Team</p>
+          </div>
+        `;
+        break;
+
+      case 'satisfaction_survey':
+        subject = `How was your experience with us?`;
+        html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1976d2;">We Value Your Feedback</h2>
+            
+            <p>Dear ${data.customer_name},</p>
+            
+            <p>Thank you for choosing ROMASHKA. We'd love to hear about your recent experience!</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${data.survey_url}" style="background: #1976d2; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block;">
+                Take 2-Minute Survey
+              </a>
+            </div>
+
+            <p>Your feedback helps us improve our service and better serve customers like you.</p>
+            
+            <p>Best regards,<br>The ROMASHKA Team</p>
+          </div>
+        `;
+        break;
+
+      default:
+        throw new Error(`Unknown template type: ${templateType}`);
+    }
+
+    return this.sendEmail({
+      to,
+      subject,
+      html
+    });
+  }
+
+  // Utility method to validate email addresses
+  isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  // Method to get email delivery statistics (if needed for analytics)
+  async getDeliveryStats(startDate: Date, endDate: Date): Promise<any> {
+    // This would require SendGrid's Event Webhook or Stats API
+    // Implementation depends on specific requirements
+    console.log('Email delivery stats requested for:', { startDate, endDate });
+    return {
+      delivered: 0,
+      bounced: 0,
+      opened: 0,
+      clicked: 0
+    };
+  }
+}
+
+// Export singleton instance
+const emailService = new EmailService();
+
+// Export the main function for workflow engine
+export const sendEmail = (options: EmailOptions) => emailService.sendEmail(options);
+
+// Export other utility functions
+export const sendBulkEmail = (emails: EmailOptions[]) => emailService.sendBulkEmail(emails);
+export const sendTemplateEmail = (to: string | string[], templateId: string, dynamicData: any, from?: string) => 
+  emailService.sendTemplateEmail(to, templateId, dynamicData, from);
+export const sendEscalationEmail = (to: string, customerInfo: any, issueDetails: any) =>
+  emailService.sendEscalationEmail(to, customerInfo, issueDetails);
+export const sendCustomerNotificationEmail = (to: string, templateType: 'order_delay' | 'follow_up' | 'satisfaction_survey', data: any) =>
+  emailService.sendCustomerNotificationEmail(to, templateType, data);
+
+export default emailService;

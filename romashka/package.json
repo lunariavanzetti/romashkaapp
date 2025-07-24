@@ -33,6 +33,7 @@
     "@types/d3": "^7.4.3",
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.12",
+    "@xyflow/react": "^12.8.2",
     "braces": "^3.0.3",
     "chart.js": "^4.5.0",
     "clsx": "^2.1.1",
