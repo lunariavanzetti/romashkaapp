@@ -24,10 +24,16 @@ const analyticsRoutes = [
     description: 'Overview and key metrics'
   },
   {
+    path: '/analytics/integrations',
+    label: 'Integration Analytics',
+    icon: TrendingUp,
+    description: 'AI-integration performance and business impact'
+  },
+  {
     path: '/analytics/real-time',
     label: 'Real-time Analytics',
     icon: Activity,
-    description: 'Live conversation monitoring'
+    description: 'Live conversation and integration monitoring'
   },
   {
     path: '/analytics/reporting',
