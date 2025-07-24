@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { ConversationMonitoringService } from '../services/conversationMonitoringService';
 import { knowledgeMatchingService } from '../services/ai/knowledgeMatchingService';
+import { integrationQueryService } from '../services/ai/integrationQueryService';
+import { promptEnhancementService } from '../services/ai/promptEnhancementService';
 
 export interface ChatMessage {
   id: string;
@@ -386,7 +388,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
     }
   }, [conversationId, onError]);
 
-  // Generate AI response using knowledge matching service
+  // Generate AI response using knowledge matching service with integration context
   const generateAIResponse = useCallback(async (userMessage: string, convId: string) => {
     if (!agentConfig || !convId) return;
 
@@ -402,22 +404,87 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
         }]
       }));
 
-      // Get AI response using knowledge matching service
-      const response = await knowledgeMatchingService.findAnswer({
-        question: userMessage,
-        knowledgeBase: agentConfig.knowledgeBase,
-        agentTone: agentConfig.tone,
-        businessType: agentConfig.businessType
+      // Get current user ID for integration context
+      const { data: { user } } = await supabase!.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Analyze message for integration context
+      const integrationContext = await integrationQueryService.analyzeAndFetchContext(
+        userMessage, 
+        user.id, 
+        convId
+      );
+
+      console.log('🔗 Integration context loaded:', {
+        hasIntegrations: integrationContext.hasIntegrations,
+        providers: integrationContext.availableProviders,
+        summary: integrationContext.summary
       });
 
-      let aiResponseContent = response.answer || "I don't have that information available. Would you like me to connect you with a human agent?";
+      let response;
+      let aiResponseContent;
+      let responseMetadata: any = {
+        agent_id: 'ai_agent',
+        has_integration_data: integrationContext.hasIntegrations
+      };
+
+      // If we have integration context, use enhanced prompts
+      if (integrationContext.hasIntegrations && integrationContext.relevantData) {
+        console.log('🚀 Using enhanced AI prompts with integration data');
+        
+        // Enhance prompts with integration context
+        const enhancedPrompts = promptEnhancementService.enhancePromptWithIntegrations({
+          userMessage,
+          originalKnowledgeBase: agentConfig.knowledgeBase,
+          integrationContext,
+          agentTone: agentConfig.tone,
+          businessType: agentConfig.businessType,
+          userId: user.id
+        });
+
+        // Use enhanced prompts for AI response
+        response = await knowledgeMatchingService.findAnswerWithCustomPrompts({
+          systemPrompt: enhancedPrompts.enhancedSystemPrompt,
+          userPrompt: enhancedPrompts.enhancedUserPrompt
+        });
+
+        responseMetadata = {
+          ...responseMetadata,
+          confidence: response.confidence,
+          sources: response.sources,
+          integration_context: integrationContext.summary,
+          query_intent: integrationContext.queryIntent?.type,
+          providers_used: integrationContext.availableProviders
+        };
+
+        aiResponseContent = response.answer || "I don't have that information available. Would you like me to connect you with a human agent?";
+        
+      } else {
+        console.log('📚 Using standard knowledge base response');
+        
+        // Use standard knowledge matching service
+        response = await knowledgeMatchingService.findAnswer({
+          question: userMessage,
+          knowledgeBase: agentConfig.knowledgeBase,
+          agentTone: agentConfig.tone,
+          businessType: agentConfig.businessType
+        });
+
+        responseMetadata = {
+          ...responseMetadata,
+          confidence: response.confidence,
+          sources: response.sources
+        };
+
+        aiResponseContent = response.answer || "I don't have that information available. Would you like me to connect you with a human agent?";
+      }
       
       // Apply advanced settings
       if (agentConfig.advancedSettings?.limitResponseLength && aiResponseContent.length > 500) {
         aiResponseContent = aiResponseContent.substring(0, 497) + '...';
       }
 
-      // Insert AI response
+      // Insert AI response with enhanced metadata
       const { data: aiMessage, error } = await supabase
         .from('messages')
         .insert([{
@@ -425,11 +492,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
           sender_type: 'ai',
           content: aiResponseContent,
           message_type: 'text',
-          metadata: {
-            agent_id: 'ai_agent',
-            confidence: response.confidence,
-            sources: response.sources
-          },
+          metadata: responseMetadata,
           status: 'sent'
         }])
         .select()
@@ -437,13 +500,33 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
 
       if (error) throw error;
 
-      // Track AI response
+      // Track AI response with integration context
       if (enableAnalytics) {
         await ConversationMonitoringService.recordAIResponse(convId, Date.now(), true);
       }
 
     } catch (err) {
       console.error('Failed to generate AI response:', err);
+      
+      // Fallback response on error
+      try {
+        await supabase
+          .from('messages')
+          .insert([{
+            conversation_id: convId,
+            sender_type: 'ai',
+            content: "I'm having trouble accessing information right now. Let me connect you with a human agent who can help.",
+            message_type: 'text',
+            metadata: {
+              agent_id: 'ai_agent',
+              error: true,
+              fallback_response: true
+            },
+            status: 'sent'
+          }]);
+      } catch (fallbackError) {
+        console.error('Failed to send fallback response:', fallbackError);
+      }
     } finally {
       // Hide typing indicator
       setState(prev => ({
