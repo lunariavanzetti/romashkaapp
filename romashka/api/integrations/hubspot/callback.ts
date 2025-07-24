@@ -36,9 +36,9 @@ module.exports = async function handler(req, res) {
     
     const body = new URLSearchParams({
       grant_type: 'authorization_code',
-      client_id: process.env.HUBSPOT_CLIENT_ID!,
-      client_secret: process.env.HUBSPOT_CLIENT_SECRET!,
-      redirect_uri: `${process.env.VERCEL_URL || process.env.FRONTEND_URL}/api/integrations/hubspot/callback`,
+      client_id: process.env.HUBSPOT_CLIENT_ID,
+      client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+      redirect_uri: 'https://romashkaai.vercel.app/api/integrations/hubspot/callback',
       code: typeof code === 'string' ? code : '',
     });
 

@@ -606,7 +606,7 @@ const hubspotConfig: HubSpotConfig = {
   clientId: import.meta.env.VITE_HUBSPOT_CLIENT_ID || '',
   clientSecret: import.meta.env.VITE_HUBSPOT_CLIENT_SECRET || '',
   scopes: ['crm.objects.contacts.read', 'crm.objects.contacts.write', 'crm.objects.companies.read', 'crm.objects.deals.read'],
-  redirectUri: `${import.meta.env.VITE_APP_URL || 'https://romashkaai.vercel.app'}/api/integrations/hubspot/callback`,
+  redirectUri: 'https://romashkaai.vercel.app/api/integrations/hubspot/callback',
 };
 
 export const hubspotService = new HubSpotIntegrationService(hubspotConfig);
