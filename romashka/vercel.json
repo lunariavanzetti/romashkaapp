@@ -5,6 +5,9 @@
     { "src": "api/**/*.ts", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "/api/integrations/hubspot/callback", "dest": "/api/integrations/hubspot/callback.ts" },
+    { "src": "/api/integrations/salesforce/callback", "dest": "/api/integrations/salesforce/callback.ts" },
+    { "src": "/api/integrations/shopify/callback", "dest": "/api/integrations/shopify/callback.ts" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/assets/(.*)", "dest": "/assets/$1" },
     { "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))", "dest": "/$1" },
