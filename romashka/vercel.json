@@ -1,62 +1,13 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } },
-    { "src": "api/**/*.ts", "use": "@vercel/node" }
-  ],
-  "headers": [
-    {
-      "source": "/widget.js",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
-        }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        },
-        {
-          "key": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Cache-Bust",
-          "value": "v2.0.4-20250721-oauth-fix"
-        }
-      ]
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node"
     }
-  ],
+  },
   "rewrites": [
-    { "source": "/((?!api).*))", "destination": "/index.html" }
-  ],
-  "env": {
-    "SUPABASE_URL": "",
-    "SUPABASE_KEY": "",
-    "OPENAI_API_KEY": "",
-    "PADDLE_VENDOR_ID": "",
-    "PADDLE_API_KEY": ""
-  }
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
 } 
