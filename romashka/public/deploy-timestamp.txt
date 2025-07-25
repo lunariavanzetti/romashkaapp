@@ -1,3 +1,3 @@
-Deployment triggered at: 2025-07-21T17:45:00Z
-Version: 0.5.4
-Feature: Bypass API endpoint issue - enable direct OAuth integration flow for configured credentials
+Deployment triggered at: 2025-01-25T02:15:00Z
+Version: 0.5.5
+Feature: Updated HubSpot credentials to match developer portal - fixing 401 errors
