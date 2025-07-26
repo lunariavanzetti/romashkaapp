@@ -329,13 +329,8 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
           .from('conversations')
           .upsert([{
             id: conversationId,
-            workflow_id: 'default-workflow',
-            status: 'active',
-            metadata: {
-              agent_config: agentConfig,
-              user_id: userId,
-              started_at: new Date().toISOString()
-            }
+            status: 'active'
+            // Note: metadata and workflow_id not available in current schema
           }], {
             onConflict: 'id'
           });
@@ -354,8 +349,8 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
           sender_type: 'user',
           content,
           message_type: messageType,
-          metadata,
           status: 'sent'
+          // Note: metadata not available in current schema
         }])
         .select()
         .single();
@@ -453,13 +448,8 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
           sender_type: 'ai',
           content: aiResponseContent,
           message_type: 'text',
-          metadata: {
-            agent_id: 'ai_agent',
-            integration_bridge_enabled: !!currentUser,
-            user_id: currentUser?.id,
-            model: 'gpt-4o-mini'
-          },
           status: 'sent'
+          // Note: metadata not available in current schema
         }])
         .select()
         .single();
@@ -491,14 +481,8 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
         .from('conversations')
         .insert([
           {
-            workflow_id: 'default-workflow',
-            status: 'active',
-            metadata: {
-              agent_config: agentConfig,
-              started_at: new Date().toISOString(),
-              platform: 'widget',
-              user_id: userId
-            }
+            status: 'active'
+            // Note: metadata and workflow_id not available in current schema
           }
         ])
         .select()

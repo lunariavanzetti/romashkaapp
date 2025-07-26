@@ -265,8 +265,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         // Send message with attachments if any
         await sendMessage(
           messageContent || '📎 File attachment',
-          'text',
-          uploadedFiles.length > 0 ? { attachments: uploadedFiles } : undefined
+          'text'
+          // Note: metadata/attachments not supported in current schema
         );
 
         // Record user activity for analytics
@@ -490,17 +490,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                         >
                           <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                           
-                          {/* Attachments */}
-                          {message.metadata?.attachments && message.metadata.attachments.length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {message.metadata.attachments.map((attachment: any, index: number) => (
-                                <div key={index} className="flex items-center space-x-1 text-xs opacity-75">
-                                  <PaperClipIcon className="w-3 h-3" />
-                                  <span>{attachment.name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                          {/* Attachments - Not available in current schema */}
                         </div>
                         
                         {/* Message status and timestamp */}
