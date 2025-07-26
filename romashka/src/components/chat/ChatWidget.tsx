@@ -121,7 +121,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     onError: (error) => {
       console.error('Chat error:', error);
       // Enable simple mode if there are persistent errors
-      setIsSimpleMode(true);
+      setTimeout(() => setIsSimpleMode(true), 1000);
     },
     autoMarkAsRead: true,
     enableFileUpload: enableFileUpload,
@@ -583,7 +583,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                         placeholder="Type your message..."
                         className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-opacity-50 resize-none"
                         style={{ focusRingColor: primaryColor }}
-                        disabled={!isConnected}
+                        disabled={false}
                       />
 
                       {/* Emoji Button */}
