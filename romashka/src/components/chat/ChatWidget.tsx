@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useRealTimeChat, type ChatMessage } from '../../hooks/useRealTimeChat';
 import { ConversationMonitoringService } from '../../services/conversationMonitoringService';
+import { supabase } from '../../services/supabaseClient';
 
 interface ChatWidgetProps {
   agentName?: string;
@@ -49,13 +50,35 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [conversationId] = useState(`conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-  const [userId] = useState(`user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const [conversationId] = useState(() => {
+    // Generate a proper UUID for conversation ID
+    return crypto.randomUUID();
+  });
+  const [userId, setUserId] = useState(() => crypto.randomUUID());
+  
+  // Get authenticated user ID if available
+  useEffect(() => {
+    const getAuthUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          setUserId(user.id);
+        }
+      } catch (error) {
+        console.warn('Could not get authenticated user for chat:', error);
+      }
+    };
+    getAuthUser();
+  }, []);
   const [showWelcome, setShowWelcome] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Add simplified chat state for fallback
+  const [simpleMessages, setSimpleMessages] = useState<ChatMessage[]>([]);
+  const [isSimpleMode, setIsSimpleMode] = useState(false);
 
   // Use the enhanced real-time chat hook
   const {
@@ -97,6 +120,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     },
     onError: (error) => {
       console.error('Chat error:', error);
+      // Enable simple mode if there are persistent errors
+      setIsSimpleMode(true);
     },
     autoMarkAsRead: true,
     enableFileUpload: enableFileUpload,
@@ -106,22 +131,91 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, simpleMessages]);
+
+  // Simple mode message sender
+  const sendSimpleMessage = useCallback(async (content: string) => {
+    const newMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      conversation_id: conversationId,
+      sender_type: 'user',
+      content,
+      message_type: 'text',
+      status: 'sent',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    setSimpleMessages(prev => [...prev, newMessage]);
+    
+    // Try to get AI response using the enhanced service
+    setTimeout(async () => {
+      let aiContent = "I'm having trouble connecting to the database right now, but I'm here to help! Please try refreshing the page or check back in a moment.";
+      
+      try {
+        // Try to use the enhanced AI service even in simple mode
+        const { aiService } = await import('../../services/aiService');
+        
+        // Get current user for integration bridge
+        let currentUser = null;
+        try {
+          const { data: { user: sessionUser } } = await supabase.auth.getUser();
+          currentUser = sessionUser;
+        } catch (error) {
+          console.warn('Could not get user for simple mode AI:', error);
+        }
+        
+        const response = await aiService.generateResponse(content, [], 'en', currentUser);
+        if (response) {
+          aiContent = response;
+        }
+      } catch (error) {
+        console.warn('Could not get AI response in simple mode:', error);
+      }
+      
+      const aiResponse: ChatMessage = {
+        id: crypto.randomUUID(),
+        conversation_id: conversationId,
+        sender_type: 'ai',
+        content: aiContent,
+        message_type: 'text',
+        status: 'sent',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      setSimpleMessages(prev => [...prev, aiResponse]);
+    }, 1000);
+  }, [conversationId]);
 
   // Send welcome message when chat opens for the first time
   useEffect(() => {
-    if (isOpen && showWelcome && messages.length === 0) {
+    const currentMessages = isSimpleMode ? simpleMessages : messages;
+    if (isOpen && showWelcome && currentMessages.length === 0) {
       const welcome = welcomeMessage || generateWelcomeMessage();
       setTimeout(async () => {
-        // Start conversation first if needed
-        if (!conversationId) {
-          await startConversation();
+        if (isSimpleMode) {
+          const welcomeMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            conversation_id: conversationId,
+            sender_type: 'ai',
+            content: welcome,
+            message_type: 'text',
+            status: 'sent',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          setSimpleMessages([welcomeMsg]);
+        } else {
+          // Start conversation first if needed
+          if (!conversationId) {
+            await startConversation();
+          }
+          await sendMessage(welcome, 'text');
         }
-        await sendMessage(welcome, 'text');
         setShowWelcome(false);
       }, 500);
     }
-  }, [isOpen, showWelcome, messages.length, welcomeMessage, conversationId, startConversation, sendMessage]);
+  }, [isOpen, showWelcome, messages.length, simpleMessages.length, welcomeMessage, conversationId, startConversation, sendMessage, isSimpleMode, generateWelcomeMessage]);
 
   // Generate contextual welcome message
   const generateWelcomeMessage = useCallback(() => {
@@ -155,32 +249,37 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     setAttachments([]);
 
     try {
-      // Upload files first if any
-      const uploadedFiles = [];
-      for (const file of messageAttachments) {
-        if (enableFileUpload) {
-          const uploadedFile = await uploadFile(file);
-          uploadedFiles.push(uploadedFile);
+      if (isSimpleMode || error) {
+        // Use simple mode messaging
+        await sendSimpleMessage(messageContent);
+      } else {
+        // Upload files first if any
+        const uploadedFiles = [];
+        for (const file of messageAttachments) {
+          if (enableFileUpload) {
+            const uploadedFile = await uploadFile(file);
+            uploadedFiles.push(uploadedFile);
+          }
         }
+
+        // Send message with attachments if any
+        await sendMessage(
+          messageContent || '📎 File attachment',
+          'text',
+          uploadedFiles.length > 0 ? { attachments: uploadedFiles } : undefined
+        );
+
+        // Record user activity for analytics
+        await ConversationMonitoringService.recordAIResponse(conversationId, Date.now(), true);
       }
-
-      // Send message with attachments if any
-      await sendMessage(
-        messageContent || '📎 File attachment',
-        'text',
-        uploadedFiles.length > 0 ? { attachments: uploadedFiles } : undefined
-      );
-
-      // Record user activity for analytics
-      await ConversationMonitoringService.recordAIResponse(conversationId, Date.now(), true);
 
     } catch (error) {
       console.error('Error sending message:', error);
-      // Re-add the message content if sending failed
-      setInputValue(messageContent);
-      setAttachments(messageAttachments);
+      // Fall back to simple mode
+      setIsSimpleMode(true);
+      await sendSimpleMessage(messageContent);
     }
-  }, [inputValue, attachments, sendMessage, conversationId]);
+  }, [inputValue, attachments, sendMessage, conversationId, isSimpleMode, error, sendSimpleMessage, uploadFile, enableFileUpload]);
 
   // Handle typing indicator
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -373,7 +472,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                     </div>
                   )}
 
-                  {messages.map((message) => (
+                  {(isSimpleMode ? simpleMessages : messages).map((message) => (
                     <motion.div
                       key={message.id}
                       initial={{ opacity: 0, y: 10 }}
@@ -528,7 +627,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                     {/* Send Button */}
                     <button
                       onClick={handleSendMessage}
-                      disabled={(!inputValue.trim() && attachments.length === 0) || !isConnected}
+                      disabled={(!inputValue.trim() && attachments.length === 0)}
                       className="p-2 rounded-full text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
                       style={{ backgroundColor: primaryColor }}
                       aria-label="Send message"
