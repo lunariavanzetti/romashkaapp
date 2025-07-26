@@ -113,7 +113,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     },
     onMessageReceived: (message) => {
       // Play notification sound or show notification
-      if (message.sender !== 'user' && !isOpen) {
+      if (message.sender_type !== 'user' && !isOpen) {
         // Show notification badge or play sound
         console.log('New message received:', message);
       }
@@ -477,16 +477,16 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                       key={message.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[280px] ${message.sender === 'user' ? 'order-2' : 'order-1'}`}>
+                      <div className={`max-w-[280px] ${message.sender_type === 'user' ? 'order-2' : 'order-1'}`}>
                         <div
                           className={`px-4 py-2 rounded-2xl ${
-                            message.sender === 'user'
+                            message.sender_type === 'user'
                               ? 'text-white rounded-br-sm'
                               : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-bl-sm'
                           }`}
-                          style={message.sender === 'user' ? { backgroundColor: primaryColor } : {}}
+                          style={message.sender_type === 'user' ? { backgroundColor: primaryColor } : {}}
                         >
                           <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                           
@@ -505,10 +505,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                         
                         {/* Message status and timestamp */}
                         <div className={`flex items-center space-x-1 mt-1 text-xs text-gray-500 ${
-                          message.sender === 'user' ? 'justify-end' : 'justify-start'
+                          message.sender_type === 'user' ? 'justify-end' : 'justify-start'
                         }`}>
                           <span>{new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                          {message.sender === 'user' && getMessageStatusIcon(message)}
+                          {message.sender_type === 'user' && getMessageStatusIcon(message)}
                         </div>
                       </div>
                     </motion.div>

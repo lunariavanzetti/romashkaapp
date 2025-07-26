@@ -122,20 +122,30 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
 
         if (messagesError) throw messagesError;
 
-        // Load participants
-        const { data: participants, error: participantsError } = await supabase
-          .from('conversation_participants')
-          .select(`
-            id,
-            name,
-            email,
-            role,
-            is_online,
-            last_seen
-          `)
-          .eq('conversation_id', conversationId);
+        // Load participants (optional table)
+        let participants = [];
+        try {
+          const { data: participantsData, error: participantsError } = await supabase
+            .from('conversation_participants')
+            .select(`
+              id,
+              name,
+              email,
+              role,
+              is_online,
+              last_seen
+            `)
+            .eq('conversation_id', conversationId);
 
-        if (participantsError) throw participantsError;
+          if (participantsError && participantsError.code !== '42P01') {
+            // Ignore "relation does not exist" error (42P01), throw others
+            throw participantsError;
+          }
+          participants = participantsData || [];
+        } catch (error) {
+          console.warn('Conversation participants table not available:', error);
+          participants = [];
+        }
 
         if (mounted) {
           setState(prev => ({
@@ -250,34 +260,8 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
             }
           }
         )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'conversation_participants',
-            filter: `conversation_id=eq.${conversationId}`
-          },
-          (payload) => {
-            if (payload.eventType === 'UPDATE') {
-              const updatedParticipant = payload.new as ChatParticipant;
-              
-              setState(prev => {
-                const newParticipants = prev.participants.map(p =>
-                  p.id === updatedParticipant.id ? updatedParticipant : p
-                );
-                
-                // Call the callback with the new participants
-                onParticipantChange?.(newParticipants);
-                
-                return {
-                  ...prev,
-                  participants: newParticipants
-                };
-              });
-            }
-          }
-        )
+        // Optional: Subscribe to conversation_participants changes (only if table exists)
+        // This subscription is not critical for basic chat functionality
         .subscribe((status) => {
           if (mounted) {
             setState(prev => ({
