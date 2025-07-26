@@ -315,6 +315,37 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
     try {
       const startTime = Date.now();
 
+      // Ensure conversation exists before inserting message
+      const { data: existingConv, error: selectError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('id', conversationId)
+        .single();
+
+      if (!existingConv || selectError) {
+        // Create conversation if it doesn't exist
+        console.log('[useRealTimeChat] Creating conversation:', conversationId);
+        const { error: convError } = await supabase
+          .from('conversations')
+          .upsert([{
+            id: conversationId,
+            workflow_id: 'default-workflow',
+            status: 'active',
+            metadata: {
+              agent_config: agentConfig,
+              user_id: userId,
+              started_at: new Date().toISOString()
+            }
+          }], {
+            onConflict: 'id'
+          });
+
+        if (convError) {
+          console.error('[useRealTimeChat] Failed to create conversation:', convError);
+          throw convError;
+        }
+      }
+
       // Insert message to database
       const { data, error } = await supabase
         .from('messages')
@@ -460,11 +491,13 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
         .from('conversations')
         .insert([
           {
+            workflow_id: 'default-workflow',
             status: 'active',
             metadata: {
               agent_config: agentConfig,
               started_at: new Date().toISOString(),
-              platform: 'widget'
+              platform: 'widget',
+              user_id: userId
             }
           }
         ])
@@ -488,7 +521,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [agentConfig, enableAnalytics]);
+  }, [agentConfig, enableAnalytics, userId]);
 
   // File upload function
   const uploadFile = useCallback(async (file: File): Promise<string> => {
