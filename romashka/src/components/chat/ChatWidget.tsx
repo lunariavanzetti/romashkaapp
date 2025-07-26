@@ -215,7 +215,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         setShowWelcome(false);
       }, 500);
     }
-  }, [isOpen, showWelcome, messages.length, simpleMessages.length, welcomeMessage, conversationId, startConversation, sendMessage, isSimpleMode, generateWelcomeMessage]);
+  }, [isOpen, showWelcome, messages.length, simpleMessages.length, welcomeMessage, conversationId, startConversation, sendMessage, isSimpleMode]);
 
   // Generate contextual welcome message
   const generateWelcomeMessage = useCallback(() => {
