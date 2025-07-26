@@ -12,6 +12,7 @@
     { "src": "/api/integrations/refresh-token", "dest": "/api/integrations/refresh-token.ts" },
     { "src": "/api/integrations/sync-hubspot", "dest": "/api/integrations/sync-hubspot.ts" },
     { "src": "/api/test-debug", "dest": "/api/test-debug.ts" },
+    { "src": "/api/test-sync", "dest": "/api/test-sync.ts" },
     { "src": "/api/hello", "dest": "/api/hello.js" },
     { "src": "/api/sync/hubspot", "dest": "/api/sync/[provider].ts" },
     { "src": "/api/sync/salesforce", "dest": "/api/sync/[provider].ts" },
