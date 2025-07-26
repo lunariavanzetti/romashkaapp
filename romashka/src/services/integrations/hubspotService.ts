@@ -529,13 +529,13 @@ export class HubSpotIntegrationService {
   }
 
   /**
-   * Get OAuth token for user
+   * Get OAuth token for user (with server-side refresh to avoid CORS)
    */
   async getOAuthToken(userId: string, portalId: string): Promise<{ accessToken: string; refreshToken: string } | null> {
     try {
       const { data, error } = await supabase!
         .from('oauth_tokens')
-        .select('access_token, refresh_token, expires_at')
+        .select('id, access_token, refresh_token, expires_at')
         .eq('user_id', userId)
         .eq('provider', 'hubspot')
         .eq('store_identifier', portalId)
@@ -543,31 +543,27 @@ export class HubSpotIntegrationService {
 
       if (error || !data) return null;
 
-      // Check if token is expired
-      if (data.expires_at && new Date(data.expires_at) <= new Date()) {
-        // Token is expired, attempt refresh
-        const newTokenData = await this.refreshAccessToken(data.refresh_token);
-        
-        // Update token in database
-        await supabase!
-          .from('oauth_tokens')
-          .update({
-            access_token: newTokenData.access_token,
-            refresh_token: newTokenData.refresh_token,
-            expires_at: new Date(Date.now() + newTokenData.expires_in * 1000).toISOString()
-          })
-          .eq('user_id', userId)
-          .eq('provider', 'hubspot')
-          .eq('store_identifier', portalId);
+      // Use server-side token refresh endpoint to avoid CORS issues
+      const refreshResponse = await fetch('/api/integrations/refresh-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          integrationId: data.id,
+          userId: userId
+        })
+      });
 
-        return {
-          accessToken: newTokenData.access_token,
-          refreshToken: newTokenData.refresh_token
-        };
+      if (!refreshResponse.ok) {
+        console.error('Token refresh failed:', await refreshResponse.text());
+        return null;
       }
 
+      const refreshData = await refreshResponse.json();
+      
       return {
-        accessToken: data.access_token,
+        accessToken: refreshData.accessToken,
         refreshToken: data.refresh_token
       };
     } catch (error) {
