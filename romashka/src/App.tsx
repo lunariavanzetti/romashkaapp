@@ -41,6 +41,7 @@ import PredictiveAnalyticsTab from './pages/analytics/PredictiveAnalyticsTab';
 import AgentSetupPage from './pages/agent-setup/AgentSetupPage';
 import Debug from './pages/Debug';
 import DebugOnboarding from './pages/DebugOnboarding';
+import AIIntegrationTest from './pages/test/AIIntegrationTest';
 
 // Component to conditionally render Navigation
 const AppContent = () => {
@@ -94,6 +95,7 @@ const AppContent = () => {
         <Route path="/analytics/predictive" element={<ProtectedRoute><DashboardLayout><PredictiveAnalyticsTab /></DashboardLayout></ProtectedRoute>} />
         <Route path="/debug" element={<div className="pt-24"><Debug /></div>} />
         <Route path="/debug-onboarding" element={<div className="pt-24"><DebugOnboarding /></div>} />
+        <Route path="/test-ai-integration" element={<ProtectedRoute><DashboardLayout><AIIntegrationTest /></DashboardLayout></ProtectedRoute>} />
         <Route path="/test-training" element={<div className="pt-24"><h1>🧪 TEST TRAINING PAGE - NO PROTECTION</h1></div>} />
         <Route path="/test-personality" element={<div className="pt-24"><h1>🧪 TEST PERSONALITY PAGE - NO PROTECTION</h1></div>} />
         <Route path="/onboarding" element={<div className="pt-24"><Onboarding /></div>} />
