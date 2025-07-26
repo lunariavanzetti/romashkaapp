@@ -224,21 +224,30 @@ export class UnifiedIntegrationService {
         
         case 'hubspot':
           try {
-            // Get valid token (will refresh if expired)
-            const tokenData = await hubspotService.getOAuthToken(user.id, token.store_identifier);
-            if (!tokenData) {
-              throw new Error('Unable to get valid HubSpot token - please reconnect');
+            console.log('[DEBUG] Starting HubSpot server-side sync');
+            // Use server-side sync to avoid CORS issues
+            const syncResponse = await fetch('/api/integrations/sync-hubspot', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                integrationId: token.id,
+                userId: user.id
+              })
+            });
+
+            if (!syncResponse.ok) {
+              const errorText = await syncResponse.text();
+              console.error('[DEBUG] Server-side sync failed:', errorText);
+              throw new Error(`HubSpot sync failed: ${errorText}`);
             }
+
+            const syncResult = await syncResponse.json();
+            console.log('[DEBUG] HubSpot sync completed:', syncResult);
             
-            console.log('[DEBUG] HubSpot token retrieved successfully');
-            contacts = await hubspotService.syncContacts(user.id, tokenData.accessToken);
-            console.log('[DEBUG] HubSpot contacts synced:', contacts);
-            
-            contacts += await hubspotService.syncCompanies(user.id, tokenData.accessToken);
-            console.log('[DEBUG] HubSpot companies synced');
-            
-            deals = await hubspotService.syncDeals(user.id, tokenData.accessToken);
-            console.log('[DEBUG] HubSpot deals synced:', deals);
+            contacts = syncResult.contacts || 0;
+            deals = syncResult.deals || 0;
           } catch (hubspotError) {
             console.error('[DEBUG] HubSpot sync error:', hubspotError);
             throw new Error(`HubSpot sync failed: ${hubspotError instanceof Error ? hubspotError.message : 'Unknown error'}`);

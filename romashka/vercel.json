@@ -10,6 +10,7 @@
     { "src": "/api/integrations/shopify/callback", "dest": "/api/integrations/shopify/callback.ts" },
     { "src": "/api/integrations/check-credentials", "dest": "/api/integrations/check-credentials.ts" },
     { "src": "/api/integrations/refresh-token", "dest": "/api/integrations/refresh-token.ts" },
+    { "src": "/api/integrations/sync-hubspot", "dest": "/api/integrations/sync-hubspot.ts" },
     { "src": "/api/test-debug", "dest": "/api/test-debug.ts" },
     { "src": "/api/hello", "dest": "/api/hello.js" },
     { "src": "/api/sync/hubspot", "dest": "/api/sync/[provider].ts" },
