@@ -194,9 +194,11 @@ export class UnifiedIntegrationService {
    */
   async syncIntegration(integrationId: string): Promise<SyncStats> {
     try {
+      console.log('[DEBUG] syncIntegration called for:', integrationId);
       const { data: { user } } = await supabase!.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      console.log('[DEBUG] User authenticated, fetching token');
       const { data: token, error } = await supabase!
         .from('oauth_tokens')
         .select('*')
@@ -204,7 +206,12 @@ export class UnifiedIntegrationService {
         .eq('user_id', user.id)
         .single();
 
-      if (error || !token) throw new Error('Integration not found');
+      if (error || !token) {
+        console.log('[DEBUG] Token not found:', error);
+        throw new Error('Integration not found');
+      }
+
+      console.log('[DEBUG] Token found for provider:', token.provider);
 
       let contacts = 0, orders = 0, products = 0, deals = 0;
       const startTime = new Date().toISOString();
