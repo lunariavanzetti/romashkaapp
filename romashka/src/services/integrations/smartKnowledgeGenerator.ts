@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase } from '../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 import type { IntegrationData } from './aiIntegrationBridge';
 import AIIntegrationBridge from './aiIntegrationBridge';

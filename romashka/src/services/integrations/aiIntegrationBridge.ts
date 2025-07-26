@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase } from '../supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
 export interface IntegrationData {
