@@ -147,7 +147,10 @@ export class UnifiedIntegrationService {
           return await salesforceService.testConnection(token.store_identifier, token.access_token);
         
         case 'hubspot':
-          return await hubspotService.testConnection(token.access_token);
+          // Get valid token (will refresh if expired)
+          const tokenData = await hubspotService.getOAuthToken(user.id, token.store_identifier);
+          if (!tokenData) return false;
+          return await hubspotService.testConnection(tokenData.accessToken);
         
         default:
           throw new Error(`Unsupported provider: ${token.provider}`);
@@ -220,9 +223,26 @@ export class UnifiedIntegrationService {
           break;
         
         case 'hubspot':
-          contacts = await hubspotService.syncContacts(user.id, token.access_token);
-          contacts += await hubspotService.syncCompanies(user.id, token.access_token);
-          deals = await hubspotService.syncDeals(user.id, token.access_token);
+          try {
+            // Get valid token (will refresh if expired)
+            const tokenData = await hubspotService.getOAuthToken(user.id, token.store_identifier);
+            if (!tokenData) {
+              throw new Error('Unable to get valid HubSpot token - please reconnect');
+            }
+            
+            console.log('[DEBUG] HubSpot token retrieved successfully');
+            contacts = await hubspotService.syncContacts(user.id, tokenData.accessToken);
+            console.log('[DEBUG] HubSpot contacts synced:', contacts);
+            
+            contacts += await hubspotService.syncCompanies(user.id, tokenData.accessToken);
+            console.log('[DEBUG] HubSpot companies synced');
+            
+            deals = await hubspotService.syncDeals(user.id, tokenData.accessToken);
+            console.log('[DEBUG] HubSpot deals synced:', deals);
+          } catch (hubspotError) {
+            console.error('[DEBUG] HubSpot sync error:', hubspotError);
+            throw new Error(`HubSpot sync failed: ${hubspotError instanceof Error ? hubspotError.message : 'Unknown error'}`);
+          }
           break;
         
         default:
