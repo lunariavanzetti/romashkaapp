@@ -15,6 +15,7 @@
     { "src": "/api/test-sync", "dest": "/api/test-sync.ts" },
     { "src": "/api/test-ai-integration", "dest": "/api/test-ai-integration.ts" },
     { "src": "/api/test-knowledge-generation", "dest": "/api/test-knowledge-generation.ts" },
+    { "src": "/api/inspect-data", "dest": "/api/inspect-data.ts" },
     { "src": "/api/hello", "dest": "/api/hello.js" },
     { "src": "/api/sync/hubspot", "dest": "/api/sync/[provider].ts" },
     { "src": "/api/sync/salesforce", "dest": "/api/sync/[provider].ts" },
