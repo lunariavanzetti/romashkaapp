@@ -70,14 +70,6 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     };
     getAuthUser();
   }, []);
-
-  // Enable simple mode if there's a persistent error
-  useEffect(() => {
-    if (error && !isLoading) {
-      console.log('[ChatWidget] Error detected, enabling simple mode:', error);
-      setIsSimpleMode(true);
-    }
-  }, [error, isLoading]);
   const [showWelcome, setShowWelcome] = useState(true);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -466,13 +458,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                 {/* Messages Container */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900">
                   {error && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-700 text-sm">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
                       <div className="flex items-center space-x-2">
                         <ExclamationTriangleIcon className="w-4 h-4" />
-                        <span>
-                          {isSimpleMode ? 'Simple mode active' : 'Connection error'}: {error}
-                          {isSimpleMode && ' (You can still chat!)'}
-                        </span>
+                        <span>Connection error: {error}</span>
                       </div>
                     </div>
                   )}
@@ -594,7 +583,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                         placeholder="Type your message..."
                         className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-opacity-50 resize-none"
                         style={{ focusRingColor: primaryColor }}
-                        disabled={false}
+                        disabled={!isConnected}
                       />
 
                       {/* Emoji Button */}
