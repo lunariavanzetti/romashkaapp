@@ -495,12 +495,24 @@ export class WidgetService extends BaseChannelService {
   private async triggerAIResponse(conversationId: string, content: MessageContent, sessionId: string): Promise<void> {
     try {
       // Import AI service dynamically to avoid circular dependencies
-      const { openaiService } = await import('../openaiService');
+      const { aiService } = await import('../aiService');
+      const { supabase } = await import('../supabaseClient');
       
-      const response = await openaiService.generateResponse(
+      // Get user from session for integration bridge
+      let user = null;
+      try {
+        const { data: { user: sessionUser } } = await supabase.auth.getUser();
+        user = sessionUser;
+        console.log('[Widget Service] User found for integration bridge:', user?.id);
+      } catch (error) {
+        console.warn('[Widget Service] Could not get user for integration bridge:', error);
+      }
+      
+      const response = await aiService.generateResponse(
         content.text || 'Widget interaction',
-        conversationId,
-        'website'
+        [], // empty knowledge base for now
+        'en',
+        user // pass user for integration bridge
       );
 
       if (response) {

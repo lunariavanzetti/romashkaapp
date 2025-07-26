@@ -386,7 +386,7 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
     }
   }, [conversationId, onError]);
 
-  // Generate AI response using knowledge matching service
+  // Generate AI response using enhanced AI service with integration bridge
   const generateAIResponse = useCallback(async (userMessage: string, convId: string) => {
     if (!agentConfig || !convId) return;
 
@@ -402,15 +402,28 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
         }]
       }));
 
-      // Get AI response using knowledge matching service
-      const response = await knowledgeMatchingService.findAnswer({
-        question: userMessage,
-        knowledgeBase: agentConfig.knowledgeBase,
-        agentTone: agentConfig.tone,
-        businessType: agentConfig.businessType
-      });
+      // Get current user for AI-Integration Bridge
+      let currentUser = null;
+      try {
+        const { data: { user: sessionUser } } = await supabase.auth.getUser();
+        currentUser = sessionUser;
+        console.log('[useRealTimeChat] User found for AI integration bridge:', currentUser?.id);
+      } catch (error) {
+        console.warn('[useRealTimeChat] Could not get user for integration bridge:', error);
+      }
 
-      let aiResponseContent = response.answer || "I don't have that information available. Would you like me to connect you with a human agent?";
+      // Use enhanced AI service with integration bridge
+      const { aiService } = await import('../services/aiService');
+      let aiResponseContent = await aiService.generateResponse(
+        userMessage,
+        agentConfig.knowledgeBase || [],
+        'en',
+        currentUser
+      );
+
+      if (!aiResponseContent) {
+        aiResponseContent = "I don't have that information available. Would you like me to connect you with a human agent?";
+      }
       
       // Apply advanced settings
       if (agentConfig.advancedSettings?.limitResponseLength && aiResponseContent.length > 500) {
@@ -427,8 +440,9 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
           message_type: 'text',
           metadata: {
             agent_id: 'ai_agent',
-            confidence: response.confidence,
-            sources: response.sources
+            integration_bridge_enabled: !!currentUser,
+            user_id: currentUser?.id,
+            model: 'gpt-4o-mini'
           },
           status: 'sent'
         }])
