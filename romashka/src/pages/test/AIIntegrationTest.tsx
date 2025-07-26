@@ -164,6 +164,7 @@ export default function AIIntegrationTest() {
         <div className="mb-6 p-4 bg-blue-50 rounded-lg">
           <h3 className="font-semibold text-blue-900 mb-2">Test Status</h3>
           <p className="text-blue-800">User: {user.email}</p>
+          <p className="text-blue-800">User ID: {user.id}</p>
           <p className="text-blue-800">Integration Bridge: ✅ Available</p>
           <p className="text-blue-800">Smart Knowledge Generator: ✅ Available</p>
         </div>

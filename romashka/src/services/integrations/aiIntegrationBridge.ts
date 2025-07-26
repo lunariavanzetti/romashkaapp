@@ -76,11 +76,17 @@ export class AIIntegrationBridge {
       ]);
 
       if (contactsResult.error) {
-        console.warn('[AI Bridge] Contacts fetch error:', contactsResult.error);
+        console.error('[AI Bridge] Contacts fetch error:', contactsResult.error);
+      } else {
+        console.log('[AI Bridge] Contacts fetched successfully:', contactsResult.data?.length || 0);
       }
+      
       if (dealsResult.error) {
-        console.warn('[AI Bridge] Deals fetch error:', dealsResult.error);
+        console.error('[AI Bridge] Deals fetch error:', dealsResult.error);
+      } else {
+        console.log('[AI Bridge] Deals fetched successfully:', dealsResult.data?.length || 0);
       }
+      
       if (ordersResult.error) {
         console.warn('[AI Bridge] Orders fetch error:', ordersResult.error);
       }
@@ -101,6 +107,14 @@ export class AIIntegrationBridge {
         orders: integrationData.orders.length,
         products: integrationData.products.length
       });
+
+      // Log sample data for debugging
+      if (integrationData.contacts.length > 0) {
+        console.log('[AI Bridge] Sample contact:', integrationData.contacts[0]);
+      }
+      if (integrationData.deals.length > 0) {
+        console.log('[AI Bridge] Sample deal:', integrationData.deals[0]);
+      }
 
       return integrationData;
     } catch (error) {
