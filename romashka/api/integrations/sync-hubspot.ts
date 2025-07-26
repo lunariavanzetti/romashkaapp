@@ -21,7 +21,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // First refresh the token to ensure it's valid
-    const refreshResponse = await fetch(`${req.headers.origin}/api/integrations/refresh-token`, {
+    const origin = req.headers.origin || 'https://romashkaai.vercel.app';
+    const refreshResponse = await fetch(`${origin}/api/integrations/refresh-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ integrationId, userId })
@@ -36,12 +37,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('[DEBUG] Got valid access token, starting sync');
 
     // Sync contacts
+    console.log('[DEBUG] Fetching contacts from HubSpot API');
     const contactsResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts?properties=email,firstname,lastname,phone,company,jobtitle,lifecyclestage,hs_lead_source,createdate,lastmodifieddate&limit=100', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     });
+    
+    console.log('[DEBUG] Contacts API response status:', contactsResponse.status);
 
     if (!contactsResponse.ok) {
       const errorText = await contactsResponse.text();
@@ -85,12 +89,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Sync deals
+    console.log('[DEBUG] Fetching deals from HubSpot API');
     const dealsResponse = await fetch('https://api.hubapi.com/crm/v3/objects/deals?properties=dealname,amount,dealstage,closedate,createdate,pipeline,dealtype&limit=100', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     });
+    
+    console.log('[DEBUG] Deals API response status:', dealsResponse.status);
 
     let dealsStored = 0;
     if (dealsResponse.ok) {
