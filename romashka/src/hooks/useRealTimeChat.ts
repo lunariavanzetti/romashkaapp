@@ -370,10 +370,10 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
         generateAIResponse(content, conversationId);
       }
 
-      // Record response time for monitoring
-      const responseTime = Date.now() - startTime;
+      // Record user message time for monitoring (actual response time, not timestamp)
+      const userMessageResponseTime = Date.now() - startTime;
       if (enableAnalytics) {
-        await ConversationMonitoringService.recordAIResponse(conversationId, responseTime, true);
+        await ConversationMonitoringService.recordAIResponse(conversationId, userMessageResponseTime, true);
       }
 
       return data as ChatMessage;
@@ -399,6 +399,8 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
   // Generate AI response using enhanced AI service with integration bridge
   const generateAIResponse = useCallback(async (userMessage: string, convId: string) => {
     if (!agentConfig || !convId) return;
+
+    const aiStartTime = Date.now(); // Track AI response start time
 
     try {
       // Show typing indicator for AI
@@ -458,7 +460,8 @@ export function useRealTimeChat(options: UseRealTimeChatOptions) {
 
       // Track AI response
       if (enableAnalytics) {
-        await ConversationMonitoringService.recordAIResponse(convId, Date.now(), true);
+        const responseTime = Date.now() - aiStartTime;
+        await ConversationMonitoringService.recordAIResponse(convId, responseTime, true);
       }
 
     } catch (err) {

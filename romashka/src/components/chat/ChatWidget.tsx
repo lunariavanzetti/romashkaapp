@@ -243,6 +243,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
     const messageContent = inputValue.trim();
     const messageAttachments = [...attachments];
+    const startTime = Date.now(); // Track message send start time
 
     // Clear input and attachments immediately for better UX
     setInputValue('');
@@ -269,8 +270,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           // Note: metadata/attachments not supported in current schema
         );
 
-        // Record user activity for analytics
-        await ConversationMonitoringService.recordAIResponse(conversationId, Date.now(), true);
+        // Record user activity for analytics (actual response time, not timestamp)
+        const responseTime = Date.now() - startTime;
+        await ConversationMonitoringService.recordAIResponse(conversationId, responseTime, true);
       }
 
     } catch (error) {
