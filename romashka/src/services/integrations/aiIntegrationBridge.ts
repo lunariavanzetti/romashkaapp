@@ -94,9 +94,30 @@ export class AIIntegrationBridge {
         console.warn('[AI Bridge] Products fetch error:', productsResult.error);
       }
 
+      // Transform data from the actual database structure where info is in 'data' field
+      const transformedContacts = (contactsResult.data || []).map(contact => ({
+        ...contact,
+        // Extract data from JSON field for easier access
+        firstname: contact.data?.firstname || '',
+        lastname: contact.data?.lastname || '',
+        email: contact.data?.email || '',
+        phone: contact.data?.phone || '',
+        company: contact.data?.company || ''
+      }));
+
+      const transformedDeals = (dealsResult.data || []).map(deal => ({
+        ...deal,
+        // Extract data from JSON field for easier access
+        dealname: deal.data?.dealname || deal.name || '',
+        amount: deal.data?.amount || '0',
+        dealstage: deal.data?.dealstage || '',
+        pipeline: deal.data?.pipeline || '',
+        closedate: deal.data?.closedate || null
+      }));
+
       const integrationData = {
-        contacts: contactsResult.data || [],
-        deals: dealsResult.data || [],
+        contacts: transformedContacts,
+        deals: transformedDeals,
         orders: ordersResult.data || [],
         products: productsResult.data || []
       };
@@ -180,7 +201,7 @@ export class AIIntegrationBridge {
     if (data.contacts.length > 0) {
       context += '\n\n=== CUSTOMER CONTACTS ===\n';
       data.contacts.slice(0, 10).forEach(contact => {
-        context += `• ${contact.first_name || ''} ${contact.last_name || ''} (${contact.email || 'No email'})`;
+        context += `• ${contact.firstname || ''} ${contact.lastname || ''} (${contact.email || 'No email'})`;
         if (contact.company) context += ` - ${contact.company}`;
         if (contact.phone) context += ` - ${contact.phone}`;
         context += '\n';
@@ -190,10 +211,9 @@ export class AIIntegrationBridge {
     if (data.deals.length > 0) {
       context += '\n=== ACTIVE DEALS ===\n';
       data.deals.slice(0, 10).forEach(deal => {
-        context += `• ${deal.deal_name || 'Unnamed Deal'}`;
+        context += `• ${deal.dealname || 'Unnamed Deal'}`;
         if (deal.amount) context += ` - $${deal.amount}`;
-        if (deal.stage) context += ` (${deal.stage})`;
-        if (deal.contact_email) context += ` - Contact: ${deal.contact_email}`;
+        if (deal.dealstage) context += ` (${deal.dealstage})`;
         context += '\n';
       });
     }
